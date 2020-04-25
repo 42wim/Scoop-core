@@ -5,7 +5,7 @@
     Checks websites for newer versions using an (optional) regular expression defined in the manifest.
 .PARAMETER App
     Manifest name to search.
-    Placeholders are supported.
+    Wildcards are supported.
 .PARAMETER Dir
     Where to search for manifest(s).
 .PARAMETER Update
@@ -47,6 +47,7 @@
     Check manifest APP.json inside ./DIR directory and update if there is newer version.
 #>
 param(
+    [SupportsWildcards()]
     [String] $App = '*',
     [Parameter(Mandatory = $true)]
     [ValidateScript( {
@@ -63,13 +64,9 @@ param(
     [String] $Version = ''
 )
 
-. "$psscriptroot\..\lib\core.ps1"
-. "$psscriptroot\..\lib\manifest.ps1"
-. "$psscriptroot\..\lib\buckets.ps1"
-. "$psscriptroot\..\lib\autoupdate.ps1"
-. "$psscriptroot\..\lib\json.ps1"
-. "$psscriptroot\..\lib\versions.ps1"
-. "$psscriptroot\..\lib\install.ps1" # needed for hash generation
+'core', 'manifest', 'buckets', 'autoupdate', 'json', 'versions', 'install' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 $Dir = Resolve-Path $Dir
 $Search = $App
@@ -258,7 +255,7 @@ while ($in_progress -gt 0) {
         }
 
         if ($match -and $match.Success) {
-            $matchesHashtable = @{}
+            $matchesHashtable = @{ }
             $regex.GetGroupNames() | ForEach-Object { $matchesHashtable.Add($_, $match.Groups[$_].Value) }
             $ver = $matchesHashtable['1']
             if ($replace) {

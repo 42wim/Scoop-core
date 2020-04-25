@@ -3,7 +3,7 @@
     Check if ALL urls inside manifest have correct hashes.
 .PARAMETER App
     Manifest to be checked.
-    Wildcard is supported.
+    Wildcards are supported.
 .PARAMETER Dir
     Where to search for manifest(s).
 .PARAMETER Update
@@ -23,6 +23,7 @@
     Check MANIFEST and Update if there are some wrong hashes.
 #>
 param(
+    [SupportsWildcards()]
     [String] $App = '*',
     [Parameter(Mandatory = $true)]
     [ValidateScript( {
@@ -40,13 +41,9 @@ param(
     [Switch] $UseCache
 )
 
-. "$PSScriptRoot\..\lib\core.ps1"
-. "$PSScriptRoot\..\lib\manifest.ps1"
-. "$PSScriptRoot\..\lib\buckets.ps1"
-. "$PSScriptRoot\..\lib\autoupdate.ps1"
-. "$PSScriptRoot\..\lib\json.ps1"
-. "$PSScriptRoot\..\lib\versions.ps1"
-. "$PSScriptRoot\..\lib\install.ps1"
+'core', 'manifest', 'buckets', 'autoupdate', 'json', 'versions', 'install' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 $Dir = Resolve-Path $Dir
 if ($ForceUpdate) { $Update = $true }

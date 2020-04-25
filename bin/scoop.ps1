@@ -1,11 +1,13 @@
-#requires -v 3
+#Requires -Version 5
 param($cmd)
 
-set-strictmode -off
+Set-StrictMode -off
 
-. "$psscriptroot\..\lib\core.ps1"
-. "$psscriptroot\..\lib\git.ps1"
-. "$psscriptroot\..\lib\buckets.ps1"
+'core', 'git', 'buckets' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
+
+# TODO: ???
 . (relpath '..\lib\commands')
 
 reset_aliases

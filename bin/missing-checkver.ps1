@@ -3,13 +3,14 @@
     Check if manifest contains checkver and autoupdate property.
 .PARAMETER App
     Manifest name.
-    Wirldcard is supported.
+    Wirldcards are supported.
 .PARAMETER Dir
     Location of manifests.
 .PARAMETER SkipSupported
     Manifests with checkver and autoupdate will not be presented.
 #>
 param(
+    [SupportsWildcards()]
     [String] $App = '*',
     [Parameter(Mandatory = $true)]
     [ValidateScript( {
@@ -23,8 +24,9 @@ param(
     [Switch] $SkipSupported
 )
 
-. "$PSScriptRoot\..\lib\core.ps1"
-. "$PSScriptRoot\..\lib\manifest.ps1"
+'core', 'manifest' | ForEach-Object {
+    . "$PSscriptRoot\..\lib\$_.ps1"
+}
 
 $Dir = Resolve-Path $Dir
 

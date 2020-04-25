@@ -15,6 +15,7 @@
     Format manifest '7zip' inside bucket directory.
 #>
 param(
+    [SupportsWildcards()]
     [String] $App = '*',
     [Parameter(Mandatory = $true)]
     [ValidateScript( {
@@ -27,9 +28,9 @@ param(
     [String] $Dir
 )
 
-. "$PSScriptRoot\..\lib\core.ps1"
-. "$PSScriptRoot\..\lib\manifest.ps1"
-. "$PSScriptRoot\..\lib\json.ps1"
+'core', 'manifest', 'json' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 $Dir = Resolve-Path $Dir
 

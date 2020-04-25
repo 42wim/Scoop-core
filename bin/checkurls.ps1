@@ -3,7 +3,7 @@
     List manifests which do not have valid URLs.
 .PARAMETER App
     Manifest name to search.
-    Placeholder is supported.
+    Wildcards is supported.
 .PARAMETER Dir
     Where to search for manifest(s).
 .PARAMETER Timeout
@@ -12,6 +12,7 @@
     Manifests will all valid URLs will not be shown.
 #>
 param(
+    [SupportsWildcards()]
     [String] $App = '*',
     [Parameter(Mandatory = $true)]
     [ValidateScript( {
@@ -26,9 +27,9 @@ param(
     [Switch] $SkipValid
 )
 
-. "$PSScriptRoot\..\lib\core.ps1"
-. "$PSScriptRoot\..\lib\manifest.ps1"
-. "$PSScriptRoot\..\lib\install.ps1"
+'core', 'manifest', 'install' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 $Dir = Resolve-Path $Dir
 $Queue = @()

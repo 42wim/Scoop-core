@@ -3,9 +3,9 @@
 # remote install:
 #   Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
 $old_erroractionpreference = $erroractionpreference
-$erroractionpreference = 'stop' # quit if anything goes wrong
+$ErrorActionPreference = 'Stop' # quit if anything goes wrong
 
-if (($PSVersionTable.PSVersion.Major) -lt 5) {
+if ($PSVersionTable.PSVersion.Major -lt 5) {
     Write-Output "PowerShell 5 or later is required to run Scoop."
     Write-Output "Upgrade PowerShell: https://docs.microsoft.com/en-us/powershell/scripting/setup/installing-windows-powershell"
     break
@@ -76,4 +76,4 @@ success 'Scoop was installed successfully!'
 
 Write-Output "Type 'scoop help' for instructions."
 
-$erroractionpreference = $old_erroractionpreference # Reset $erroractionpreference to original value
+$ErrorActionPreference = $old_erroractionpreference # Reset $erroractionpreference to original value

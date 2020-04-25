@@ -54,8 +54,9 @@ param(
     [Switch] $SkipUpdated
 )
 
-. "$PSScriptRoot\..\lib\manifest.ps1"
-. "$PSScriptRoot\..\lib\json.ps1"
+'manifest', 'json' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 $Dir = Resolve-Path $Dir
 

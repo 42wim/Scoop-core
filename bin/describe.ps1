@@ -3,13 +3,14 @@
     Search for application description on homepage.
 .PARAMETER App
     Manifest name to search.
-    Placeholders are supported.
+    Wildcards are supported.
 .PARAMETER Dir
     Where to search for manifest(s).
 #>
 param(
+    [SupportsWildcards()]
     [String] $App = '*',
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory)]
     [ValidateScript( {
         if (!(Test-Path $_ -Type Container)) {
             throw "$_ is not a directory!"
@@ -20,9 +21,9 @@ param(
     [String] $Dir
 )
 
-. "$PSScriptRoot\..\lib\core.ps1"
-. "$PSScriptRoot\..\lib\manifest.ps1"
-. "$PSScriptRoot\..\lib\description.ps1"
+'core', 'manifest', 'description' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 $Dir = Resolve-Path $Dir
 $Queue = @()
