@@ -1,10 +1,8 @@
 . "$psscriptroot\..\lib\core.ps1"
 . "$psscriptroot\..\lib\install.ps1"
-. "$psscriptroot\..\lib\unix.ps1"
 . "$psscriptroot\Scoop-TestLib.ps1"
 
 $repo_dir = (Get-Item $MyInvocation.MyCommand.Path).directory.parent.FullName
-$isUnix = is_unix
 
 describe "Get-AppFilePath" -Tag 'Scoop' {
     beforeall {
@@ -136,7 +134,7 @@ describe "movedir" -Tag 'Scoop' {
         $working_dir = setup_working "movedir"
     }
 
-    it "moves directories with no spaces in path" -skip:$isUnix {
+    it "moves directories with no spaces in path" {
         $dir = "$working_dir\user"
         movedir "$dir\_tmp\$extract_dir" "$dir\$extract_to"
 
@@ -144,7 +142,7 @@ describe "movedir" -Tag 'Scoop' {
         "$dir\_tmp\$extract_dir" | should -not -exist
     }
 
-    it "moves directories with spaces in path" -skip:$isUnix {
+    it "moves directories with spaces in path" {
         $dir = "$working_dir\user with space"
         movedir "$dir\_tmp\$extract_dir" "$dir\$extract_to"
 
@@ -157,7 +155,7 @@ describe "movedir" -Tag 'Scoop' {
         "$dir\_tmp" | should -not -exist
     }
 
-    it "moves directories with quotes in path" -skip:$isUnix {
+    it "moves directories with quotes in path" {
         $dir = "$working_dir\user with 'quote"
         movedir "$dir\_tmp\$extract_dir" "$dir\$extract_to"
 
@@ -173,7 +171,7 @@ describe "shim" -Tag 'Scoop' {
         $(ensure_in_path $shimdir) | out-null
     }
 
-    it "links a file onto the user's path" -skip:$isUnix {
+    it "links a file onto the user's path" {
         { get-command "shim-test" -ea stop } | should -throw
         { get-command "shim-test.ps1" -ea stop } | should -throw
         { get-command "shim-test.cmd" -ea stop } | should -throw
@@ -187,7 +185,7 @@ describe "shim" -Tag 'Scoop' {
     }
 
     context "user with quote" {
-        it "shims a file with quote in path" -skip:$isUnix {
+        it "shims a file with quote in path" {
             { get-command "shim-test" -ea stop } | should -throw
             { shim-test } | should -throw
 
@@ -209,7 +207,7 @@ describe "rm_shim" -Tag 'Scoop' {
         $(ensure_in_path $shimdir) | out-null
     }
 
-    it "removes shim from path" -skip:$isUnix {
+    it "removes shim from path" {
         shim "$working_dir\shim-test.ps1" $false "shim-test"
 
         rm_shim "shim-test" $shimdir
@@ -228,11 +226,11 @@ Describe "get_app_name_from_ps1_shim" -Tag 'Scoop' {
         $(ensure_in_path $shimdir) | Out-Null
     }
 
-    It "returns empty string if file does not exist" -skip:$isUnix {
+    It "returns empty string if file does not exist" {
         get_app_name_from_ps1_shim "non-existent-file" | should -be ""
     }
 
-    It "returns app name if file exists and is a shim to an app" -skip:$isUnix {
+    It "returns app name if file exists and is a shim to an app" {
         mkdir -p "$working_dir/mockapp/current/"
         Write-Output "" | Out-File "$working_dir/mockapp/current/mockapp.ps1"
         shim "$working_dir/mockapp/current/mockapp.ps1" $false "shim-test"
@@ -240,7 +238,7 @@ Describe "get_app_name_from_ps1_shim" -Tag 'Scoop' {
         get_app_name_from_ps1_shim "$shim_path" | should -be "mockapp"
     }
 
-    It "returns empty string if file exists and is not a shim" -skip:$isUnix {
+    It "returns empty string if file exists and is not a shim" {
         Write-Output "lorem ipsum" | Out-File -Encoding ascii "$working_dir/mock-shim.ps1"
         get_app_name_from_ps1_shim "$working_dir/mock-shim.ps1" | should -be ""
     }
@@ -263,7 +261,7 @@ describe "ensure_robocopy_in_path" -Tag 'Scoop' {
     }
 
     context "robocopy is not in path" {
-        it "shims robocopy when not on path" -skip:$isUnix {
+        it "shims robocopy when not on path" {
             mock Test-CommandAvailable { $false }
             Test-CommandAvailable robocopy | should -be $false
 
@@ -278,7 +276,7 @@ describe "ensure_robocopy_in_path" -Tag 'Scoop' {
     }
 
     context "robocopy is in path" {
-        it "does not shim robocopy when it is in path" -skip:$isUnix {
+        it "does not shim robocopy when it is in path" {
             mock Test-CommandAvailable { $true }
             Test-CommandAvailable robocopy | should -be $true
 

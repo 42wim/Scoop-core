@@ -56,7 +56,6 @@ param(
 
 . "$PSScriptRoot\..\lib\manifest.ps1"
 . "$PSScriptRoot\..\lib\json.ps1"
-. "$PSScriptRoot\..\lib\unix.ps1"
 
 $Dir = Resolve-Path $Dir
 
@@ -76,17 +75,11 @@ Optional options:
     exit 0
 }
 
-if (is_unix) {
-    if (!(which hub)) {
-        Write-Host "Please install hub ('brew install hub' or visit: https://hub.github.com/)" -ForegroundColor Yellow
-        exit 1
-    }
-} else {
-    if (!(scoop which hub)) {
-        Write-Host "Please install hub 'scoop install hub'" -ForegroundColor Yellow
-        exit 1
-    }
+if (!(scoop which hub)) {
+    Write-Host "Please install hub 'scoop install hub'" -ForegroundColor Yellow
+    exit 1
 }
+
 
 function execute($cmd) {
     Write-Host $cmd -ForegroundColor Green

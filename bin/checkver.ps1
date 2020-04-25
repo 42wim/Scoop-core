@@ -70,7 +70,6 @@ param(
 . "$psscriptroot\..\lib\json.ps1"
 . "$psscriptroot\..\lib\versions.ps1"
 . "$psscriptroot\..\lib\install.ps1" # needed for hash generation
-. "$psscriptroot\..\lib\unix.ps1"
 
 $Dir = Resolve-Path $Dir
 $Search = $App

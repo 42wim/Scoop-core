@@ -6,7 +6,6 @@ if([String]::IsNullOrEmpty($MyInvocation.PSScriptRoot)) {
 . "$psscriptroot\Scoop-TestLib.ps1"
 . "$psscriptroot\..\lib\core.ps1"
 . "$psscriptroot\..\lib\manifest.ps1"
-. "$psscriptroot\..\lib\unix.ps1"
 
 $repo_dir = (Get-Item $MyInvocation.PSScriptRoot).FullName
 
