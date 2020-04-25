@@ -1,6 +1,7 @@
 . "$PSScriptRoot\core.ps1"
 
 $bucketsdir = "$scoopdir\buckets"
+$SCOOP_BUCKETS_DIRECTORY = $bucketsdir
 
 function Find-BucketDirectory {
     <#

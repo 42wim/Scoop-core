@@ -952,9 +952,11 @@ Optimize-SecurityProtocol
 
 # Scoop root directory
 $scoopdir = $env:SCOOP, (get_config 'rootPath'), "$env:USERPROFILE\scoop" | Where-Object { -not [String]::IsNullOrEmpty($_) } | Select-Object -First 1
+$SCOOP_ROOT_DIRECTORY = $scoopdir
 
 # Scoop global apps directory
 $globaldir = $env:SCOOP_GLOBAL, (get_config 'globalPath'), "$env:ProgramData\scoop" | Where-Object { -not [String]::IsNullOrEmpty($_) } | Select-Object -first 1
+$SCOOP_GLOBAL_ROOT_DIRECTORY = $globaldir
 
 # Scoop cache directory
 # Note: Setting the SCOOP_CACHE environment variable to use a shared directory
@@ -962,6 +964,7 @@ $globaldir = $env:SCOOP_GLOBAL, (get_config 'globalPath'), "$env:ProgramData\sco
 #       multiple users write and access cached files at the same time.
 #       Use at your own risk.
 $cachedir = $env:SCOOP_CACHE, (get_config 'cachePath'), "$scoopdir\cache" | Where-Object { -not [String]::IsNullOrEmpty($_) } | Select-Object -first 1
+$SCOOP_CACHE_DIRECTORY = $cachedir
 
 # Scoop config file migration
 $configHome = $env:XDG_CONFIG_HOME, "$env:USERPROFILE\.config" | Select-Object -First 1

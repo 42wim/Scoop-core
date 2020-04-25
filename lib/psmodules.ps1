@@ -1,4 +1,5 @@
 $modulesdir = "$scoopdir\modules"
+$SCOOP_MODULE_DIRECTORY = $modulesdir
 
 function install_psmodule($manifest, $dir, $global) {
     $psmodule = $manifest.psmodule
