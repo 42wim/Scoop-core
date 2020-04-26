@@ -49,6 +49,6 @@ if ($gcm.Path -and $gcm.Path.EndsWith('.ps1') -and (($gcm.Path -like "$usershims
     }
 }
 
-if ($FINAL_PATH) { Write-Host $FINAL_PATH }
+if ($FINAL_PATH) { Write-UserMessage $FINAL_PATH }
 
 exit $FINAL_EXIT_CODE

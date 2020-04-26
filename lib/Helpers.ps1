@@ -10,6 +10,8 @@ function Write-UserMessage {
     .PARAMETER Severity
         Specify the severity of the message.
         Could be Message, Info, Warning, Error
+    .PARAMETER Output
+        Specify the Write-Output cmdlet is used instead of Write-Host
     .PARAMETER Info
         Same as -Severity Info
     .PARAMETER Warning
@@ -22,6 +24,7 @@ function Write-UserMessage {
         [String[]] $Message,
         [ValidateSet('Message', 'Info', 'Warning', 'Error')]
         [String] $Severity = 'Message',
+        [Switch] $Output,
         [Switch] $Info,
         [Switch] $Warning,
         [Switch] $Err
@@ -34,9 +37,13 @@ function Write-UserMessage {
         'Info' { $sev = 'INFO '; $color = 'DarkGray' }
         'Warning' { $sev = 'WARN '; $color = 'DarkYellow' }
         'Error' { $sev = 'ERROR '; $color = 'DarkRed' }
-        default { $sev = ''; $color = 'White' }
+        default { $sev = ''; $color = 'White'; $Output = $true }
     }
 
     $display = ($Message -replace '^', "$Sev") -join "`r`n"
-    Write-Host $display -ForegroundColor $color
+    if ($Output) {
+        Write-Output $display
+    } else {
+        Write-Host $display -ForegroundColor $color
+    }
 }
