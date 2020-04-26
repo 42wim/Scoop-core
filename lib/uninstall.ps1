@@ -28,8 +28,11 @@ function Uninstall-ScoopApplication {
 
     # Do not uninstall when there is any process opened from application directory
     $processdir = appdir $App $Global | Resolve-Path | Select-Object -ExpandProperty Path
-    if (Get-Process | Where-Object { $_.Path -like "$processdir\*" }) {
-        error 'Application is still running. Close all instances and try again.'
+    $processes = Get-Process | Where-Object { $_.Path -like "$processdir\*" }
+    if ($processes) {
+        error 'Application is still running!'
+        error 'Processes with following IDs are blocking uninstallation:'
+        error ($processes.Id -join ", ")
         return $false
     }
 
