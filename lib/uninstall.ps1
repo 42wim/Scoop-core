@@ -30,8 +30,11 @@ function Uninstall-ScoopApplication {
     $processdir = appdir $App $Global | Resolve-Path | Select-Object -ExpandProperty Path
     $processes = Get-Process | Where-Object { $_.Path -like "$processdir\*" }
     if ($processes) {
+        $plPr = pluralize $processes.Count 'Process' 'Processes'
+        $plId = pluralize $processes.Count 'ID' 'IDs'
+        $plIs = pluralize $processes.Count 'is' 'are'
         error 'Application is still running!'
-        error 'Processes with following IDs are blocking uninstallation:'
+        error "$plPr with following $plId $plIs blocking uninstallation:"
         error ($processes.Id -join ", ")
         return $false
     }
