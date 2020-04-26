@@ -1,24 +1,52 @@
-# Usage: scoop list [query]
+# Usage: scoop list [query] [options]
 # Summary: List installed apps
+#
 # Help: Lists all installed apps, or the apps matching the supplied query.
-param($query)
+#
+# Options:
+#   -i, --installed     List apps sorted by installed date
+#   -u, --updated       List apps sorted by update time
+#   -r, --reverse       Apps will be listed descending order.
+#                           In case of Installed or Updated, apps will be listed from newest to oldest.
 
-. "$psscriptroot\..\lib\core.ps1"
-. "$psscriptroot\..\lib\versions.ps1"
-. "$psscriptroot\..\lib\manifest.ps1"
-. "$psscriptroot\..\lib\buckets.ps1"
+'core', 'buckets', 'getopt', 'versions', 'manifest' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 reset_aliases
+
+$opt, $query, $err = getopt $args 'iur' 'installed', 'updated', 'reverse'
+# TODO: Stop-ScoopExecution
+if ($err) { "scoop install: $err"; exit 1 }
+
+$orderInstalled = $opt.i -or $opt.installed
+$orderUpdated = $opt.u -or $opt.updated
+$reverse = $opt.r -or $opt.reverse
+# TODO: Stop-ScoopExecution
+if ($orderUpdated -and $orderInstalled) { error '--installed and --updated parameters cannot be used simultaneously'; exit 1 }
 $def_arch = default_architecture
 
-$local = installed_apps $false | ForEach-Object { @{ name = $_ } }
-$global = installed_apps $true | ForEach-Object { @{ name = $_; global = $true } }
+$locA = appsdir $false
+$globA = appsdir $true
+$local = installed_apps $false | ForEach-Object { @{ name = $_; gci = (Get-ChildItem $locA $_) } }
+$global = installed_apps $true | ForEach-Object { @{ name = $_; gci = (Get-ChildItem $globA $_); global = $true } }
 
 $apps = @($local) + @($global)
 
 if($apps) {
-    write-host "Installed apps$(if($query) { `" matching '$query'`"}): `n"
-    $apps | Sort-Object { $_.name } | Where-Object { !$query -or ($_.name -match $query) } | ForEach-Object {
+    $mes = if ($query) { " matching '$query'" }
+    write-host "Installed apps${mes}: `n"
+
+    $sortSplat = @{ 'Property' = { $_.name }; 'Descending' = $reverse }
+    if ($orderInstalled) {
+        $sortSplat.Property = { $_.gci.CreationTime }
+    } elseif ($orderUpdated) {
+        $sortSplat.Property = {
+            Join-Path $_.gci.Fullname '*\install.json' | Get-ChildItem | Sort-Object -Property LastWriteTimeUtc | Select-Object -ExpandProperty LastWriteTimeUtc -Last 1
+        }
+    }
+
+    $apps | Sort-Object @sortSplat | Where-Object { !$query -or ($_.name -match $query) } | ForEach-Object {
         $app = $_.name
         $global = $_.global
         $ver = current_version $app $global
@@ -44,8 +72,10 @@ if($apps) {
         write-host ''
     }
     write-host ''
-    exit 0
+    $exitCode = 0
 } else {
     write-host "There aren't any apps installed."
-    exit 1
+    $exitCode = 1
 }
+
+exit $exitCode
