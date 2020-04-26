@@ -13,17 +13,9 @@
 #   -s, --skip                Skip hash validation (use with caution!)
 #   -q, --quiet               Hide extraneous messages
 
-. "$psscriptroot\..\lib\core.ps1"
-. "$psscriptroot\..\lib\shortcuts.ps1"
-. "$psscriptroot\..\lib\psmodules.ps1"
-. "$psscriptroot\..\lib\decompress.ps1"
-. "$psscriptroot\..\lib\manifest.ps1"
-. "$psscriptroot\..\lib\buckets.ps1"
-. "$psscriptroot\..\lib\versions.ps1"
-. "$psscriptroot\..\lib\getopt.ps1"
-. "$psscriptroot\..\lib\depends.ps1"
-. "$psscriptroot\..\lib\git.ps1"
-. "$psscriptroot\..\lib\install.ps1"
+'core', 'shortcuts', 'psmodules', 'decompress', 'manifest', 'buckets', 'versions', 'getopt', 'depends', 'git', 'install', 'uninstall' | ForEach-Object {
+    . "PSScriptRoot\..\lib\$_.ps1"
+}
 
 reset_aliases
 
@@ -167,11 +159,11 @@ function update($app, $global, $quiet = $false, $independent, $suggested, $use_c
 
     # re-use architecture, bucket and url from first install
     $architecture = ensure_architecture $install.architecture
+    $url = $install.url
     $bucket = $install.bucket
     if ($null -eq $bucket) {
         $bucket = 'main'
     }
-    $url = $install.url
 
     if (!$independent) {
         # check dependencies
@@ -203,8 +195,7 @@ function update($app, $global, $quiet = $false, $independent, $suggested, $use_c
 
     write-host "Updating '$app' ($old_version -> $version)"
 
-    # region Workaround
-    # Workaround for https://github.com/lukesampson/scoop/issues/2220 until install is refactored
+    #region Workaround of #2220
     # Remove and replace whole region after proper fix
     Write-Host "Downloading new version"
     if (Test-Aria2Enabled) {
@@ -236,31 +227,15 @@ function update($app, $global, $quiet = $false, $independent, $suggested, $use_c
     }
     # There is no need to check hash again while installing
     $check_hash = $false
-    # endregion Workaround
+    #endregion Workaround of #2220
 
-    $dir = versiondir $app $old_version $global
-    $persist_dir = persistdir $app $global
+    $result = Uninstall-ScoopApplication -App $app -Global:$global
+    if ($result -eq $false) { return }
 
-    #region Workaround for #2952
-    $processdir = appdir $app $global | Resolve-Path | Select-Object -ExpandProperty Path
-    if (Get-Process | Where-Object { $_.Path -like "$processdir\*" }) {
-        error "Application is still running. Close all instances and try again."
-        return
-    }
-    #endregion Workaround for #2952
-
-    write-host "Uninstalling '$app' ($old_version)"
-    run_uninstaller $old_manifest $architecture $dir
-    rm_shims $old_manifest $global $architecture
-    env_rm_path $old_manifest $dir $global
-    env_rm $old_manifest $global
-
-    # If a junction was used during install, that will have been used
-    # as the reference directory. Otherwise it will just be the version
-    # directory.
-    $refdir = unlink_current $dir
-
+    # Rename current version to .old if same version is installed
     if ($force -and ($old_version -eq $version)) {
+        $dir = versiondir $app $old_version $global
+
         if (!(Test-Path "$dir/../_$version.old")) {
             Move-Item "$dir" "$dir/../_$version.old"
         } else {
@@ -272,14 +247,12 @@ function update($app, $global, $quiet = $false, $independent, $suggested, $use_c
         }
     }
 
-    if ($bucket) {
-        # add bucket name it was installed from
+    if ($install.url) {
+        $app = $install.url
+    } elseif ($bucket) {
         $app = "$bucket/$app"
     }
-    if ($install.url) {
-        # use the url of the install json if the application was installed through url
-        $app = $install.url
-    }
+
     install_app $app $architecture $global $suggested $use_cache $check_hash
 }
 

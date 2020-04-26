@@ -11,7 +11,7 @@ param(
     [bool] $purge
 )
 
-'core', 'install', 'shortcuts', 'versions', 'manifest' | ForEach-Object {
+'core', 'install', 'shortcuts', 'versions', 'manifest', 'uninstall' | ForEach-Object {
     . "$PSScriptRoot\..\lib\$_.ps1"
 }
 
@@ -28,36 +28,7 @@ if ($purge) {
 $yn = Read-Host 'Are you sure? (yN)'
 if ($yn -notlike 'y*') { exit }
 
-$errors = $false
-
-# Uninstall given app
-function do_uninstall($app, $global) {
-    $version = current_version $app $global
-    $dir = versiondir $app $version $global
-    $manifest = installed_manifest $app $version $global
-    $install = install_info $app $version $global
-    $architecture = $install.architecture
-
-    Write-Output "Uninstalling '$app'"
-    run_uninstaller $manifest $architecture $dir
-    rm_shims $manifest $global $architecture
-
-    # If a junction was used during install, that will have been used
-    # as the reference directory. Othewise it will just be the version
-    # directory.
-    $refdir = unlink_current (appdir $app $global)
-
-    env_rm_path $manifest $refdir $global
-    env_rm $manifest $global
-
-    $appdir = appdir $app $global
-    try {
-        Remove-Item $appdir -Recurse -Force -ErrorAction Stop
-    } catch {
-        $errors = $true
-        warn "Couldn't remove $(friendly_path $appdir): $_.Exception"
-    }
-}
+$errors = 0
 
 function rm_dir($dir) {
     try {
@@ -76,17 +47,17 @@ function keep_onlypersist($directory) {
 # a problem deleting a directory (which is quite likely)
 if ($global) {
     installed_apps $true | ForEach-Object { # global apps
-        do_uninstall $_ $true
+        $result = Uninstall-ScoopApplication -App $_ -Global
+        if ($result -eq $false) { $errors += 1 }
     }
 }
 
 installed_apps $false | ForEach-Object { # local apps
-    do_uninstall $_ $false
+    $result = Uninstall-ScoopApplication -App $_
+    if ($result -eq $false) { $errors += 1 }
 }
 
-if ($errors) {
-    abort 'Not all apps could be deleted. Try again or restart.'
-}
+if ($errors -gt 0) { abort 'Not all apps could be deleted. Try again or restart.' }
 
 if ($purge) {
     rm_dir $scoopdir
