@@ -6,12 +6,12 @@ function Write-UserMessage {
     .DESCRIPTION
         Based on passed severity the message will have different color and prefix.
     .PARAMETER Message
-        Specify the message to be displayed to user.
+        Specifies the message to be displayed to user.
     .PARAMETER Severity
-        Specify the severity of the message.
+        Specifies the severity of the message.
         Could be Message, Info, Warning, Error
     .PARAMETER Output
-        Specify the Write-Output cmdlet is used instead of Write-Host
+        Specifies the Write-Output cmdlet is used instead of Write-Host
     .PARAMETER Info
         Same as -Severity Info
     .PARAMETER Warning
