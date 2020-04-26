@@ -1,43 +1,54 @@
 # Usage: scoop which <command>
 # Summary: Locate a shim/executable (similar to 'which' on Linux)
 # Help: Locate the path to a shim/executable that was installed with Scoop (similar to 'which' on Linux)
-param($command)
-. "$psscriptroot\..\lib\core.ps1"
-. "$psscriptroot\..\lib\help.ps1"
+param([String] $Command)
+
+'core', 'help', 'commands' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 reset_aliases
 
-if(!$command) { 'ERROR: <command> missing'; my_usage; exit 1 }
+if (!$command) { Write-UserMessage '<command> missing' -Err; my_usage; exit 1 }
 
 try {
-    $gcm = Get-Command "$command" -ea stop
+    $gcm = Get-Command $Command -ErrorAction Stop
 } catch {
-    abort "'$command' not found" 3
+    # TODO: Stop-ScoopExecution
+    abort "Command '$command' not found" 3
 }
 
-$path = "$($gcm.path)"
-$usershims = "$(resolve-path $(shimdir $false))"
+$usershims = shimdir $false | Resolve-Path
+# TODO: Get rid of fullpath
 $globalshims = fullpath (shimdir $true) # don't resolve: may not exist
 
-if($path.endswith(".ps1") -and ($path -like "$usershims*" -or $path -like "$globalshims*")) {
-    $shimtext = Get-Content $path
+$FINAL_PATH = $null
+$FINAL_EXIT_CODE = 0
 
-    $exepath = ($shimtext | Where-Object { $_.startswith('$path') }).split(' ') | Select-Object -Last 1 | Invoke-Expression
+if ($gcm.Path -and $gcm.Path.EndsWith('.ps1') -and (($gcm.Path -like "$usershims*") -or ($gcm.Path -like "$globalshims*"))) {
+    $shimtext = Get-Content $gcm.Path
+    $exepath = ($shimtext | Where-Object { $_.StartsWith('$path') }) -split ' ' | Select-Object -Last 1 | Invoke-Expression
 
-    if(![system.io.path]::ispathrooted($exepath)) {
-        # Expand relative path
-        $exepath = resolve-path (join-path (split-path $path) $exepath)
+    # Expand relative path
+    if ($exepath -and ![System.IO.Path]::IsPathRooted($exepath)) {
+        $exepath = Split-Path $path | Join-Path -ChildPath $exepath | Resolve-Path
+    } else {
+        $exepath = $gcm.Path
     }
 
-    friendly_path $exepath
-} elseif($gcm.commandtype -eq 'Application') {
-    $gcm.Source
-} elseif($gcm.commandtype -eq 'Alias') {
-    scoop which $gcm.resolvedcommandname
+    $FINAL_PATH = friendly_path $exepath
 } else {
-    [console]::error.writeline("Not a scoop shim.")
-    $path
-    exit 2
+    switch ($gcm.CommandType) {
+        'Application' { $FINAL_PATH = $gcm.Source }
+        'Alias' { $FINAL_PATH = exec 'which'  @{ 'Command' = $gcm.ResolvedCommandName } }
+        default {
+            Write-UserMessage -Message 'Not a scoop shim'
+            $FINAL_PATH = $path
+            $FINAL_EXIT_CODE = 2
+        }
+    }
 }
 
-exit 0
+if ($FINAL_PATH) { Write-Host $FINAL_PATH }
+
+exit $FINAL_EXIT_CODE

@@ -1,3 +1,5 @@
+. "$PSScriptRoot\Helpers.ps1"
+
 function Optimize-SecurityProtocol {
     # .NET Framework 4.7+ has a default security protocol called 'SystemDefault',
     # which allows the operating system to choose the best protocol to use.
