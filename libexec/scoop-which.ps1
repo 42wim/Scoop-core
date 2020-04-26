@@ -18,32 +18,32 @@ try {
     abort "Command '$command' not found" 3
 }
 
-$usershims = shimdir $false | Resolve-Path
+$userShims = shimdir $false | Resolve-Path
 # TODO: Get rid of fullpath
-$globalshims = fullpath (shimdir $true) # don't resolve: may not exist
+$globalShims = fullpath (shimdir $true) # don't resolve: may not exist
 
 $FINAL_PATH = $null
 $FINAL_EXIT_CODE = 0
 
-if ($gcm.Path -and $gcm.Path.EndsWith('.ps1') -and (($gcm.Path -like "$usershims*") -or ($gcm.Path -like "$globalshims*"))) {
-    $shimtext = Get-Content $gcm.Path
-    $exepath = ($shimtext | Where-Object { $_.StartsWith('$path') }) -split ' ' | Select-Object -Last 1 | Invoke-Expression
+if ($gcm.Path -and $gcm.Path.EndsWith('.ps1') -and (($gcm.Path -like "$userShims*") -or ($gcm.Path -like "$globalShims*"))) {
+    $shimText = Get-Content $gcm.Path
+    $exePath = ($shimText | Where-Object { $_.StartsWith('$path') }) -split ' ' | Select-Object -Last 1 | Invoke-Expression
 
     # Expand relative path
-    if ($exepath -and ![System.IO.Path]::IsPathRooted($exepath)) {
-        $exepath = Split-Path $path | Join-Path -ChildPath $exepath | Resolve-Path
+    if ($exePath -and ![System.IO.Path]::IsPathRooted($exePath)) {
+        $exePath = Split-Path $path | Join-Path -ChildPath $exePath | Resolve-Path
     } else {
-        $exepath = $gcm.Path
+        $exePath = $gcm.Path
     }
 
-    $FINAL_PATH = friendly_path $exepath
+    $FINAL_PATH = friendly_path $exePath
 } else {
     switch ($gcm.CommandType) {
         'Application' { $FINAL_PATH = $gcm.Source }
         'Alias' { $FINAL_PATH = exec 'which'  @{ 'Command' = $gcm.ResolvedCommandName } }
         default {
             Write-UserMessage -Message 'Not a scoop shim'
-            $FINAL_PATH = $path
+            $FINAL_PATH = $gcm.Path
             $FINAL_EXIT_CODE = 2
         }
     }
