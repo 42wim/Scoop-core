@@ -149,13 +149,10 @@ The following buckets are known to scoop:
 - [versions](https://github.com/ScoopInstaller/Versions) - Alternative versions of apps found in other buckets
 
 The main bucket is installed by default. To add any of the other buckets, type:
-```
-scoop bucket add bucketname
-```
+`scoop bucket add bucketname`
+
 For example, to add the extras bucket, type:
-```
-scoop bucket add extras
-```
+`scoop bucket add extras`
 
 ## Other application buckets
 
