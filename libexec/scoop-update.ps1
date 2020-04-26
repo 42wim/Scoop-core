@@ -14,7 +14,7 @@
 #   -q, --quiet               Hide extraneous messages
 
 'core', 'shortcuts', 'psmodules', 'decompress', 'manifest', 'buckets', 'versions', 'getopt', 'depends', 'git', 'install', 'uninstall' | ForEach-Object {
-    . "PSScriptRoot\..\lib\$_.ps1"
+    . "$PSScriptRoot\..\lib\$_.ps1"
 }
 
 reset_aliases
