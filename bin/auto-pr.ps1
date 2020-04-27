@@ -76,7 +76,7 @@ Optional options:
     exit 0
 }
 
-if (!(Get-Command 'hub' -CommandType Application)) {
+if (!(Get-Command -Name 'hub' -CommandType Application -ErrorAction SilentlyContinue)) {
     # TODO: Stop-ScoopExecution
     Write-UserMessage -Message 'hub is required! Please refer to ''https://hub.github.com/'' to find out how to get hub for your platform.' -Warning
     exit 1
