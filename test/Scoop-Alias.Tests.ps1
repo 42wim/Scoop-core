@@ -1,55 +1,32 @@
-. "$psscriptroot\..\libexec\scoop-alias.ps1" | out-null
+. "$PSScriptRoot\..\lib\Alias.ps1"
 
-reset_aliases
+describe 'Add-Alias' -Tag 'Scoop' {
+    BeforeAll {
+        mock shimdir { "$env:TMP\Scoopshim" }
+        mock load_cfg { }
 
-describe "add_alias" -Tag 'Scoop' {
-  mock shimdir { "TestDrive:\shim" }
-  mock set_config { }
-  mock get_config { @{} }
-
-  $shimdir = shimdir
-  mkdir $shimdir
-
-  context "alias doesn't exist" {
-    it "creates a new alias" {
-      $alias_file = "$shimdir\scoop-rm.ps1"
-      $alias_file | should -not -exist
-
-      add_alias "rm" '"hello, world!"'
-      Invoke-Expression $alias_file | should -be "hello, world!"
+        $shimdir = shimdir
+        New-Item $shimdir -ItemType Directory -Force | Out-Null
     }
-  }
 
-  context "alias exists" {
-    it "does not change existing alias" {
-      $alias_file = "$shimdir\scoop-rm.ps1"
-      new-item $alias_file -type file
-      $alias_file | should -exist
+    context 'alias does not exist' {
+        it 'creates a new alias' {
+            $aliasFile = "$shimdir\scoop-cosiTest.ps1"
+            $aliasFile | Should -Not -Exist
 
-      add_alias "rm" "test"
-      $alias_file | should -FileContentMatch ""
+            Add-Alias -Name 'cosiTest' -Command '"hello, world!"'
+            Invoke-Expression $aliasFile | Should -Be 'hello, world!'
+        }
     }
-  }
+
+    context 'invalid alias definition' {
+        it 'require needed parameters' {
+            { Add-Alias } | Should -Throw
+            { Add-Alias -Name 'cosi' } | Should -Throw
+            { Add-Alias -Name 'cosi' -Command '' } | Should -Throw
+        }
+    }
 }
 
-describe "rm_alias" {
-  mock shimdir { "TestDrive:\shim" }
-  mock set_config { }
-  mock get_config { @{} }
-
-  $shimdir = shimdir
-  mkdir $shimdir
-
-  context "alias exists" {
-    it "removes an existing alias" {
-      $alias_file = "$shimdir\scoop-rm.ps1"
-      add_alias "rm" '"hello, world!"'
-
-      $alias_file | should -exist
-      mock get_config { @(@{"rm" = "scoop-rm"}) }
-
-      rm_alias "rm"
-      $alias_file | should -not -exist
-    }
-  }
-}
+# TODO: Remove alias test
+# TODO: Proper scoop installation tests without mocks
