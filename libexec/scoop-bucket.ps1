@@ -17,24 +17,24 @@
 #
 # To list all known buckets, use:
 #     scoop bucket known
-param($cmd, $name, $repo)
+param($Cmd, $Name, $Repo)
 
-. "$psscriptroot\..\lib\core.ps1"
-. "$psscriptroot\..\lib\buckets.ps1"
-. "$psscriptroot\..\lib\help.ps1"
-. "$psscriptroot\..\lib\git.ps1"
+'buckets', 'help' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 reset_aliases
 
-$usage_add = "usage: scoop bucket add <name> [<repo>]"
-$usage_rm = "usage: scoop bucket rm <name>"
+$usage_add = 'usage: scoop bucket add <name> [<repo>]'
+$usage_rm = 'usage: scoop bucket rm <name>'
+$exitCode = 0
 
-switch($cmd) {
-    'add' { add_bucket $name $repo }
-    'rm' { rm_bucket $name }
+switch ($Cmd) {
+    'add' { add_bucket $Name $Repo }
+    'rm' { rm_bucket $Name }
     'list' { Get-LocalBucket }
     'known' { known_buckets }
-    default { "scoop bucket: cmd '$cmd' not supported"; my_usage; exit 1 }
+    default { my_usage; $exitCode = 1 }
 }
 
-exit 0
+exit $exitCode

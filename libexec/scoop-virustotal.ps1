@@ -34,7 +34,7 @@
 #   -n, --no-depends By default, all dependencies are checked, too.  This flag allows
 #                    to avoid it.
 
-'core', 'help', 'getopt', 'manifest', 'buckets', 'json', 'decompress', 'install', 'depends', 'VirusTotal' | ForEach-Object {
+'core', 'depends', 'getopt', 'help', 'VirusTotal' | ForEach-Object {
     . "$PSScriptRoot\..\lib\$_.ps1"
 }
 

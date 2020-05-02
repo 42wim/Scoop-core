@@ -29,12 +29,6 @@ function Find-BucketDirectory {
     return $bucket
 }
 
-function bucketdir($name) {
-    Show-DeprecatedWarning $MyInvocation 'Find-BucketDirectory'
-
-    return Find-BucketDirectory $name
-}
-
 function known_bucket_repos {
     $json = "$PSScriptRoot\..\buckets.json"
 
@@ -61,12 +55,6 @@ function Get-LocalBucket {
     #>
 
     return (Get-ChildItem -Directory $bucketsdir).Name
-}
-
-function buckets {
-    Show-DeprecatedWarning $MyInvocation 'Get-LocalBucket'
-
-    return Get-LocalBucket
 }
 
 function find_manifest($app, $bucket) {
@@ -153,4 +141,16 @@ function new_issue_msg($app, $bucket, $title, $body) {
 
     $msg = "`nPlease try again or create a new issue by using the following link and paste your console output:"
     return "$msg`n$url"
+}
+
+function bucketdir($name) {
+    Show-DeprecatedWarning $MyInvocation 'Find-BucketDirectory'
+
+    return Find-BucketDirectory $name
+}
+
+function buckets {
+    Show-DeprecatedWarning $MyInvocation 'Get-LocalBucket'
+
+    return Get-LocalBucket
 }

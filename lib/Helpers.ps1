@@ -65,3 +65,19 @@ function Write-UserMessage {
         Write-Host $display -ForegroundColor $foreColor
     }
 }
+
+function Out-UTF8File {
+    param(
+        [Parameter(Mandatory)]
+        [Alias('Path')]
+        [System.IO.FileInfo] $File,
+        [Parameter(Mandatory, ValueFromPipeline)]
+        $Content
+    )
+
+    if ($PSVersionTable.PSVersion.Major -lt 5) {
+        Set-Content -LiteralPath $File -Value $Content -Encoding utf8
+    } else {
+        [System.IO.File]::WriteAllLines($File, ($Content -join "`r`n"))
+    }
+}
