@@ -37,5 +37,3 @@ if (('--version' -eq $cmd) -or (!$cmd -and ('-v' -in $args))) {
     Write-UserMessage -Message "scoop: '$cmd' isn't a scoop command. See 'scoop help'."
     exit 1
 }
-
-exit 0

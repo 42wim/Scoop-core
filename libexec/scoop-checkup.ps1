@@ -8,18 +8,21 @@
 }
 
 $issues = 0
-$issues += !(check_windows_defender $false)
-$issues += !(check_windows_defender $true)
-$issues += !(check_main_bucket)
-$issues += !(check_long_paths)
-$issues += !(check_envs_requirements)
-$issues += !(check_helpers_installed)
-$issues += !(check_drive)
+$issues += !(Test-WindowsDefender)
+$issues += !(Test-WindowsDefender -Global)
+$issues += !(Test-MainBucketAdded)
+$issues += !(Test-LongPathEnabled)
+$issues += !(Test-EnvironmentVariable)
+$issues += !(Test-HelpersInstalled)
+$issues += !(Test-Drive)
+$issues += !(Test-Config)
 
 if ($issues) {
     Write-UserMessage -Message "Found $issues potential $(pluralize $issues 'problem' 'problems')." -Warning
+    $exitCode = 1
 } else {
     Write-UserMessage -Message 'No problems identified!' -Success
+    $exitCode = 0
 }
 
-exit 0
+exit $exitCode
