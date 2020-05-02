@@ -248,6 +248,7 @@ function Get-AppFilePath {
 
 Function Test-CommandAvailable {
     param (
+        [Alias('Command')]
         [String]$Name
     )
     Return [Boolean](Get-Command $Name -ErrorAction Ignore)

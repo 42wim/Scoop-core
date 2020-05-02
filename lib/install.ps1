@@ -1,5 +1,6 @@
-. "$psscriptroot/autoupdate.ps1"
-. "$psscriptroot/buckets.ps1"
+'autoupdate', 'buckets', 'decompress' | ForEach-Object {
+    . "$PSScriptRoot\$_.ps1"
+}
 
 function nightly_version($date, $quiet = $false) {
     $date_str = $date.tostring("yyyyMMdd")
@@ -14,6 +15,7 @@ function install_app($app, $architecture, $global, $suggested, $use_cache = $tru
     $app, $manifest, $bucket, $url = Find-Manifest $app $bucket
 
     if(!$manifest) {
+        # TODO: Stop-ScoopExecution Try catch throw needed
         abort "Couldn't find manifest for '$app'$(if($url) { " at the URL $url" })."
     }
 
