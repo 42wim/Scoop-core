@@ -3,8 +3,6 @@
     Format manifest.
 .PARAMETER App
     Manifest to format.
-
-    Wildcards are supported.
 .PARAMETER Dir
     Where to search for manifest(s).
 .EXAMPLE
@@ -34,13 +32,13 @@ param(
 
 $Dir = Resolve-Path $Dir
 
-Get-ChildItem $Dir "$App.json" | ForEach-Object {
-    if ($PSVersionTable.PSVersion.Major -gt 5) { $_ = $_.Name } # Fix for pwsh
+foreach ($m in Get-ChildItem $Dir "$App.json") {
+    $path = $m.Fullname
 
     # beautify
-    $json = parse_json "$Dir\$_" | ConvertToPrettyJson
+    $manifest = parse_json $path | ConvertToPrettyJson
 
-    # convert to 4 spaces
-    $json = $json -replace "`t", '    '
-    [System.IO.File]::WriteAllLines("$Dir\$_", $json)
+    # Convert to 4 spaces
+    $json = $json -replace "`t", (4 * ' ')
+    [System.IO.File]::WriteAllLines($path, $manifest)
 }
