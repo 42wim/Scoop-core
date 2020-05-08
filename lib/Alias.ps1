@@ -8,7 +8,7 @@ function Get-AliasesFromConfig {
     return get_config $ALIAS_CMD_ALIAS @{ }
 }
 
-function Add-Alias {
+function Add-ScoopAlias {
     <#
     .SYNOPSIS
         Create the new alias.
@@ -49,7 +49,7 @@ $Command
     set_config $ALIAS_CMD_ALIAS $aliases | Out-Null
 }
 
-function Remove-Alias {
+function Remove-ScoopAlias {
     <#
     .SYNOPSIS
         Remove configured alias.
@@ -74,7 +74,7 @@ function Remove-Alias {
     }
 }
 
-function Get-Alias {
+function Get-ScoopAlias {
     param([Switch] $Verbose)
     $aliases = @()
 

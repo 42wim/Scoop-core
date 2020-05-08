@@ -1,5 +1,5 @@
 @{
-    Severity = @('Error','Warning')
+    Severity     = @('Error', 'Warning')
 
     ExcludeRules = @(
         # Currently Scoop widely uses Write-Host to output colored text.

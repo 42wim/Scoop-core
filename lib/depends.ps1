@@ -5,7 +5,7 @@ function install_order($apps, $arch) {
     $res = @()
     foreach ($app in $apps) {
         foreach ($dep in deps $app $arch) {
-            if ($res -notcontains $dep) { $res += $dep}
+            if ($res -notcontains $dep) { $res += $dep }
         }
         if ($res -notcontains $app) { $res += $app }
     }
@@ -26,8 +26,8 @@ function dep_resolve($app, $arch, $resolved, $unresolved) {
     $unresolved += $app
     $null, $manifest, $null, $null = Find-Manifest $app $bucket
 
-    if(!$manifest) {
-        if(((Get-LocalBucket) -notcontains $bucket) -and $bucket) {
+    if (!$manifest) {
+        if (((Get-LocalBucket) -notcontains $bucket) -and $bucket) {
             warn "Bucket '$bucket' not installed. Add it with 'scoop bucket add $bucket' or 'scoop bucket add $bucket <repo>'."
         }
         abort "Couldn't find manifest for '$app'$(if(!$bucket) { '.' } else { " from '$bucket' bucket." })"
@@ -53,23 +53,23 @@ function runtime_deps($manifest) {
 
 function script_deps($script) {
     $deps = @()
-    if($script -is [Array]) {
+    if ($script -is [Array]) {
         $script = $script -join "`n"
     }
-    if([String]::IsNullOrEmpty($script)) {
+    if ([String]::IsNullOrEmpty($script)) {
         return $deps
     }
 
-    if($script -like '*Expand-7zipArchive *' -or $script -like '*extract_7zip *') {
+    if ($script -like '*Expand-7zipArchive *' -or $script -like '*extract_7zip *') {
         $deps += '7zip'
     }
-    if($script -like '*Expand-MsiArchive *' -or $script -like '*extract_msi *') {
+    if ($script -like '*Expand-MsiArchive *' -or $script -like '*extract_msi *') {
         $deps += 'lessmsi'
     }
-    if($script -like '*Expand-InnoArchive *' -or $script -like '*unpack_inno *') {
+    if ($script -like '*Expand-InnoArchive *' -or $script -like '*unpack_inno *') {
         $deps += 'innounp'
     }
-    if($script -like '*Expand-DarkArchive *') {
+    if ($script -like '*Expand-DarkArchive *') {
         $deps += 'dark'
     }
 

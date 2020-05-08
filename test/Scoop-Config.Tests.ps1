@@ -16,7 +16,7 @@ Describe "config" -Tag 'Scoop' {
         $obj.five | Should -BeTrue
         $obj.six | Should -BeFalse
         $obj.seven | Should -BeOfType [System.DateTime]
-        if($PSVersionTable.PSVersion.Major -lt 6) {
+        if ($PSVersionTable.PSVersion.Major -lt 6) {
             $obj.eight | Should -BeOfType [System.String]
         } else {
             $obj.eight | Should -BeOfType [System.DateTime]
@@ -43,7 +43,7 @@ Describe "config" -Tag 'Scoop' {
         get_config 'five' | Should -BeTrue
         get_config 'six' | Should -BeFalse
         get_config 'seven' | Should -BeOfType [System.DateTime]
-        if($PSVersionTable.PSVersion.Major -lt 6) {
+        if ($PSVersionTable.PSVersion.Major -lt 6) {
             get_config 'eight' | Should -BeOfType [System.String]
         } else {
             get_config 'eight' | Should -BeOfType [System.DateTime]
@@ -55,7 +55,7 @@ Describe "config" -Tag 'Scoop' {
         $configFile = "$PSScriptRoot\.scoop"
 
         Mock ensure { $PSScriptRoot } -Verifiable -ParameterFilter { $dir -eq (Split-Path -Path $configFile) }
-        Mock Set-Content {} -Verifiable -ParameterFilter { $Path -eq $configFile }
+        Mock Set-Content { } -Verifiable -ParameterFilter { $Path -eq $configFile }
         Mock ConvertTo-Json { '' } -Verifiable -ParameterFilter { $InputObject -is [System.Management.Automation.PSObject] }
 
         set_config 'does_not_exist' 'default'
@@ -69,7 +69,7 @@ Describe "config" -Tag 'Scoop' {
         $scoopConfig | Add-Member -MemberType NoteProperty -Name 'should_stay' -Value 'another_value'
         $configFile = "$PSScriptRoot\.scoop"
 
-        Mock Set-Content {} -Verifiable -ParameterFilter { $Path -eq $configFile }
+        Mock Set-Content { } -Verifiable -ParameterFilter { $Path -eq $configFile }
         Mock ConvertTo-Json { '' } -Verifiable -ParameterFilter { $InputObject -is [System.Management.Automation.PSObject] }
 
         $scoopConfig = set_config 'should_be_removed' $null

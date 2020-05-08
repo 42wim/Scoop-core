@@ -66,7 +66,7 @@ if ($apps) {
     }
 
     # $apps is now a list of ($app, $global) tuples
-    $apps | ForEach-Object { cleanup @_ $verbose $cache}
+    $apps | ForEach-Object { cleanup @_ $verbose $cache }
 
     if ($cache) {
         Remove-Item "$cachedir\*.download" -ErrorAction Ignore

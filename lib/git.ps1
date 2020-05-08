@@ -1,7 +1,7 @@
 function git_proxy_cmd {
     $proxy = get_config 'proxy'
     $cmd = "git $($args | ForEach-Object { "$_ " })"
-    if($proxy -and $proxy -ne 'none') {
+    if ($proxy -and $proxy -ne 'none') {
         $cmd = "SET HTTPS_PROXY=$proxy&&SET HTTP_PROXY=$proxy&&$cmd"
     }
     & "$env:COMSPEC" /c $cmd

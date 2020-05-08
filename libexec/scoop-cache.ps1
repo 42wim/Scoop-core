@@ -19,16 +19,16 @@ reset_aliases
 function cacheinfo($file) {
     $app, $version, $url = $file.name -split '#'
     $size = filesize $file.length
-    return new-object psobject -prop @{ app=$app; version=$version; url=$url; size=$size }
+    return new-object psobject -prop @{ app = $app; version = $version; url = $url; size = $size }
 }
 
 function show($app) {
     $files = @(Get-ChildItem "$cachedir" | Where-Object { $_.name -match "^$app" })
     $total_length = ($files | Measure-Object length -sum).sum -as [double]
 
-    $f_app  = @{ expression={"$($_.app) ($($_.version))" }}
-    $f_url  = @{ expression={$_.url};alignment='right'}
-    $f_size = @{ expression={$_.size}; alignment='right'}
+    $f_app = @{ expression = { "$($_.app) ($($_.version))" } }
+    $f_url = @{ expression = { $_.url }; alignment = 'right' }
+    $f_size = @{ expression = { $_.size }; alignment = 'right' }
 
 
     $files | ForEach-Object { cacheinfo $_ } | Format-Table $f_size, $f_app, $f_url -auto -hide
@@ -36,11 +36,11 @@ function show($app) {
     "Total: $($files.length) $(pluralize $files.length 'file' 'files'), $(filesize $total_length)"
 }
 
-switch($cmd) {
+switch ($cmd) {
     'rm' {
-        if(!$app) { 'ERROR: <app> missing'; my_usage; exit 1 }
+        if (!$app) { 'ERROR: <app> missing'; my_usage; exit 1 }
         Remove-Item "$cachedir\$app#*"
-        if(test-path("$cachedir\$app.txt")) {
+        if (test-path("$cachedir\$app.txt")) {
             Remove-Item "$cachedir\$app.txt"
         }
     }

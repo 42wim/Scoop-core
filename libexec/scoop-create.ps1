@@ -11,16 +11,14 @@ function create_manifest($url) {
     $url_parts = $null
     try {
         $url_parts = parse_url $url
-    }
-    catch {
+    } catch {
         abort "Error: $url is not a valid URL"
     }
 
     $name = choose_item $url_parts "App name"
     $name = if ($name.Length -gt 0) {
         $name
-    }
-    else {
+    } else {
         file_name ($url_parts | select-object -last 1)
     }
 
@@ -33,7 +31,8 @@ function create_manifest($url) {
 
 function new_manifest() {
     @{ "homepage" = ""; "license" = ""; "version" = ""; "url" = "";
-        "hash" = ""; "extract_dir" = ""; "bin" = ""; "depends" = "" }
+        "hash" = ""; "extract_dir" = ""; "bin" = ""; "depends" = ""
+    }
 }
 
 function file_name($segment) {
@@ -53,7 +52,7 @@ function choose_item($list, $query) {
     $sel = read-host $query
 
     if ($sel.trim() -match '^[0-9+]$') {
-        return $list[$sel-1]
+        return $list[$sel - 1]
     }
 
     $sel
@@ -61,8 +60,7 @@ function choose_item($list, $query) {
 
 if (!$url) {
     scoop help create
-}
-else {
+} else {
     create_manifest $url
 }
 

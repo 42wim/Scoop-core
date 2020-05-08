@@ -33,12 +33,12 @@ function find_hash_in_textfile([String] $url, [Hashtable] $substitutions, [Strin
     $hashfile = $null
 
     $templates = @{
-        '$md5' = '([a-fA-F0-9]{32})';
-        '$sha1' = '([a-fA-F0-9]{40})';
-        '$sha256' = '([a-fA-F0-9]{64})';
-        '$sha512' = '([a-fA-F0-9]{128})';
+        '$md5'      = '([a-fA-F0-9]{32})';
+        '$sha1'     = '([a-fA-F0-9]{40})';
+        '$sha256'   = '([a-fA-F0-9]{64})';
+        '$sha512'   = '([a-fA-F0-9]{128})';
         '$checksum' = '([a-fA-F0-9]{32,128})';
-        '$base64' = '([a-zA-Z0-9+\/=]{24,88})';
+        '$base64'   = '([a-zA-Z0-9+\/=]{24,88})';
     }
 
     try {
@@ -61,13 +61,13 @@ function find_hash_in_textfile([String] $url, [Hashtable] $substitutions, [Strin
     $regex = substitute $regex $substitutions $true
     debug $regex
     if ($hashfile -match $regex) {
-        $hash = $matches[1] -replace '\s',''
+        $hash = $matches[1] -replace '\s', ''
     }
 
     # convert base64 encoded hash values
     if ($hash -match '^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{4})$') {
         $base64 = $matches[0]
-        if(!($hash -match '^[a-fA-F0-9]+$') -and $hash.length -notin @(32, 40, 64, 128)) {
+        if (!($hash -match '^[a-fA-F0-9]+$') -and $hash.length -notin @(32, 40, 64, 128)) {
             try {
                 $hash = ([System.Convert]::FromBase64String($base64) | ForEach-Object { $_.ToString('x2') }) -join ''
             } catch {
@@ -108,7 +108,7 @@ function find_hash_in_json([String] $url, [Hashtable] $substitutions, [String] $
     if (Test-ScoopDebugEnabled) { Set-Content "$PWD\checkver-hash-json.html" $json -Encoding Ascii }
 
     $hash = json_path $json $jsonpath $substitutions
-    if(!$hash) {
+    if (!$hash) {
         $hash = json_path_legacy $json $jsonpath $substitutions
     }
     return format_hash $hash
@@ -160,8 +160,8 @@ function find_hash_in_headers([String] $url) {
         $req.Timeout = 2000
         $req.Method = 'HEAD'
         $res = $req.GetResponse()
-        if(([int]$response.StatusCode -ge 300) -and ([int]$response.StatusCode -lt 400)) {
-            if($res.Headers['Digest'] -match 'SHA-256=([^,]+)' -or $res.Headers['Digest'] -match 'SHA=([^,]+)' -or $res.Headers['Digest'] -match 'MD5=([^,]+)') {
+        if (([int]$response.StatusCode -ge 300) -and ([int]$response.StatusCode -lt 400)) {
+            if ($res.Headers['Digest'] -match 'SHA-256=([^,]+)' -or $res.Headers['Digest'] -match 'SHA=([^,]+)' -or $res.Headers['Digest'] -match 'MD5=([^,]+)') {
                 $hash = ([System.Convert]::FromBase64String($matches[1]) | ForEach-Object { $_.ToString('x2') }) -join ''
                 debug $hash
             }
@@ -255,7 +255,7 @@ function get_hash_for_app([String] $app, $config, [String] $version, [String] $u
             }
         }
         'fosshub' {
-            $hash = find_hash_in_textfile $url $substitutions ($Matches.filename+'.*?"sha256":"([a-fA-F0-9]{64})"')
+            $hash = find_hash_in_textfile $url $substitutions ($Matches.filename + '.*?"sha256":"([a-fA-F0-9]{64})"')
         }
         'sourceforge' {
             # change the URL because downloads.sourceforge.net doesn't have checksums
@@ -336,23 +336,23 @@ function get_version_substitutions([String] $version, [Hashtable] $customMatches
     $firstPart = $version.Split('-') | Select-Object -first 1
     $lastPart = $version.Split('-') | Select-Object -last 1
     $versionVariables = @{
-        '$version' = $version;
+        '$version'           = $version;
         '$underscoreVersion' = ($version -replace "\.", "_");
-        '$dashVersion' = ($version -replace "\.", "-");
-        '$cleanVersion' = ($version -replace "\.", "");
-        '$majorVersion' = $firstPart.Split('.') | Select-Object -first 1;
-        '$minorVersion' = $firstPart.Split('.') | Select-Object -skip 1 -first 1;
-        '$patchVersion' = $firstPart.Split('.') | Select-Object -skip 2 -first 1;
-        '$buildVersion' = $firstPart.Split('.') | Select-Object -skip 3 -first 1;
+        '$dashVersion'       = ($version -replace "\.", "-");
+        '$cleanVersion'      = ($version -replace "\.", "");
+        '$majorVersion'      = $firstPart.Split('.') | Select-Object -first 1;
+        '$minorVersion'      = $firstPart.Split('.') | Select-Object -skip 1 -first 1;
+        '$patchVersion'      = $firstPart.Split('.') | Select-Object -skip 2 -first 1;
+        '$buildVersion'      = $firstPart.Split('.') | Select-Object -skip 3 -first 1;
         '$preReleaseVersion' = $lastPart;
     }
-    if($version -match "(?<head>\d+\.\d+(?:\.\d+)?)(?<tail>.*)") {
+    if ($version -match "(?<head>\d+\.\d+(?:\.\d+)?)(?<tail>.*)") {
         $versionVariables.Set_Item('$matchHead', $matches['head'])
         $versionVariables.Set_Item('$matchTail', $matches['tail'])
     }
-    if($customMatches) {
+    if ($customMatches) {
         $customMatches.GetEnumerator() | ForEach-Object {
-            if($_.Name -ne "0") {
+            if ($_.Name -ne "0") {
                 $versionVariables.Set_Item('$match' + (Get-Culture).TextInfo.ToTitleCase($_.Name), $_.Value)
             }
         }
@@ -369,10 +369,10 @@ function autoupdate([String] $app, $dir, $json, [String] $version, [Hashtable] $
 
     if ($json.url) {
         # create new url
-        $url   = substitute $json.autoupdate.url $substitutions
+        $url = substitute $json.autoupdate.url $substitutions
         $valid = $true
 
-        if($valid) {
+        if ($valid) {
             # create hash
             $hash = get_hash_for_app $app $json.autoupdate.hash $version $url $substitutions
             if ($null -eq $hash) {
@@ -395,10 +395,10 @@ function autoupdate([String] $app, $dir, $json, [String] $version, [Hashtable] $
             $architecture = $_.Name
 
             # create new url
-            $url   = substitute (arch_specific "url" $json.autoupdate $architecture) $substitutions
+            $url = substitute (arch_specific "url" $json.autoupdate $architecture) $substitutions
             $valid = $true
 
-            if($valid) {
+            if ($valid) {
                 # create hash
                 $hash = get_hash_for_app $app (arch_specific "hash" $json.autoupdate $architecture) $version $url $substitutions
                 if ($null -eq $hash) {

@@ -15,17 +15,17 @@ function print_help($cmd) {
     $summary = summary $file
     $help = scoop_help $file
 
-    if($usage) { "$usage`n" }
-    if($help) { $help }
+    if ($usage) { "$usage`n" }
+    if ($help) { $help }
 }
 
 function print_summaries {
-    $commands = @{}
+    $commands = @{ }
 
     command_files | ForEach-Object {
         $command = command_name $_
         $summary = summary (Get-Content (command_path $command) -raw)
-        if(!($summary)) { $summary = '' }
+        if (!($summary)) { $summary = '' }
         $commands.add("$command ", $summary) # add padding
     }
 
@@ -34,13 +34,13 @@ function print_summaries {
 
 $commands = commands
 
-if(!($cmd)) {
+if (!($cmd)) {
     "Usage: scoop <command> [<args>]
 
 Some useful commands are:"
     print_summaries
     "Type 'scoop help <command>' to get help for a specific command."
-} elseif($commands -contains $cmd) {
+} elseif ($commands -contains $cmd) {
     print_help $cmd
 } else {
     "scoop help: no such command '$cmd'"; exit 1

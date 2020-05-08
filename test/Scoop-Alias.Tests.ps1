@@ -1,6 +1,6 @@
 . "$PSScriptRoot\..\lib\Alias.ps1"
 
-describe 'Add-Alias' -Tag 'Scoop' {
+describe 'Add-ScoopAlias' -Tag 'Scoop' {
     BeforeAll {
         mock shimdir { "$env:TMP\Scoopshim" }
         mock load_cfg { }
@@ -14,16 +14,16 @@ describe 'Add-Alias' -Tag 'Scoop' {
             $aliasFile = "$shimdir\scoop-cosiTest.ps1"
             $aliasFile | Should -Not -Exist
 
-            Add-Alias -Name 'cosiTest' -Command '"hello, world!"'
+            Add-ScoopAlias -Name 'cosiTest' -Command '"hello, world!"'
             Invoke-Expression $aliasFile | Should -Be 'hello, world!'
         }
     }
 
     context 'invalid alias definition' {
         it 'require needed parameters' {
-            { Add-Alias } | Should -Throw
-            { Add-Alias -Name 'cosi' } | Should -Throw
-            { Add-Alias -Name 'cosi' -Command '' } | Should -Throw
+            { Add-ScoopAlias } | Should -Throw
+            { Add-ScoopAlias -Name 'cosi' } | Should -Throw
+            { Add-ScoopAlias -Name 'cosi' -Command '' } | Should -Throw
         }
     }
 }

@@ -40,7 +40,8 @@ if ($gcm.Path -and $gcm.Path.EndsWith('.ps1') -and (($gcm.Path -like "$userShims
 } else {
     switch ($gcm.CommandType) {
         'Application' { $FINAL_PATH = $gcm.Source }
-        'Alias' { $FINAL_PATH = exec 'which'  @{ 'Command' = $gcm.ResolvedCommandName } }
+        'Alias' { $FINAL_PATH = exec 'which'  @{ 'Command' = $gcm.ResolvedCommandName }
+        }
         default {
             Write-UserMessage -Message 'Not a scoop shim'
             $FINAL_PATH = $gcm.Path

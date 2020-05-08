@@ -14,7 +14,7 @@ reset_aliases
 $opt, $apps, $err = getopt $args 'a:' 'arch='
 $app = $apps[0]
 
-if(!$app) { error '<app> missing'; my_usage; exit 1 }
+if (!$app) { error '<app> missing'; my_usage; exit 1 }
 
 $architecture = default_architecture
 try {
@@ -24,7 +24,7 @@ try {
 }
 
 $deps = @(deps $app $architecture)
-if($deps) {
+if ($deps) {
     $deps[($deps.length - 1)..0]
 }
 

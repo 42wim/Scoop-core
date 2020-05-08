@@ -24,9 +24,9 @@ Describe 'Decompression function' -Tag 'Scoop', 'Decompress' {
     Context "7zip extraction" {
 
         BeforeAll {
-            if($env:CI) {
+            if ($env:CI) {
                 mock Get-AppFilePath { (Get-Command 7z.exe).Path }
-            } elseif(!(installed 7zip)) {
+            } elseif (!(installed 7zip)) {
                 scoop install 7zip
             }
             $test1 = "$working_dir\7ZipTest1.7z"
@@ -73,9 +73,9 @@ Describe 'Decompression function' -Tag 'Scoop', 'Decompress' {
     Context "msi extraction" {
 
         BeforeAll {
-            if($env:CI) {
+            if ($env:CI) {
                 mock Get-AppFilePath { $env:lessmsi }
-            } elseif(!(installed lessmsi)) {
+            } elseif (!(installed lessmsi)) {
                 scoop install lessmsi
             }
             $test1 = "$working_dir\MSITest.msi"
@@ -107,9 +107,9 @@ Describe 'Decompression function' -Tag 'Scoop', 'Decompress' {
     Context "inno extraction" {
 
         BeforeAll {
-            if($env:CI) {
+            if ($env:CI) {
                 mock Get-AppFilePath { $env:innounp }
-            } elseif(!(installed innounp)) {
+            } elseif (!(installed innounp)) {
                 scoop install innounp
             }
             $test = "$working_dir\InnoTest.exe"

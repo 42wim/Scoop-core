@@ -289,12 +289,12 @@ describe "ensure_robocopy_in_path" -Tag 'Scoop' {
 }
 
 describe 'sanitary_path' -Tag 'Scoop' {
-  it 'removes invalid path characters from a string' {
-    $path = 'test?.json'
-    $valid_path = sanitary_path $path
+    it 'removes invalid path characters from a string' {
+        $path = 'test?.json'
+        $valid_path = sanitary_path $path
 
-    $valid_path | should -be "test.json"
-  }
+        $valid_path | should -be "test.json"
+    }
 }
 
 describe 'app' -Tag 'Scoop' {

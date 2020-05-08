@@ -71,7 +71,7 @@ if (!$apps) {
 
         if ($outdatedApplications -and (Test-Aria2Enabled)) {
             Write-UserMessage -Message 'Scoop uses ''aria2c'' for multi-conneciton downloads.',
-                'In case of issues with downloading, run ''scoop config aria2-enabled $false'' to disable aria2.' -Warning
+            'In case of issues with downloading, run ''scoop config aria2-enabled $false'' to disable aria2.' -Warning
         }
 
         $c = $outdatedApplications.Count
@@ -86,7 +86,7 @@ if (!$apps) {
     foreach ($_ in $outdatedApplications) {
         # TODO: Try catch
         # $outdated is a list of ($app, $global) tuples
-        Update-App -App $_[0] -Global:$_[1] -Suggested @{} -Quiet:$quiet -Independent:$independent -SkipCache:(!$useCache) -SkipHashCheck:(!$checkHash)
+        Update-App -App $_[0] -Global:$_[1] -Suggested @{ } -Quiet:$quiet -Independent:$independent -SkipCache:(!$useCache) -SkipHashCheck:(!$checkHash)
     }
 }
 

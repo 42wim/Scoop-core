@@ -32,7 +32,7 @@ $exitCode = 0
 switch ($Option) {
     'add' {
         try {
-            Add-Alias -Name $Name -Command $Command -Description $Description
+            Add-ScoopAlias -Name $Name -Command $Command -Description $Description
         } catch {
             Write-UserMessage -Message $_.Exception.Message -Err
             $exitCode = 2
@@ -40,13 +40,13 @@ switch ($Option) {
     }
     'rm' {
         try {
-            Remove-Alias -Name $Name
+            Remove-ScoopAlias -Name $Name
         } catch {
             Write-UserMessage -Message $_.Exception.Message -Err
             $exitCode = 2
         }
     }
-    'list' { Get-Alias -Verbose:$Verbose }
+    'list' { Get-ScoopAlias -Verbose:$Verbose }
     default { my_usage; $exitCode = 1 }
 }
 

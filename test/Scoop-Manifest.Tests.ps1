@@ -50,8 +50,8 @@ describe -Tag 'Manifests' "manifest-validation" {
                 $bucketdir = "$psscriptroot\..\bucket\"
             }
             $changed_manifests = @()
-            if($env:CI -eq $true) {
-                $commit = if($env:APPVEYOR_PULL_REQUEST_HEAD_COMMIT) { $env:APPVEYOR_PULL_REQUEST_HEAD_COMMIT } else { $env:APPVEYOR_REPO_COMMIT }
+            if ($env:CI -eq $true) {
+                $commit = if ($env:APPVEYOR_PULL_REQUEST_HEAD_COMMIT) { $env:APPVEYOR_PULL_REQUEST_HEAD_COMMIT } else { $env:APPVEYOR_REPO_COMMIT }
                 $changed_manifests = (Get-GitChangedFile -Include '*.json' -Commit $commit)
             }
             $manifest_files = Get-ChildItem $bucketdir *.json
@@ -62,13 +62,13 @@ describe -Tag 'Manifests' "manifest-validation" {
 
         $manifest_files | ForEach-Object {
             $skip_manifest = ($changed_manifests -inotcontains $_.FullName)
-            if($env:CI -ne $true -or $changed_manifests -imatch 'schema.json') {
+            if ($env:CI -ne $true -or $changed_manifests -imatch 'schema.json') {
                 $skip_manifest = $false
             }
             it "$_" -skip:$skip_manifest {
                 $file = $_ # exception handling may overwrite $_
 
-                if(!($quota_exceeded)) {
+                if (!($quota_exceeded)) {
                     try {
                         $validator.Validate($file.fullname)
 
@@ -78,7 +78,7 @@ describe -Tag 'Manifests' "manifest-validation" {
                         }
                         $validator.Errors.Count | should -be 0
                     } catch {
-                        if($_.exception.message -like '*The free-quota limit of 1000 schema validations per hour has been reached.*') {
+                        if ($_.exception.message -like '*The free-quota limit of 1000 schema validations per hour has been reached.*') {
                             $quota_exceeded = $true
                             write-host -f darkyellow 'Schema validation limit exceeded. Will skip further validations.'
                         } else {
@@ -90,7 +90,7 @@ describe -Tag 'Manifests' "manifest-validation" {
                 $manifest = parse_json $file.fullname
                 $url = arch_specific "url" $manifest "32bit"
                 $url64 = arch_specific "url" $manifest "64bit"
-                if(!$url) {
+                if (!$url) {
                     $url = $url64
                 }
                 $url | should -not -benullorempty

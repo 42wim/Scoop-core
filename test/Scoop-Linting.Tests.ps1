@@ -20,16 +20,16 @@ Describe -Tag 'Linter' "PSScriptAnalyzer" {
     $linting_settings = Get-Item -Path "$repo_dir\PSScriptAnalyzerSettings.psd1"
 
     Context "Linting all *.psd1, *.psm1 and *.ps1 files" {
-        foreach($directory in $scoop_modules) {
+        foreach ($directory in $scoop_modules) {
             $analysis = Invoke-ScriptAnalyzer -Path $directory.FullName -Settings $linting_settings.FullName
             It "Should pass: $directory" {
                 $analysis.Count | should -be 0
             }
-            if($analysis) {
-                foreach($result in $analysis) {
+            if ($analysis) {
+                foreach ($result in $analysis) {
                     switch -wildCard ($result.ScriptName) {
                         '*.psm1' { $type = 'Module' }
-                        '*.ps1'  { $type = 'Script' }
+                        '*.ps1' { $type = 'Script' }
                         '*.psd1' { $type = 'Manifest' }
                     }
                     Write-Host -f Yellow "      [*] $($result.Severity): $($result.Message)"

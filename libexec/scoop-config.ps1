@@ -91,17 +91,17 @@ param($name, $value)
 
 reset_aliases
 
-if(!$name) { my_usage; exit 1 }
+if (!$name) { my_usage; exit 1 }
 
-if($name -like 'rm') {
+if ($name -like 'rm') {
     set_config $value $null | Out-Null
     Write-Output "'$value' has been removed"
-} elseif($null -ne $value) {
+} elseif ($null -ne $value) {
     set_config $name $value | Out-Null
     Write-Output "'$name' has been set to '$value'"
 } else {
     $value = get_config $name
-    if($null -eq $value) {
+    if ($null -eq $value) {
         Write-Output "'$name' is not set"
     } else {
         Write-Output $value

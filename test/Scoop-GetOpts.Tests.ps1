@@ -24,12 +24,12 @@ describe "getopt" -Tag 'Scoop' {
         $null, $null, $err = getopt '--non-exist' '' ''
         $err | should -be 'Option --non-exist not recognized.'
 
-        $null, $null, $err = getopt '--global','--another' 'abc:de:' 'global','one'
+        $null, $null, $err = getopt '--global', '--another' 'abc:de:' 'global', 'one'
         $err | should -be 'Option --another not recognized.'
     }
 
     it 'remaining args returned' {
-        $opt, $rem, $err = getopt '-g','rem' 'g' ''
+        $opt, $rem, $err = getopt '-g', 'rem' 'g' ''
         $err | should -benullorempty
         $opt.g | should -betrue
         $rem | should -not -benullorempty
@@ -39,7 +39,7 @@ describe "getopt" -Tag 'Scoop' {
 
     it 'get a long flag and a short option with argument' {
         $a = "--global -a 32bit test" -split ' '
-        $opt, $rem, $err = getopt $a 'ga:' 'global','arch='
+        $opt, $rem, $err = getopt $a 'ga:' 'global', 'arch='
 
         $err | should -benullorempty
         $opt.global | should -betrue

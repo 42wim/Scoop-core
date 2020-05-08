@@ -9,7 +9,7 @@
 #    a parameter should end with '='
 # returns @(opts hash, remaining_args array, error string)
 function getopt($argv, $shortopts, $longopts) {
-    $opts = @{}; $rem = @()
+    $opts = @{ }; $rem = @()
 
     function err($msg) {
         $opts, $rem, $msg
@@ -23,22 +23,23 @@ function getopt($argv, $shortopts, $longopts) {
     $argv = @($argv)
     $longopts = @($longopts)
 
-    for($i = 0; $i -lt $argv.length; $i++) {
+    for ($i = 0; $i -lt $argv.length; $i++) {
         $arg = $argv[$i]
-        if($null -eq $arg) { continue }
+        if ($null -eq $arg) { continue }
         # don't try to parse array arguments
-        if($arg -is [array]) { $rem += ,$arg; continue }
-        if($arg -is [int]) { $rem += $arg; continue }
-        if($arg -is [decimal]) { $rem += $arg; continue }
+        if ($arg -is [array]) { $rem += , $arg; continue }
+        if ($arg -is [int]) { $rem += $arg; continue }
+        if ($arg -is [decimal]) { $rem += $arg; continue }
 
-        if($arg.startswith('--')) {
+        if ($arg.startswith('--')) {
             $name = $arg.substring(2)
 
             $longopt = $longopts | Where-Object { $_ -match "^$name=?$" }
 
-            if($longopt) {
-                if($longopt.endswith('=')) { # requires arg
-                    if($i -eq $argv.length - 1) {
+            if ($longopt) {
+                if ($longopt.endswith('=')) {
+                    # requires arg
+                    if ($i -eq $argv.length - 1) {
                         return err "Option --$name requires an argument."
                     }
                     $opts.$name = $argv[++$i]
@@ -48,14 +49,14 @@ function getopt($argv, $shortopts, $longopts) {
             } else {
                 return err "Option --$name not recognized."
             }
-        } elseif($arg.startswith('-') -and $arg -ne '-') {
-            for($j = 1; $j -lt $arg.length; $j++) {
+        } elseif ($arg.startswith('-') -and $arg -ne '-') {
+            for ($j = 1; $j -lt $arg.length; $j++) {
                 $letter = $arg[$j].tostring()
 
-                if($shortopts -match "$(regex_escape $letter)`:?") {
+                if ($shortopts -match "$(regex_escape $letter)`:?") {
                     $shortopt = $matches[0]
-                    if($shortopt[1] -eq ':') {
-                        if($j -ne $arg.length -1 -or $i -eq $argv.length - 1) {
+                    if ($shortopt[1] -eq ':') {
+                        if ($j -ne $arg.length - 1 -or $i -eq $argv.length - 1) {
                             return err "Option -$letter requires an argument."
                         }
                         $opts.$letter = $argv[++$i]

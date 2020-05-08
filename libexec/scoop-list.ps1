@@ -33,7 +33,7 @@ $global = installed_apps $true | ForEach-Object { @{ name = $_; gci = (Get-Child
 
 $apps = @($local) + @($global)
 
-if($apps) {
+if ($apps) {
     $mes = if ($query) { " matching '$query'" }
     write-host "Installed apps${mes}: `n"
 
@@ -55,7 +55,7 @@ if($apps) {
         write-host "  $app " -NoNewline
         write-host -f DarkCyan $ver -NoNewline
 
-        if($global) { write-host -f DarkGreen ' *global*' -NoNewline }
+        if ($global) { write-host -f DarkGreen ' *global*' -NoNewline }
 
         if (!$install_info) { Write-Host ' *failed*' -ForegroundColor DarkRed -NoNewline }
         if ($install_info.hold) { Write-Host ' *hold*' -ForegroundColor DarkMagenta -NoNewline }
