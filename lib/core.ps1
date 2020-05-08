@@ -263,26 +263,28 @@ function Get-HelperPath {
         $Helper
     )
 
-    $HelperPath = $null
-    switch ($Helper) {
-        '7zip' {
-            $HelperPath = Get-AppFilePath '7zip' '7z.exe'
-            if ([String]::IsNullOrEmpty($HelperPath)) {
-                $HelperPath = Get-AppFilePath '7zip-zstd' '7z.exe'
+    process {
+        $helperPath = $null
+        switch ($Helper) {
+            'Aria2' { $helperPath = Get-AppFilePath 'aria2' 'aria2c.exe' }
+            'Innounp' { $helperPath = Get-AppFilePath 'innounp' 'innounp.exe' }
+            'Lessmsi' { $helperPath = Get-AppFilePath 'lessmsi' 'lessmsi.exe' }
+            '7zip' {
+                $helperPath = Get-AppFilePath '7zip' '7z.exe'
+                if ([String]::IsNullOrEmpty($helperPath)) {
+                    $helperPath = Get-AppFilePath '7zip-zstd' '7z.exe'
+                }
+            }
+            'Dark' {
+                $helperPath = Get-AppFilePath 'dark' 'dark.exe'
+                if ([String]::IsNullOrEmpty($helperPath)) {
+                    $helperPath = Get-AppFilePath 'wixtoolset' 'dark.exe'
+                }
             }
         }
-        'Lessmsi' { $HelperPath = Get-AppFilePath 'lessmsi' 'lessmsi.exe' }
-        'Innounp' { $HelperPath = Get-AppFilePath 'innounp' 'innounp.exe' }
-        'Dark' {
-            $HelperPath = Get-AppFilePath 'dark' 'dark.exe'
-            if ([String]::IsNullOrEmpty($HelperPath)) {
-                $HelperPath = Get-AppFilePath 'wixtoolset' 'dark.exe'
-            }
-        }
-        'Aria2' { $HelperPath = Get-AppFilePath 'aria2' 'aria2c.exe' }
-    }
 
-    return $HelperPath
+        return $helperPath
+    }
 }
 
 function Test-HelperInstalled {
