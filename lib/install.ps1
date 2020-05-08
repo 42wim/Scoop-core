@@ -176,11 +176,9 @@ function aria_exit_code($exitcode) {
 }
 
 function get_filename_from_metalink($file) {
-    $bytes = get_magic_bytes_pretty $file ''
-    # check if file starts with '<?xml'
-    if (!($bytes.StartsWith('3c3f786d6c'))) {
-        return $null
-    }
+    $XML_MAGIC = '3C3F786D6C'
+    # Check if file starts with '<?xml'
+    if (!(Get-MagicBytes $file -Pretty -Glue '').StartsWith($XML_MAGIC)) { return $null }
 
     # Add System.Xml for reading metalink files
     Add-Type -AssemblyName 'System.Xml'
@@ -655,7 +653,7 @@ function check_hash($file, $hash, $app_name) {
         $msg += "App:         $app_name`n"
         $msg += "URL:         $url`n"
         if (Test-Path $file) {
-            $msg += "First bytes: $((get_magic_bytes_pretty $file ' ').ToUpper())`n"
+            $msg += "First bytes: $(Get-MagicBytes $file)`n"
         }
         if ($expected -or $actual) {
             $msg += "Expected:    $expected`n"

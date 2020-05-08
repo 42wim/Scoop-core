@@ -1,0 +1,10 @@
+{
+    "Function deprecation": {
+        "prefix": "deprecated",
+        "scope": "powershell",
+        "body": [
+            "Show-DeprecatedWarning \\$MyInvocation '$1'",
+            "$1",
+        ],
+    },
+}

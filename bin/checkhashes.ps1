@@ -139,7 +139,7 @@ foreach ($current in $MANIFESTS) {
             $file = fullpath (cache_path $current.app $version $current.urls[$_])
             Write-Host  "`tURL:`t`t$($current.urls[$_])"
             if (Test-Path $file) {
-                Write-Host  "`tFirst bytes:`t$((get_magic_bytes_pretty $file ' ').ToUpper())"
+                Write-Host  "`tFirst bytes:`t$(Get-MagicBytes $file -Pretty)"
             }
             Write-Host  "`tExpected:`t$($current.hashes[$_])" -ForegroundColor Green
             Write-Host  "`tActual:`t`t$($actuals[$_])" -ForegroundColor Red

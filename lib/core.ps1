@@ -385,11 +385,6 @@ function is_local($path) {
 
 # operations
 
-function run($exe, $arg, $msg, $continue_exit_codes) {
-    Show-DeprecatedWarning $MyInvocation 'Invoke-ExternalCommand'
-    Invoke-ExternalCommand -FilePath $exe -ArgumentList $arg -Activity $msg -ContinueExitCodes $continue_exit_codes
-}
-
 function Invoke-ExternalCommand {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [OutputType([Boolean])]
@@ -934,26 +929,22 @@ function handle_special_urls($url) {
     return $url
 }
 
-function get_magic_bytes($file) {
-    if (!(Test-Path $file)) {
-        return ''
-    }
+#region Deprecated
+function run($exe, $arg, $msg, $continue_exit_codes) {
+    Show-DeprecatedWarning $MyInvocation 'Invoke-ExternalCommand'
+    Invoke-ExternalCommand -FilePath $exe -ArgumentList $arg -Activity $msg -ContinueExitCodes $continue_exit_codes
+}
 
-    if ((Get-Command Get-Content).parameters.ContainsKey('AsByteStream')) {
-        # PowerShell Core (6.0+) '-Encoding byte' is replaced by '-AsByteStream'
-        return Get-Content $file -AsByteStream -TotalCount 8
-    } else {
-        return Get-Content $file -Encoding byte -TotalCount 8
-    }
+function get_magic_bytes($file) {
+    Show-DeprecatedWarning $MyInvocation 'Get-MagicBytes'
+    return Get-MagicBytes -File $file
 }
 
 function get_magic_bytes_pretty($file, $glue = ' ') {
-    if (!(Test-Path $file)) {
-        return ''
-    }
-
-    return (get_magic_bytes $file | ForEach-Object { $_.ToString('x2') }) -join $glue
+    Show-DeprecatedWarning $MyInvocation 'Get-MagicBytes'
+    return Get-MagicBytes -File $file -Glue $glue -Pretty
 }
+#endregion Deprecated
 
 ##################
 # Core Bootstrap #

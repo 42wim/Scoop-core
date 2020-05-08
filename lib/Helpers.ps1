@@ -85,10 +85,54 @@ function Out-UTF8File {
         $Content
     )
     process {
-        if ($PSVersionTable.PSVersion.Major -lt 5) {
+        if ($PSVersionTable.PSVersion.Major -ge 6) {
             Set-Content -LiteralPath $File -Value $Content -Encoding utf8
         } else {
             [System.IO.File]::WriteAllLines($File, ($Content -join "`r`n"))
         }
+    }
+}
+
+function Get-MagicBytes {
+    <#
+    .SYNOPSIS
+        Get file's first 8 bytes.
+    .PARAMETER File
+        Specifies the file.
+    .PARAMETER Pretty
+        Specifies to return 'x2' representation of each byte.
+    .PARAMETER Glue
+        Specifies the characters used to join the bytes representation.
+    #>
+    [CmdletBinding()]
+    [OutputType([String])]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline)] $File,
+        [Switch] $Pretty,
+        [String] $Glue = ' '
+    )
+
+    process {
+        if (!(Test-Path $File -PathType Leaf)) { return '' }
+
+        if ((Get-Command Get-Content).Parameters.ContainsKey('AsByteStream')) {
+            # PowerShell Core (6.0+) '-Encoding byte' is replaced by '-AsByteStream'
+            $key = 'AsByteStream'
+            $value = $true
+        } else {
+            $key = 'Encoding'
+            $value = 'Byte'
+        }
+        $par = @{
+            'LiteralPath' = $File
+            'TotalCount'  = 8
+            "$key"        = $value
+        }
+
+        $cont = Get-Content @par
+        if ($Pretty) { $cont = $cont | ForEach-Object { $_.ToString('x2') } }
+        $cont = $cont -join $Glue
+
+        return $cont.ToUpper()
     }
 }
