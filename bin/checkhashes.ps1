@@ -27,12 +27,12 @@ param(
     [String] $App = '*',
     [Parameter(Mandatory = $true)]
     [ValidateScript( {
-            if (!(Test-Path $_ -Type Container)) {
-                throw "$_ is not a directory!"
-            } else {
-                $true
-            }
-        })]
+        if (!(Test-Path $_ -Type Container)) {
+            throw "$_ is not a directory!"
+        } else {
+            $true
+        }
+    })]
     [String] $Dir,
     [Switch] $Update,
     [Switch] $ForceUpdate,
@@ -41,7 +41,7 @@ param(
     [Switch] $UseCache
 )
 
-'core', 'manifest', 'buckets', 'autoupdate', 'json', 'versions', 'install' | ForEach-Object {
+'core', 'Helpers', 'manifest', 'buckets', 'autoupdate', 'json', 'versions', 'install' | ForEach-Object {
     . "$PSScriptRoot\..\lib\$_.ps1"
 }
 
@@ -104,14 +104,19 @@ foreach ($current in $MANIFESTS) {
     # Array of computed hashes
     $actuals = @()
 
-    $current.urls | ForEach-Object {
+    $break = $false
+    foreach ($u in $current.urls) {
         $algorithm, $expected = get_hash $current.hashes[$count]
         $version = 'HASH_CHECK'
         $tmp = $expected_hash -split ':'
+        try {
+            dl_with_cache $current.app $version $u $null $null -use_cache:$UseCache
+        } catch {
+            $break = $true
+            continue
+        }
 
-        dl_with_cache $current.app $version $_ $null $null -use_cache:$UseCache
-
-        $to_check = fullpath (cache_path $current.app $version $_)
+        $to_check = fullpath (cache_path $current.app $version $u)
         $actual_hash = compute_hash $to_check $algorithm
 
         # Append type of algorithm to both expected and actual if it's not sha256
@@ -125,6 +130,11 @@ foreach ($current in $MANIFESTS) {
             $mismatched += $count
         }
         $count++
+    }
+
+    if ($break) {
+        err $current.app 'Download failed'
+        continue
     }
 
     if ($mismatched.Length -eq 0 ) {
