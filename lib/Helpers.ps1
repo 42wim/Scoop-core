@@ -36,33 +36,43 @@ function Write-UserMessage {
         [Switch] $SkipSeverity,
         [System.ConsoleColor] $Color = 'White'
     )
-    if ($Info) { $Severity = 'Info' }
-    if ($Warning) { $Severity = 'Warning' }
-    if ($Err) { $Severity = 'Error' }
-    if ($Success) { $Severity = 'Success' }
 
-    switch ($Severity) {
-        'Info' { $sev = 'INFO '; $foreColor = 'DarkGray' }
-        'Warning' { $sev = 'WARN '; $foreColor = 'DarkYellow' }
-        'Error' { $sev = 'ERROR '; $foreColor = 'DarkRed' }
-        'Success' { $sev = ''; $foreColor = 'DarkGreen' }
-        default {
-            $sev = ''
-            $foreColor = 'White'
-            if ($Color) {
-                $foreColor = $Color
-            } else {
-                $Output = $true
+    begin {
+        if ($Info) { $Severity = 'Info' }
+        if ($Warning) { $Severity = 'Warning' }
+        if ($Err) { $Severity = 'Error' }
+        if ($Success) { $Severity = 'Success' }
+
+        switch ($Severity) {
+            'Info' { $sev = 'INFO '; $foreColor = 'DarkGray' }
+            'Warning' { $sev = 'WARN '; $foreColor = 'DarkYellow' }
+            'Error' { $sev = 'ERROR '; $foreColor = 'DarkRed' }
+            'Success' { $sev = ''; $foreColor = 'DarkGreen' }
+            default {
+                $sev = ''
+                $foreColor = 'White'
+                if ($Color) {
+                    $foreColor = $Color
+                } else {
+                    $Output = $true
+                }
             }
         }
+        $display = @()
     }
 
-    $m = if ($SkipSeverity) { $Message } else { $Message -replace '^', "$sev" }
-    $display = $m -join "`r`n"
-    if ($Output) {
-        Write-Output $display
-    } else {
-        Write-Host $display -ForegroundColor $foreColor
+    process {
+        $m = if ($SkipSeverity) { $Message } else { $Message -replace '^', "$sev" }
+        $display += $m
+    }
+
+    end {
+        $display = $display -join "`r`n"
+        if ($Output) {
+            Write-Output $display
+        } else {
+            Write-Host $display -ForegroundColor $foreColor
+        }
     }
 }
 
@@ -74,10 +84,11 @@ function Out-UTF8File {
         [Parameter(Mandatory, ValueFromPipeline)]
         $Content
     )
-
-    if ($PSVersionTable.PSVersion.Major -lt 5) {
-        Set-Content -LiteralPath $File -Value $Content -Encoding utf8
-    } else {
-        [System.IO.File]::WriteAllLines($File, ($Content -join "`r`n"))
+    process {
+        if ($PSVersionTable.PSVersion.Major -lt 5) {
+            Set-Content -LiteralPath $File -Value $Content -Encoding utf8
+        } else {
+            [System.IO.File]::WriteAllLines($File, ($Content -join "`r`n"))
+        }
     }
 }
