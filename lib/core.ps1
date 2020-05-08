@@ -142,7 +142,7 @@ function Test-ScoopDebugEnabled {
 }
 
 function debug($obj) {
-    if (Test-ScoopDebugEnabled) { return }
+    if (!(Test-ScoopDebugEnabled)) { return }
 
     $prefix = "DEBUG[$(Get-Date -UFormat %s)]"
     $param = $MyInvocation.Line.Replace($MyInvocation.InvocationName, '').Trim()
