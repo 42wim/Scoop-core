@@ -1,12 +1,12 @@
 # Usage: scoop status
 # Summary: Show status and check for new app versions
 
-. "$psscriptroot\..\lib\core.ps1"
-. "$psscriptroot\..\lib\manifest.ps1"
-. "$psscriptroot\..\lib\buckets.ps1"
-. "$psscriptroot\..\lib\versions.ps1"
-. "$psscriptroot\..\lib\depends.ps1"
-. "$psscriptroot\..\lib\git.ps1"
+. "$PSScriptRoot\..\lib\core.ps1"
+. "$PSScriptRoot\..\lib\manifest.ps1"
+. "$PSScriptRoot\..\lib\buckets.ps1"
+. "$PSScriptRoot\..\lib\versions.ps1"
+. "$PSScriptRoot\..\lib\depends.ps1"
+. "$PSScriptRoot\..\lib\git.ps1"
 
 reset_aliases
 

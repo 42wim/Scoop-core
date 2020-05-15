@@ -4,7 +4,7 @@ if (!$script:failed) { $script:failed = 0 }
 function filter_tests($arg) {
     if (!$arg) { return }
     $script:filter = $arg -join ' '
-    write-host "filtering by '$filter'"
+    Write-Host "filtering by '$filter'"
 }
 function test($desc, $assertions) {
     if ($filter -and $desc -notlike "*$filter*") { return }
@@ -40,22 +40,22 @@ function test_results {
         $res = "$script:failed failed"
     }
 
-    write-host "ran $script:run tests, " -nonewline
-    write-host $res -f $col
+    Write-Host "ran $script:run tests, " -nonewline
+    Write-Host $res -f $col
 }
 
 function script:fail($msg) {
     $script:failed++
-    $invoked = (get-variable -scope 1 myinvocation).value
+    $invoked = (Get-Variable -Scope 1 myinvocation).value
 
-    $script = split-path $invoked.scriptname -leaf
+    $script = Split-Path $invoked.scriptname -leaf
     $line = $invoked.scriptlinenumber
 
     if ($script:test) { $msg = "$script:test`r`n      -> $msg" }
 
-    write-host "FAIL: $msg" -f darkred
-    write-host "$script line $line`:"
-    write-host (($invoked.positionmessage -split "`r`n")[1..2] -join "`r`n")
+    Write-Host "FAIL: $msg" -f darkred
+    Write-Host "$script line $line`:"
+    Write-Host (($invoked.positionmessage -split "`r`n")[1..2] -join "`r`n")
 }
 
 function script:fmt($var) {
@@ -66,18 +66,16 @@ function script:fmt($var) {
 
 # copies fixtures to a working directory
 function setup_working($name) {
-    $fixtures = "$psscriptroot/fixtures/$name"
-    if (!(test-path $fixtures)) {
-        write-host "couldn't find fixtures for $name at $fixtures" -f red
+    $fixtures = "$PSScriptRoot/fixtures/$name"
+    if (!(Test-Path $fixtures)) {
+        Write-Host "couldn't find fixtures for $name at $fixtures" -f red
         exit 1
     }
 
     # reset working dir
     $working_dir = "$env:TEMP/ScoopTestFixtures/$name"
 
-    if (test-path $working_dir) {
-        Remove-Item -Recurse -Force $working_dir
-    }
+    if (Test-Path $working_dir) { Remove-Item -Recurse -Force $working_dir }
 
     # set up
     Copy-Item $fixtures -Destination $working_dir -Recurse

@@ -2,13 +2,13 @@
 # Summary: Display information about an app
 param($app)
 
-. "$psscriptroot\..\lib\buckets.ps1"
-. "$psscriptroot\..\lib\core.ps1"
-. "$psscriptroot\..\lib\depends.ps1"
-. "$psscriptroot\..\lib\help.ps1"
-. "$psscriptroot\..\lib\install.ps1"
-. "$psscriptroot\..\lib\manifest.ps1"
-. "$psscriptroot\..\lib\versions.ps1"
+. "$PSScriptRoot\..\lib\buckets.ps1"
+. "$PSScriptRoot\..\lib\core.ps1"
+. "$PSScriptRoot\..\lib\depends.ps1"
+. "$PSScriptRoot\..\lib\help.ps1"
+. "$PSScriptRoot\..\lib\install.ps1"
+. "$PSScriptRoot\..\lib\manifest.ps1"
+. "$PSScriptRoot\..\lib\versions.ps1"
 
 reset_aliases
 

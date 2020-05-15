@@ -2,10 +2,10 @@
 # Summary: Returns the path to the specified app
 param($app)
 
-. "$psscriptroot\..\lib\core.ps1"
-. "$psscriptroot\..\lib\help.ps1"
-. "$psscriptroot\..\lib\manifest.ps1"
-. "$psscriptroot\..\lib\buckets.ps1"
+. "$PSScriptRoot\..\lib\core.ps1"
+. "$PSScriptRoot\..\lib\help.ps1"
+. "$PSScriptRoot\..\lib\manifest.ps1"
+. "$PSScriptRoot\..\lib\buckets.ps1"
 
 reset_aliases
 

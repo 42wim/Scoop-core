@@ -1,8 +1,8 @@
 # Usage: scoop hold <apps>
 # Summary: Hold an app to disable updates
 
-. "$psscriptroot\..\lib\help.ps1"
-. "$psscriptroot\..\lib\manifest.ps1"
+. "$PSScriptRoot\..\lib\help.ps1"
+. "$PSScriptRoot\..\lib\manifest.ps1"
 
 reset_aliases
 $apps = $args

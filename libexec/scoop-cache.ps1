@@ -12,14 +12,14 @@
 #     scoop cache rm *
 param($cmd, $app)
 
-. "$psscriptroot\..\lib\help.ps1"
+. "$PSScriptRoot\..\lib\help.ps1"
 
 reset_aliases
 
 function cacheinfo($file) {
     $app, $version, $url = $file.name -split '#'
     $size = filesize $file.length
-    return new-object psobject -prop @{ app = $app; version = $version; url = $url; size = $size }
+    return New-Object psobject -prop @{ app = $app; version = $version; url = $url; size = $size }
 }
 
 function show($app) {
@@ -40,7 +40,7 @@ switch ($cmd) {
     'rm' {
         if (!$app) { 'ERROR: <app> missing'; my_usage; exit 1 }
         Remove-Item "$cachedir\$app#*"
-        if (test-path("$cachedir\$app.txt")) {
+        if (Test-Path("$cachedir\$app.txt")) {
             Remove-Item "$cachedir\$app.txt"
         }
     }

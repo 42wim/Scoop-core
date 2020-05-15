@@ -86,7 +86,7 @@
 param($name, $value)
 
 'core', 'help' | ForEach-Object {
-    . "$psscriptroot\..\lib\$_.ps1"
+    . "$PSScriptRoot\..\lib\$_.ps1"
 }
 
 reset_aliases

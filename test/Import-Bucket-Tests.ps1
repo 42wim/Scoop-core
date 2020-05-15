@@ -3,9 +3,9 @@ if ([String]::IsNullOrEmpty($MyInvocation.PSScriptRoot)) {
     exit 1
 }
 
-. "$psscriptroot\Scoop-TestLib.ps1"
-. "$psscriptroot\..\lib\core.ps1"
-. "$psscriptroot\..\lib\manifest.ps1"
+. "$PSScriptRoot\Scoop-TestLib.ps1"
+. "$PSScriptRoot\..\lib\core.ps1"
+. "$PSScriptRoot\..\lib\manifest.ps1"
 
 $repo_dir = (Get-Item $MyInvocation.PSScriptRoot).FullName
 
@@ -23,5 +23,5 @@ if (Test-Path("$repo_dir\bucket")) {
     $bucketdir = "$repo_dir\bucket"
 }
 
-. "$psscriptroot\Import-File-Tests.ps1"
-. "$psscriptroot\Scoop-Manifest.Tests.ps1" -bucketdir $bucketdir
+. "$PSScriptRoot\Import-File-Tests.ps1"
+. "$PSScriptRoot\Scoop-Manifest.Tests.ps1" -bucketdir $bucketdir

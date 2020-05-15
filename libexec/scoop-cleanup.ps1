@@ -9,13 +9,13 @@
 #   -g, --global       Cleanup a globally installed app
 #   -k, --cache        Remove outdated download cache
 
-. "$psscriptroot\..\lib\core.ps1"
-. "$psscriptroot\..\lib\manifest.ps1"
-. "$psscriptroot\..\lib\buckets.ps1"
-. "$psscriptroot\..\lib\versions.ps1"
-. "$psscriptroot\..\lib\getopt.ps1"
-. "$psscriptroot\..\lib\help.ps1"
-. "$psscriptroot\..\lib\install.ps1"
+. "$PSScriptRoot\..\lib\core.ps1"
+. "$PSScriptRoot\..\lib\manifest.ps1"
+. "$PSScriptRoot\..\lib\buckets.ps1"
+. "$PSScriptRoot\..\lib\versions.ps1"
+. "$PSScriptRoot\..\lib\getopt.ps1"
+. "$PSScriptRoot\..\lib\help.ps1"
+. "$PSScriptRoot\..\lib\install.ps1"
 
 reset_aliases
 
@@ -41,16 +41,16 @@ function cleanup($app, $global, $verbose, $cache) {
         return
     }
 
-    write-host -f yellow "Removing $app`:" -nonewline
+    Write-Host -f yellow "Removing $app`:" -nonewline
     $versions | ForEach-Object {
         $version = $_
-        write-host " $version" -nonewline
+        Write-Host " $version" -nonewline
         $dir = versiondir $app $version $global
         # unlink all potential old link before doing recursive Remove-Item
         unlink_persist_data $dir
         Remove-Item $dir -ErrorAction Stop -Recurse -Force
     }
-    write-host ''
+    Write-Host ''
 }
 
 if ($apps) {

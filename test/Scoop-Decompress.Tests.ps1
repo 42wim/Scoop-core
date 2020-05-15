@@ -1,7 +1,7 @@
-. "$psscriptroot\Scoop-TestLib.ps1"
-. "$psscriptroot\..\lib\decompress.ps1"
-. "$psscriptroot\..\lib\install.ps1"
-. "$psscriptroot\..\lib\manifest.ps1"
+. "$PSScriptRoot\Scoop-TestLib.ps1"
+. "$PSScriptRoot\..\lib\decompress.ps1"
+. "$PSScriptRoot\..\lib\install.ps1"
+. "$PSScriptRoot\..\lib\manifest.ps1"
 
 function test_extract($extract_fn, $from, $removal) {
     $to = (strip_ext $from) -replace '\.tar$', ''
@@ -17,7 +17,7 @@ Describe 'Decompression function' -Tag 'Scoop', 'Decompress' {
             $testcases = "$working_dir\TestCases.zip"
             $testcases | Should -Exist
             compute_hash $testcases 'sha256' | Should -Be '695bb18cafda52644a19afd184b2545e9c48f1a191f7ff1efc26cb034587079c'
-            Microsoft.Powershell.Archive\Expand-Archive $testcases $working_dir
+            Microsoft.PowerShell.Archive\Expand-Archive $testcases $working_dir
         }
     }
 
@@ -25,7 +25,7 @@ Describe 'Decompression function' -Tag 'Scoop', 'Decompress' {
 
         BeforeAll {
             if ($env:CI) {
-                mock Get-AppFilePath { (Get-Command 7z.exe).Path }
+                Mock Get-AppFilePath { (Get-Command 7z.exe).Path }
             } elseif (!(installed 7zip)) {
                 scoop install 7zip
             }
@@ -74,7 +74,7 @@ Describe 'Decompression function' -Tag 'Scoop', 'Decompress' {
 
         BeforeAll {
             if ($env:CI) {
-                mock Get-AppFilePath { $env:lessmsi }
+                Mock Get-AppFilePath { $env:lessmsi }
             } elseif (!(installed lessmsi)) {
                 scoop install lessmsi
             }
@@ -83,7 +83,7 @@ Describe 'Decompression function' -Tag 'Scoop', 'Decompress' {
         }
 
         It "extract normal MSI file" {
-            mock get_config { $false }
+            Mock get_config { $false }
             $to = test_extract "Expand-MsiArchive" $test1
             $to | Should -Exist
             "$to\MSITest\empty" | Should -Exist
@@ -91,13 +91,13 @@ Describe 'Decompression function' -Tag 'Scoop', 'Decompress' {
         }
 
         It "extract empty MSI file using lessmsi" {
-            mock get_config { $true }
+            Mock get_config { $true }
             $to = test_extract "Expand-MsiArchive" $test2
             $to | Should -Exist
         }
 
         It "works with '-Removal' switch (`$removal param)" {
-            mock get_config { $false }
+            Mock get_config { $false }
             $test1 | Should -Exist
             test_extract "Expand-MsiArchive" $test1 $true
             $test1 | Should -Not -Exist
@@ -108,7 +108,7 @@ Describe 'Decompression function' -Tag 'Scoop', 'Decompress' {
 
         BeforeAll {
             if ($env:CI) {
-                mock Get-AppFilePath { $env:innounp }
+                Mock Get-AppFilePath { $env:innounp }
             } elseif (!(installed innounp)) {
                 scoop install innounp
             }

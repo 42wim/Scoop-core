@@ -25,7 +25,7 @@ param(
 )
 
 'core', 'manifest' | ForEach-Object {
-    . "$PSscriptRoot\..\lib\$_.ps1"
+    . "$PSScriptRoot\..\lib\$_.ps1"
 }
 
 $Dir = Resolve-Path $Dir

@@ -1,85 +1,85 @@
-. "$psscriptroot\..\lib\core.ps1"
-. "$psscriptroot\..\lib\install.ps1"
-. "$psscriptroot\Scoop-TestLib.ps1"
+. "$PSScriptRoot\..\lib\core.ps1"
+. "$PSScriptRoot\..\lib\install.ps1"
+. "$PSScriptRoot\Scoop-TestLib.ps1"
 
 $repo_dir = (Get-Item $MyInvocation.MyCommand.Path).directory.parent.FullName
 
-describe "Get-AppFilePath" -Tag 'Scoop' {
-    beforeall {
+Describe "Get-AppFilePath" -Tag 'Scoop' {
+    BeforeAll {
         $working_dir = setup_working "is_directory"
         Mock versiondir { 'local' } -Verifiable -ParameterFilter { $global -eq $false }
         Mock versiondir { 'global' } -Verifiable -ParameterFilter { $global -eq $true }
     }
 
-    it "should return locally installed program" {
+    It "should return locally installed program" {
         Mock Test-Path { $true } -Verifiable -ParameterFilter { $Path -eq 'local\i_am_a_file.txt' }
         Mock Test-Path { $false } -Verifiable -ParameterFilter { $Path -eq 'global\i_am_a_file.txt' }
         Get-AppFilePath -App 'is_directory' -File 'i_am_a_file.txt' | Should -Be 'local\i_am_a_file.txt'
     }
 
-    it "should return globally installed program" {
+    It "should return globally installed program" {
         Mock Test-Path { $false } -Verifiable -ParameterFilter { $Path -eq 'local\i_am_a_file.txt' }
         Mock Test-Path { $true } -Verifiable -ParameterFilter { $Path -eq 'global\i_am_a_file.txt' }
         Get-AppFilePath -App 'is_directory' -File 'i_am_a_file.txt' | Should -Be 'global\i_am_a_file.txt'
     }
 
-    it "should return null if program is not installed" {
+    It "should return null if program is not installed" {
         Get-AppFilePath -App 'is_directory' -File 'i_do_not_exist' | Should -BeNullOrEmpty
     }
 
-    it "should throw if parameter is wrong or missing" {
+    It "should throw if parameter is wrong or missing" {
         { Get-AppFilePath -App 'is_directory' -File } | Should -Throw
         { Get-AppFilePath -App -File 'i_am_a_file.txt' } | Should -Throw
         { Get-AppFilePath -App -File } | Should -Throw
     }
 }
 
-describe "Get-HelperPath" -Tag 'Scoop' {
-    beforeall {
+Describe "Get-HelperPath" -Tag 'Scoop' {
+    BeforeAll {
         $working_dir = setup_working "is_directory"
     }
-    it "should return path if program is installed" {
+    It "should return path if program is installed" {
         Mock Get-AppFilePath { '7zip\current\7z.exe' }
         Get-HelperPath -Helper 7zip | Should -Be '7zip\current\7z.exe'
     }
 
-    it "should return null if program is not installed" {
+    It "should return null if program is not installed" {
         Mock Get-AppFilePath { $null }
         Get-HelperPath -Helper 7zip | Should -BeNullOrEmpty
     }
 
-    it "should throw if parameter is wrong or missing" {
+    It "should throw if parameter is wrong or missing" {
         { Get-HelperPath -Helper } | Should -Throw
         { Get-HelperPath -Helper Wrong } | Should -Throw
     }
 }
 
 
-describe "Test-HelperInstalled" -Tag 'Scoop' {
-    it "should return true if program is installed" {
+Describe "Test-HelperInstalled" -Tag 'Scoop' {
+    It "should return true if program is installed" {
         Mock Get-HelperPath { '7z.exe' }
         Test-HelperInstalled -Helper 7zip | Should -BeTrue
     }
 
-    it "should return false if program is not installed" {
+    It "should return false if program is not installed" {
         Mock Get-HelperPath { $null }
         Test-HelperInstalled -Helper 7zip | Should -BeFalse
     }
 
-    it "should throw if parameter is wrong or missing" {
+    It "should throw if parameter is wrong or missing" {
         { Test-HelperInstalled -Helper } | Should -Throw
         { Test-HelperInstalled -Helper Wrong } | Should -Throw
     }
 }
 
-describe "Test-Aria2Enabled" -Tag 'Scoop' {
-    it "should return true if aria2 is installed" {
+Describe "Test-Aria2Enabled" -Tag 'Scoop' {
+    It "should return true if aria2 is installed" {
         Mock Test-HelperInstalled { $true }
         Mock get_config { $true }
         Test-Aria2Enabled | Should -BeTrue
     }
 
-    it "should return false if aria2 is not installed" {
+    It "should return false if aria2 is not installed" {
         Mock Test-HelperInstalled { $false }
         Mock get_config { $false }
         Test-Aria2Enabled | Should -BeFalse
@@ -94,128 +94,128 @@ describe "Test-Aria2Enabled" -Tag 'Scoop' {
     }
 }
 
-describe "Test-CommandAvailable" -Tag 'Scoop' {
-    it "should return true if command exists" {
+Describe "Test-CommandAvailable" -Tag 'Scoop' {
+    It "should return true if command exists" {
         Test-CommandAvailable 'Write-Host' | Should -BeTrue
     }
 
-    it "should return false if command doesn't exist" {
+    It "should return false if command doesn't exist" {
         Test-CommandAvailable 'Write-ThisWillProbablyNotExist' | Should -BeFalse
     }
 
-    it "should throw if parameter is wrong or missing" {
+    It "should throw if parameter is wrong or missing" {
         { Test-CommandAvailable } | Should -Throw
     }
 }
 
 
-describe "is_directory" -Tag 'Scoop' {
-    beforeall {
+Describe "is_directory" -Tag 'Scoop' {
+    BeforeAll {
         $working_dir = setup_working "is_directory"
     }
 
-    it "is_directory recognize directories" {
-        is_directory "$working_dir\i_am_a_directory" | should -be $true
+    It "is_directory recognize directories" {
+        is_directory "$working_dir\i_am_a_directory" | Should -be $true
     }
-    it "is_directory recognize files" {
-        is_directory "$working_dir\i_am_a_file.txt" | should -be $false
+    It "is_directory recognize files" {
+        is_directory "$working_dir\i_am_a_file.txt" | Should -be $false
     }
 
-    it "is_directory is falsey on unknown path" {
-        is_directory "$working_dir\i_do_not_exist" | should -be $false
+    It "is_directory is falsey on unknown path" {
+        is_directory "$working_dir\i_do_not_exist" | Should -be $false
     }
 }
 
-describe "movedir" -Tag 'Scoop' {
+Describe "movedir" -Tag 'Scoop' {
     $extract_dir = "subdir"
     $extract_to = $null
 
-    beforeall {
+    BeforeAll {
         $working_dir = setup_working "movedir"
     }
 
-    it "moves directories with no spaces in path" {
+    It "moves directories with no spaces in path" {
         $dir = "$working_dir\user"
         movedir "$dir\_tmp\$extract_dir" "$dir\$extract_to"
 
-        "$dir\test.txt" | should -FileContentMatch "this is the one"
-        "$dir\_tmp\$extract_dir" | should -not -exist
+        "$dir\test.txt" | Should -FileContentMatch "this is the one"
+        "$dir\_tmp\$extract_dir" | Should -not -exist
     }
 
-    it "moves directories with spaces in path" {
+    It "moves directories with spaces in path" {
         $dir = "$working_dir\user with space"
         movedir "$dir\_tmp\$extract_dir" "$dir\$extract_to"
 
-        "$dir\test.txt" | should -FileContentMatch "this is the one"
-        "$dir\_tmp\$extract_dir" | should -not -exist
+        "$dir\test.txt" | Should -FileContentMatch "this is the one"
+        "$dir\_tmp\$extract_dir" | Should -not -exist
 
         # test trailing \ in from dir
         movedir "$dir\_tmp\$null" "$dir\another"
-        "$dir\another\test.txt" | should -FileContentMatch "testing"
-        "$dir\_tmp" | should -not -exist
+        "$dir\another\test.txt" | Should -FileContentMatch "testing"
+        "$dir\_tmp" | Should -not -exist
     }
 
-    it "moves directories with quotes in path" {
+    It "moves directories with quotes in path" {
         $dir = "$working_dir\user with 'quote"
         movedir "$dir\_tmp\$extract_dir" "$dir\$extract_to"
 
-        "$dir\test.txt" | should -FileContentMatch "this is the one"
-        "$dir\_tmp\$extract_dir" | should -not -exist
+        "$dir\test.txt" | Should -FileContentMatch "this is the one"
+        "$dir\_tmp\$extract_dir" | Should -not -exist
     }
 }
 
-describe "shim" -Tag 'Scoop' {
-    beforeall {
+Describe "shim" -Tag 'Scoop' {
+    BeforeAll {
         $working_dir = setup_working "shim"
         $shimdir = shimdir
-        $(ensure_in_path $shimdir) | out-null
+        $(ensure_in_path $shimdir) | Out-Null
     }
 
-    it "links a file onto the user's path" {
-        { get-command "shim-test" -ea stop } | should -throw
-        { get-command "shim-test.ps1" -ea stop } | should -throw
-        { get-command "shim-test.cmd" -ea stop } | should -throw
-        { shim-test } | should -throw
+    It "links a file onto the user's path" {
+        { Get-Command "shim-test" -ea stop } | Should -throw
+        { Get-Command "shim-test.ps1" -ea stop } | Should -throw
+        { Get-Command "shim-test.cmd" -ea stop } | Should -throw
+        { shim-test } | Should -throw
 
         shim "$working_dir\shim-test.ps1" $false "shim-test"
-        { get-command "shim-test" -ea stop } | should -not -throw
-        { get-command "shim-test.ps1" -ea stop } | should -not -throw
-        { get-command "shim-test.cmd" -ea stop } | should -not -throw
-        shim-test | should -be "Hello, world!"
+        { Get-Command "shim-test" -ea stop } | Should -not -throw
+        { Get-Command "shim-test.ps1" -ea stop } | Should -not -throw
+        { Get-Command "shim-test.cmd" -ea stop } | Should -not -throw
+        shim-test | Should -be "Hello, world!"
     }
 
-    context "user with quote" {
-        it "shims a file with quote in path" {
-            { get-command "shim-test" -ea stop } | should -throw
-            { shim-test } | should -throw
+    Context "user with quote" {
+        It "shims a file with quote in path" {
+            { Get-Command "shim-test" -ea stop } | Should -throw
+            { shim-test } | Should -throw
 
             shim "$working_dir\user with 'quote\shim-test.ps1" $false "shim-test"
-            { get-command "shim-test" -ea stop } | should -not -throw
-            shim-test | should -be "Hello, world!"
+            { Get-Command "shim-test" -ea stop } | Should -not -throw
+            shim-test | Should -be "Hello, world!"
         }
     }
 
-    aftereach {
+    AfterEach {
         rm_shim "shim-test" $shimdir
     }
 }
 
-describe "rm_shim" -Tag 'Scoop' {
-    beforeall {
+Describe "rm_shim" -Tag 'Scoop' {
+    BeforeAll {
         $working_dir = setup_working "shim"
         $shimdir = shimdir
-        $(ensure_in_path $shimdir) | out-null
+        $(ensure_in_path $shimdir) | Out-Null
     }
 
-    it "removes shim from path" {
+    It "removes shim from path" {
         shim "$working_dir\shim-test.ps1" $false "shim-test"
 
         rm_shim "shim-test" $shimdir
 
-        { get-command "shim-test" -ea stop } | should -throw
-        { get-command "shim-test.ps1" -ea stop } | should -throw
-        { get-command "shim-test.cmd" -ea stop } | should -throw
-        { shim-test } | should -throw
+        { Get-Command "shim-test" -ea stop } | Should -throw
+        { Get-Command "shim-test.ps1" -ea stop } | Should -throw
+        { Get-Command "shim-test.cmd" -ea stop } | Should -throw
+        { shim-test } | Should -throw
     }
 }
 
@@ -227,20 +227,20 @@ Describe "get_app_name_from_ps1_shim" -Tag 'Scoop' {
     }
 
     It "returns empty string if file does not exist" {
-        get_app_name_from_ps1_shim "non-existent-file" | should -be ""
+        get_app_name_from_ps1_shim "non-existent-file" | Should -be ""
     }
 
     It "returns app name if file exists and is a shim to an app" {
         mkdir -p "$working_dir/mockapp/current/"
         Write-Output "" | Out-File "$working_dir/mockapp/current/mockapp.ps1"
         shim "$working_dir/mockapp/current/mockapp.ps1" $false "shim-test"
-        $shim_path = (get-command "shim-test.ps1").Path
-        get_app_name_from_ps1_shim "$shim_path" | should -be "mockapp"
+        $shim_path = (Get-Command "shim-test.ps1").Path
+        get_app_name_from_ps1_shim "$shim_path" | Should -be "mockapp"
     }
 
     It "returns empty string if file exists and is not a shim" {
         Write-Output "lorem ipsum" | Out-File -Encoding ascii "$working_dir/mock-shim.ps1"
-        get_app_name_from_ps1_shim "$working_dir/mock-shim.ps1" | should -be ""
+        get_app_name_from_ps1_shim "$working_dir/mock-shim.ps1" | Should -be ""
     }
 
     AfterEach {
@@ -252,141 +252,141 @@ Describe "get_app_name_from_ps1_shim" -Tag 'Scoop' {
     }
 }
 
-describe "ensure_robocopy_in_path" -Tag 'Scoop' {
+Describe "ensure_robocopy_in_path" -Tag 'Scoop' {
     $shimdir = shimdir $false
-    mock versiondir { $repo_dir }
+    Mock versiondir { $repo_dir }
 
-    beforeall {
+    BeforeAll {
         reset_aliases
     }
 
-    context "robocopy is not in path" {
-        it "shims robocopy when not on path" {
-            mock Test-CommandAvailable { $false }
-            Test-CommandAvailable robocopy | should -be $false
+    Context "robocopy is not in path" {
+        It "shims robocopy when not on path" {
+            Mock Test-CommandAvailable { $false }
+            Test-CommandAvailable robocopy | Should -be $false
 
             ensure_robocopy_in_path
 
-            "$shimdir/robocopy.ps1" | should -exist
-            "$shimdir/robocopy.exe" | should -exist
+            "$shimdir/robocopy.ps1" | Should -exist
+            "$shimdir/robocopy.exe" | Should -exist
 
             # clean up
-            rm_shim robocopy $(shimdir $false) | out-null
+            rm_shim robocopy $(shimdir $false) | Out-Null
         }
     }
 
-    context "robocopy is in path" {
-        it "does not shim robocopy when it is in path" {
-            mock Test-CommandAvailable { $true }
-            Test-CommandAvailable robocopy | should -be $true
+    Context "robocopy is in path" {
+        It "does not shim robocopy when it is in path" {
+            Mock Test-CommandAvailable { $true }
+            Test-CommandAvailable robocopy | Should -be $true
 
             ensure_robocopy_in_path
 
-            "$shimdir/robocopy.ps1" | should -not -exist
-            "$shimdir/robocopy.exe" | should -not -exist
+            "$shimdir/robocopy.ps1" | Should -not -exist
+            "$shimdir/robocopy.exe" | Should -not -exist
         }
     }
 }
 
-describe 'sanitary_path' -Tag 'Scoop' {
-    it 'removes invalid path characters from a string' {
+Describe 'sanitary_path' -Tag 'Scoop' {
+    It 'removes invalid path characters from a string' {
         $path = 'test?.json'
         $valid_path = sanitary_path $path
 
-        $valid_path | should -be "test.json"
+        $valid_path | Should -be "test.json"
     }
 }
 
-describe 'app' -Tag 'Scoop' {
-    it 'parses the bucket name from an app query' {
+Describe 'app' -Tag 'Scoop' {
+    It 'parses the bucket name from an app query' {
         $query = "C:\test.json"
         $app, $bucket, $version = parse_app $query
-        $app | should -be "C:\test.json"
-        $bucket | should -benullorempty
-        $version | should -benullorempty
+        $app | Should -be "C:\test.json"
+        $bucket | Should -benullorempty
+        $version | Should -benullorempty
 
         $query = "test.json"
         $app, $bucket, $version = parse_app $query
-        $app | should -be "test.json"
-        $bucket | should -benullorempty
-        $version | should -benullorempty
+        $app | Should -be "test.json"
+        $bucket | Should -benullorempty
+        $version | Should -benullorempty
 
         $query = ".\test.json"
         $app, $bucket, $version = parse_app $query
-        $app | should -be ".\test.json"
-        $bucket | should -benullorempty
-        $version | should -benullorempty
+        $app | Should -be ".\test.json"
+        $bucket | Should -benullorempty
+        $version | Should -benullorempty
 
         $query = "..\test.json"
         $app, $bucket, $version = parse_app $query
-        $app | should -be "..\test.json"
-        $bucket | should -benullorempty
-        $version | should -benullorempty
+        $app | Should -be "..\test.json"
+        $bucket | Should -benullorempty
+        $version | Should -benullorempty
 
         $query = "\\share\test.json"
         $app, $bucket, $version = parse_app $query
-        $app | should -be "\\share\test.json"
-        $bucket | should -benullorempty
-        $version | should -benullorempty
+        $app | Should -be "\\share\test.json"
+        $bucket | Should -benullorempty
+        $version | Should -benullorempty
 
         $query = "https://example.com/test.json"
         $app, $bucket, $version = parse_app $query
-        $app | should -be "https://example.com/test.json"
-        $bucket | should -benullorempty
-        $version | should -benullorempty
+        $app | Should -be "https://example.com/test.json"
+        $bucket | Should -benullorempty
+        $version | Should -benullorempty
 
         $query = "test"
         $app, $bucket, $version = parse_app $query
-        $app | should -be "test"
-        $bucket | should -benullorempty
-        $version | should -benullorempty
+        $app | Should -be "test"
+        $bucket | Should -benullorempty
+        $version | Should -benullorempty
 
         $query = "extras/enso"
         $app, $bucket, $version = parse_app $query
-        $app | should -be "enso"
-        $bucket | should -be "extras"
-        $version | should -benullorempty
+        $app | Should -be "enso"
+        $bucket | Should -be "extras"
+        $version | Should -benullorempty
 
         $query = "test-app"
         $app, $bucket, $version = parse_app $query
-        $app | should -be "test-app"
-        $bucket | should -benullorempty
-        $version | should -benullorempty
+        $app | Should -be "test-app"
+        $bucket | Should -benullorempty
+        $version | Should -benullorempty
 
         $query = "test-bucket/test-app"
         $app, $bucket, $version = parse_app $query
-        $app | should -be "test-app"
-        $bucket | should -be "test-bucket"
-        $version | should -benullorempty
+        $app | Should -be "test-app"
+        $bucket | Should -be "test-bucket"
+        $version | Should -benullorempty
 
         $query = "test-bucket/test-app@1.8.0"
         $app, $bucket, $version = parse_app $query
-        $app | should -be "test-app"
-        $bucket | should -be "test-bucket"
-        $version | should -be "1.8.0"
+        $app | Should -be "test-app"
+        $bucket | Should -be "test-bucket"
+        $version | Should -be "1.8.0"
 
         $query = "test-bucket/test-app@1.8.0-rc2"
         $app, $bucket, $version = parse_app $query
-        $app | should -be "test-app"
-        $bucket | should -be "test-bucket"
-        $version | should -be "1.8.0-rc2"
+        $app | Should -be "test-app"
+        $bucket | Should -be "test-bucket"
+        $version | Should -be "1.8.0-rc2"
 
         $query = "test-bucket/test_app"
         $app, $bucket, $version = parse_app $query
-        $app | should -be "test_app"
-        $bucket | should -be "test-bucket"
-        $version | should -benullorempty
+        $app | Should -be "test_app"
+        $bucket | Should -be "test-bucket"
+        $version | Should -benullorempty
 
         $query = "test-bucket/test_app@1.8.0"
         $app, $bucket, $version = parse_app $query
-        $app | should -be "test_app"
-        $bucket | should -be "test-bucket"
-        $version | should -be "1.8.0"
+        $app | Should -be "test_app"
+        $bucket | Should -be "test-bucket"
+        $version | Should -be "1.8.0"
 
         $query = "test-bucket/test_app@1.8.0-rc2"
         $app, $bucket, $version = parse_app $query
-        $app | should -be "test_app"
-        $bucket | should -be "test-bucket"
-        $version | should -be "1.8.0-rc2"
+        $app | Should -be "test_app"
+        $bucket | Should -be "test-bucket"
+        $version | Should -be "1.8.0-rc2"
     }
 }

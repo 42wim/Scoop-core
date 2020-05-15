@@ -1,10 +1,8 @@
-#requires -Version 5.0
-#requires -Modules @{ ModuleName = 'BuildHelpers'; ModuleVersion = '2.0.1' }
-#requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '4.4.0' }
-#requires -Modules @{ ModuleName = 'PSScriptAnalyzer'; ModuleVersion = '1.17.1' }
-param(
-    [String] $TestPath = 'test/'
-)
+#Requires -Version 5.0
+#Requires -Modules @{ ModuleName = 'BuildHelpers'; ModuleVersion = '2.0.1' }
+#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '4.4.0' }
+#Requires -Modules @{ ModuleName = 'PSScriptAnalyzer'; ModuleVersion = '1.17.1' }
+param([String] $TestPath = 'test/')
 
 $resultsXml = "$PSScriptRoot/TestResults.xml"
 $excludes = @()
@@ -62,8 +60,4 @@ if ($env:CI -eq $true) {
 Write-Host 'Invoke-Pester' @splat
 $result = Invoke-Pester @splat
 
-(New-Object Net.WebClient).UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", $resultsXml)
-
-if ($result.FailedCount -gt 0) {
-    exit $result.FailedCount
-}
+if ($result.FailedCount -gt 0) { exit $result.FailedCount }

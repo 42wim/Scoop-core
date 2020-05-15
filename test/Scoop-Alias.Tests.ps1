@@ -1,16 +1,16 @@
 . "$PSScriptRoot\..\lib\Alias.ps1"
 
-describe 'Add-ScoopAlias' -Tag 'Scoop' {
+Describe 'Add-ScoopAlias' -Tag 'Scoop' {
     BeforeAll {
-        mock shimdir { "$env:TMP\Scoopshim" }
-        mock load_cfg { }
+        Mock shimdir { "$env:TMP\Scoopshim" }
+        Mock load_cfg { }
 
         $shimdir = shimdir
         New-Item $shimdir -ItemType Directory -Force | Out-Null
     }
 
-    context 'alias does not exist' {
-        it 'creates a new alias' {
+    Context 'alias does not exist' {
+        It 'creates a new alias' {
             $aliasFile = "$shimdir\scoop-cosiTest.ps1"
             $aliasFile | Should -Not -Exist
 
@@ -19,8 +19,8 @@ describe 'Add-ScoopAlias' -Tag 'Scoop' {
         }
     }
 
-    context 'invalid alias definition' {
-        it 'require needed parameters' {
+    Context 'invalid alias definition' {
+        It 'require needed parameters' {
             { Add-ScoopAlias } | Should -Throw
             { Add-ScoopAlias -Name 'cosi' } | Should -Throw
             { Add-ScoopAlias -Name 'cosi' -Command '' } | Should -Throw

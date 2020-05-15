@@ -579,7 +579,7 @@ function shim($path, $global, $name, $arg) {
     } else {
         # Setting PSScriptRoot in Shim if it is not defined, so the shim doesn't break in PowerShell 2.0
         Write-Output "if (!(Test-Path Variable:PSScriptRoot)) { `$PSScriptRoot = Split-Path `$MyInvocation.MyCommand.Path -Parent }" | Out-File "$shim.ps1" -Encoding utf8
-        write-output "`$path = join-path `"`$psscriptroot`" `"$relative_path`"" | out-file "$shim.ps1" -Encoding utf8 -Append
+        write-output "`$path = join-path `"`$PSScriptRoot`" `"$relative_path`"" | out-file "$shim.ps1" -Encoding utf8 -Append
     }
 
     if ($path -match '\.jar$') {

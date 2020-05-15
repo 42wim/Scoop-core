@@ -7,13 +7,13 @@ Describe -Tag 'Linter' "PSScriptAnalyzer" {
 
     Context "Checking ScriptAnalyzer" {
         It "Invoke-ScriptAnalyzer Cmdlet should exist" {
-            { Get-Command Invoke-ScriptAnalyzer -ErrorAction Stop } | should -not -throw
+            { Get-Command Invoke-ScriptAnalyzer -ErrorAction Stop } | Should -not -throw
         }
         It "PSScriptAnalyzerSettings.ps1 should exist" {
-            Test-Path "$repo_dir\PSScriptAnalyzerSettings.psd1" | should -betrue
+            Test-Path "$repo_dir\PSScriptAnalyzerSettings.psd1" | Should -betrue
         }
         It "There should be files to test" {
-            $scoop_modules.Count | should -not -be 0
+            $scoop_modules.Count | Should -not -be 0
         }
     }
 
@@ -23,7 +23,7 @@ Describe -Tag 'Linter' "PSScriptAnalyzer" {
         foreach ($directory in $scoop_modules) {
             $analysis = Invoke-ScriptAnalyzer -Path $directory.FullName -Settings $linting_settings.FullName
             It "Should pass: $directory" {
-                $analysis.Count | should -be 0
+                $analysis.Count | Should -be 0
             }
             if ($analysis) {
                 foreach ($result in $analysis) {

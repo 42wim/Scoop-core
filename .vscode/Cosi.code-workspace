@@ -15,7 +15,7 @@
     "folders": [
         {
             "path": "../../Core",
-            "name": "Shovel"
+            "name": "Shovel",
         },
         {
             "path": "../../Validator",
@@ -23,7 +23,7 @@
         },
         {
             "path": "../../Shim",
-            "name": "Supporting/Validator"
+            "name": "Supporting/Validator",
         },
         {
             "path": "../../GithubActions",
