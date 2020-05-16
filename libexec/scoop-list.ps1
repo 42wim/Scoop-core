@@ -35,14 +35,16 @@ $apps = @($local) + @($global)
 
 if ($apps) {
     $mes = if ($query) { " matching '$query'" }
-    write-host "Installed apps${mes}: `n"
+    Write-Host "Installed apps${mes}: `n"
 
     $sortSplat = @{ 'Property' = { $_.name }; 'Descending' = $reverse }
     if ($orderInstalled) {
         $sortSplat.Property = { $_.gci.CreationTime }
     } elseif ($orderUpdated) {
         $sortSplat.Property = {
-            Join-Path $_.gci.Fullname '*\install.json' | Get-ChildItem | Sort-Object -Property LastWriteTimeUtc | Select-Object -ExpandProperty LastWriteTimeUtc -Last 1
+            $old = Join-Path $_.gci.Fullname '*\install.json' | Get-ChildItem
+            $new = Join-Path $_.gci.Fullname '*\scoop-install.json' | Get-ChildItem
+            @($old, $new) | Get-ChildItem | Sort-Object -Property LastWriteTimeUtc | Select-Object -ExpandProperty LastWriteTimeUtc -Last 1
         }
     }
 
@@ -51,30 +53,31 @@ if ($apps) {
         $global = $_.global
         $ver = current_version $app $global
 
-        $install_info = install_info $app $ver $global
-        write-host "  $app " -NoNewline
-        write-host -f DarkCyan $ver -NoNewline
 
-        if ($global) { write-host -f DarkGreen ' *global*' -NoNewline }
+        $install_info = install_info $app $ver $global
+        Write-Host "  $app " -NoNewline
+        Write-Host -f DarkCyan $ver -NoNewline
+
+        if ($global) { Write-Host -f DarkGreen ' *global*' -NoNewline }
 
         if (!$install_info) { Write-Host ' *failed*' -ForegroundColor DarkRed -NoNewline }
         if ($install_info.hold) { Write-Host ' *hold*' -ForegroundColor DarkMagenta -NoNewline }
 
         if ($install_info.bucket) {
-            write-host -f Yellow " [$($install_info.bucket)]" -NoNewline
+            Write-Host -f Yellow " [$($install_info.bucket)]" -NoNewline
         } elseif ($install_info.url) {
-            write-host -f Yellow " [$($install_info.url)]" -NoNewline
+            Write-Host -f Yellow " [$($install_info.url)]" -NoNewline
         }
 
         if ($install_info.architecture -and $def_arch -ne $install_info.architecture) {
-            write-host -f DarkRed " {$($install_info.architecture)}" -NoNewline
+            Write-Host -f DarkRed " {$($install_info.architecture)}" -NoNewline
         }
-        write-host ''
+        Write-Host ''
     }
-    write-host ''
+    Write-Host ''
     $exitCode = 0
 } else {
-    write-host "There aren't any apps installed."
+    Write-Host "There aren't any apps installed."
     $exitCode = 1
 }
 

@@ -88,7 +88,7 @@
         "git.inputValidationSubjectLength": 71,
         "json.schemas": [
             {
-                "url": "https://raw.githubusercontent.com/lukesampson/scoop/master/schema.json",
+                "url": "https://raw.githubusercontent.com/Ash258/Scoop-Core/NEW/schema.json",
                 "fileMatch": [
                     "bucket/*.json",
                     "TODO/*.json",
@@ -168,7 +168,6 @@
         "powershell.codeFormatting.useCorrectCasing": true,
         "powershell.codeFormatting.whitespaceAfterSeparator": true,
         "powershell.codeFormatting.whitespaceAroundOperator": true,
-        "powershell.codeFormatting.whitespaceAroundPipe": true,
         "powershell.codeFormatting.whitespaceBeforeOpenBrace": true,
         "powershell.codeFormatting.whitespaceBeforeOpenParen": true,
         "powershell.codeFormatting.whitespaceBetweenParameters": true,

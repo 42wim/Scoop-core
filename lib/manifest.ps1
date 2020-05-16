@@ -7,8 +7,9 @@ function manifest_path($app, $bucket) {
 }
 
 function parse_json($path) {
-    if (!(test-path $path)) { return $null }
-    Get-Content $path -raw -Encoding UTF8 | convertfrom-json -ea stop
+    if (!(Test-Path $path)) { return $null }
+
+    return Get-Content $path -Raw -Encoding UTF8 | ConvertFrom-Json -ErrorAction Stop
 }
 
 function url_manifest($url) {
@@ -23,7 +24,8 @@ function url_manifest($url) {
         throw
     }
     if (!$str) { return $null }
-    $str | convertfrom-json
+
+    return $str | ConvertFrom-Json
 }
 
 function manifest($app, $bucket, $url) {
@@ -60,14 +62,23 @@ function save_install_info($info, $dir) {
     $nulls = $info.keys | Where-Object { $null -eq $info[$_] }
     $nulls | ForEach-Object { $info.remove($_) } # strip null-valued
 
-    $file_content = $info | ConvertToPrettyJson
-    [System.IO.File]::WriteAllLines("$dir\install.json", $file_content)
+    $info | ConvertToPrettyJson | Out-UTF8File "$dir\scoop-install.json"
 }
 
 function install_info($app, $version, $global) {
-    $path = "$(versiondir $app $version $global)\install.json"
-    if (!(test-path $path)) { return $null }
-    parse_json $path
+    $d = versiondir $app $version $global
+    $path = "$d\scoop-install.json"
+
+    if (!(Test-Path $path)) {
+        if (Test-Path "$d\install.json") {
+            Write-UserMessage -Message "Migrating install.json to scoop-install.json" -Info
+            Rename-Item "$d\install.json" 'scoop-install.json'
+        } else {
+            return $null
+        }
+    }
+
+    return parse_json $path
 }
 
 function default_architecture {
@@ -112,12 +123,12 @@ function generate_user_manifest($app, $bucket, $version) {
         abort "'$app' does not have autoupdate capability`r`ncouldn't find manifest for '$app@$version'"
     }
 
-    ensure $(usermanifestsdir) | out-null
+    ensure $(usermanifestsdir) | Out-Null
     try {
-        autoupdate $app "$(resolve-path $(usermanifestsdir))" $manifest $version $(@{ })
-        return "$(resolve-path $(usermanifest $app))"
+        autoupdate $app "$(Resolve-Path $(usermanifestsdir))" $manifest $version $(@{ })
+        return "$(Resolve-Path $(usermanifest $app))"
     } catch {
-        write-host -f darkred "Could not install $app@$version"
+        Write-Host -f darkred "Could not install $app@$version"
     }
 
     return $null
