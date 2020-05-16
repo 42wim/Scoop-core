@@ -1,5 +1,6 @@
-. "$PSScriptRoot/core.ps1"
-. "$PSScriptRoot/autoupdate.ps1"
+'core', 'autoupdate' | ForEach-Object {
+    . "$PSScriptRoot\$_.ps1"
+}
 
 function manifest_path($app, $bucket) {
     fullpath "$(Find-BucketDirectory $bucket)\$(sanitary_path $app).json"
@@ -34,14 +35,25 @@ function save_installed_manifest($app, $bucket, $dir, $url) {
     if ($url) {
         $wc = New-Object Net.Webclient
         $wc.Headers.Add('User-Agent', (Get-UserAgent))
-        $wc.downloadstring($url) > "$dir\manifest.json"
+        # TODO: YML
+        $wc.downloadstring($url) | Out-UTF8File "$dir\scoop-manifest.json"
     } else {
-        Copy-Item (manifest_path $app $bucket) "$dir\manifest.json"
+        # TODO: YML
+        Copy-Item (manifest_path $app $bucket) "$dir\scoop-manifest.json"
     }
 }
 
 function installed_manifest($app, $version, $global) {
-    parse_json "$(versiondir $app $version $global)\manifest.json"
+    # TODO: YML
+    $old = 'manifest.json'
+    $new = 'scoop-manifest.json'
+    $d = versiondir $app $version $global
+    # Migration
+    if (Test-Path "$d\$old") {
+        Write-UserMessage -Message "Migrating $old to $new" -Info
+        Rename-Item "$d\$old" $new
+    }
+    return parse_json "$d\$new"
 }
 
 function save_install_info($info, $dir) {
