@@ -70,8 +70,10 @@ if (!$apps) {
         }
 
         if ($outdatedApplications -and (Test-Aria2Enabled)) {
-            Write-UserMessage -Message 'Scoop uses ''aria2c'' for multi-conneciton downloads.',
-            'In case of issues with downloading, run ''scoop config aria2-enabled $false'' to disable aria2.' -Warning
+            Write-UserMessage -Warning -Message @(
+                'Scoop uses ''aria2c'' for multi-conneciton downloads.'
+                'In case of issues with downloading, run ''scoop config aria2-enabled $false'' to disable aria2.'
+            )
         }
 
         $c = $outdatedApplications.Count

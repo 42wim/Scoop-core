@@ -1,7 +1,7 @@
 <#
 Diagnostic tests.
 Return $true if the test passed, otherwise $false.
-Use 'warn' to highlight the issue, and follow up with the recommended actions to rectify.
+Use 'Write-UserMessage -Warning' to highlight the issue, and follow up with the recommended actions to rectify.
 #>
 
 'core', 'buckets', 'decompress' | ForEach-Object {

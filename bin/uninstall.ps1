@@ -16,15 +16,16 @@ param(
 }
 
 if ($global -and !(is_admin)) {
-    error 'You need admin rights to uninstall globally.'
+    Write-UserMessage -Message 'You need admin rights to uninstall globally.' -Err
     exit 1
 }
 
+$message = 'This will uninstall Scoop and all the programs that have been installed with Scoop!'
 if ($purge) {
-    warn 'This will uninstall Scoop, all the programs that have been installed with Scoop and all persisted data!'
-} else {
-    warn 'This will uninstall Scoop and all the programs that have been installed with Scoop!'
+    $message = 'This will uninstall Scoop, all the programs that have been installed with Scoop and all persisted data!'
 }
+
+Write-UserMessage -Message $message -Warning
 $yn = Read-Host 'Are you sure? (yN)'
 if ($yn -notlike 'y*') { exit }
 
@@ -70,4 +71,4 @@ if ($purge) {
 remove_from_path (shimdir $false)
 if ($global) { remove_from_path (shimdir $true) }
 
-success 'Scoop has been uninstalled.'
+Write-UserMessage -Message 'Scoop has been uninstalled.' -Success

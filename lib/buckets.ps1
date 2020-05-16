@@ -1,4 +1,6 @@
-. "$PSScriptRoot\core.ps1"
+'core', 'git' | ForEach-Object {
+    . "$PSScriptRoot\$_.ps1"
+}
 
 $bucketsdir = "$scoopdir\buckets"
 $SCOOP_BUCKETS_DIRECTORY = $bucketsdir
@@ -83,7 +85,7 @@ function add_bucket($name, $repo) {
 
     $dir = Find-BucketDirectory $name -Root
     if (test-path $dir) {
-        warn "The '$name' bucket already exists. Use 'scoop bucket rm $name' to remove it."
+        Write-UserMessage -Message "The '$name' bucket already exists. Use 'scoop bucket rm $name' to remove it." -Warning
         exit 0
     }
 
@@ -97,7 +99,7 @@ function add_bucket($name, $repo) {
     ensure $bucketsdir > $null
     $dir = ensure $dir
     git_clone "$repo" "`"$dir`"" -q
-    success "The $name bucket was added successfully."
+    Write-UserMessage -Message "The $name bucket was added successfully." -Success
 }
 
 function rm_bucket($name) {

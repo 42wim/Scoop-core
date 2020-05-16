@@ -14,8 +14,7 @@ reset_aliases
 $opt, $apps, $err = getopt $args 'a:' 'arch='
 $app = $apps[0]
 
-# FIXME:
-if (!$app) { error '<app> missing'; my_usage; exit 1 }
+if (!$app) { Write-UserMessage -Message '<app> missing' -Err; my_usage; exit 1 }
 
 $architecture = default_architecture
 try {

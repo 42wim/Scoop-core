@@ -5,9 +5,10 @@
 function nightly_version($date, $quiet = $false) {
     $date_str = $date.tostring("yyyyMMdd")
     if (!$quiet) {
-        warn "This is a nightly version. Downloaded files won't be verified."
+        Write-UserMessage -Message "This is a nightly version. Downloaded files won't be verified." -Warning
     }
-    "nightly-$date_str"
+
+    return "nightly-$date_str"
 }
 
 function install_app($app, $architecture, $global, $suggested, $use_cache = $true, $check_hash = $true) {
@@ -68,7 +69,7 @@ function install_app($app, $architecture, $global, $suggested, $use_cache = $tru
         $suggested[$app] = $manifest.suggest
     }
 
-    success "'$app' ($version) was installed successfully!"
+    Write-UserMessage -Message "'$app' ($version) was installed successfully!" -Success
 
     show_notes $manifest $dir $original_dir $persist_dir
 }
@@ -286,11 +287,14 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
         Write-Host "Starting download with aria2 ..."
         Invoke-Expression $aria2
 
-        if ($lastexitcode -gt 0) {
-            error "Download failed! (Error $lastexitcode) $(aria_exit_code $lastexitcode)"
-            error $urlstxt_content
-            error $aria2
-            abort $(new_issue_msg $app $bucket "download via aria2 failed")
+        if ($LASTEXITCODE -gt 0) {
+            Write-UserMessage -Err -Message @(
+                "Download failed! (Error $LASTEXITCODE) $(aria_exit_code $LASTEXITCODE)"
+                $urlstxt_content
+                $aria2
+            )
+
+            abort (new_issue_msg $app $bucket "download via aria2 failed")
         }
 
         # remove aria2 input file when done
@@ -312,15 +316,15 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
             $manifest_hash = hash_for_url $manifest $url $architecture
             $ok, $err = check_hash $data.$url.source $manifest_hash $(show_app $app $bucket)
             if (!$ok) {
-                error $err
+                Write-UserMessage -Message $err -Err
                 if (test-path $data.$url.source) {
                     # rm cached file
                     Remove-Item -force $data.$url.source
                 }
                 if ($url.Contains('sourceforge.net')) {
-                    Write-Host -f yellow 'SourceForge.net is known for causing hash validation fails. Please try again before opening a ticket.'
+                    Write-UserMessage -Message 'SourceForge.net is known for causing hash validation fails. Please try again before opening a ticket.' -Color Yellow
                 }
-                abort $(new_issue_msg $app $bucket "hash check failed")
+                abort (new_issue_msg $app $bucket "hash check failed")
             }
         }
 
@@ -501,7 +505,7 @@ function dl_progress($read, $total, $url) {
 
 function dl_urls($app, $version, $manifest, $bucket, $architecture, $dir, $use_cache = $true, $check_hash = $true) {
     # we only want to show this warning once
-    if (!$use_cache) { warn "Cache is being ignored." }
+    if (!$use_cache) { Write-UserMessage -Message "Cache is being ignored." -Warning }
 
     # can be multiple urls: if there are, then msi or installer should go last,
     # so that $fname is set properly
@@ -536,7 +540,7 @@ function dl_urls($app, $version, $manifest, $bucket, $architecture, $dir, $use_c
                 $manifest_hash = hash_for_url $manifest $url $architecture
                 $ok, $err = check_hash "$dir\$fname" $manifest_hash $(show_app $app $bucket)
                 if (!$ok) {
-                    error $err
+                    Write-UserMessage -Message $err -Err
                     $cached = cache_path $app $version $url
                     if (test-path $cached) {
                         # rm cached file
@@ -571,7 +575,7 @@ function dl_urls($app, $version, $manifest, $bucket, $architecture, $dir, $use_c
         } elseif ($fname -match '\.msi$') {
             # check manifest doesn't use deprecated install method
             if (msi $manifest $architecture) {
-                warn "MSI install is deprecated. If you maintain this manifest, please refer to the manifest reference docs."
+                Write-UserMessage -Message "MSI install is deprecated. If you maintain this manifest, please refer to the manifest reference docs." -Warning
             } else {
                 $extract_fn = 'Expand-MsiArchive'
             }
@@ -633,7 +637,7 @@ function hash_for_url($manifest, $url, $arch) {
 function check_hash($file, $hash, $app_name) {
     $file = fullpath $file
     if (!$hash) {
-        warn "Warning: No hash in manifest. SHA256 for '$(fname $file)' is:`n    $(compute_hash $file 'sha256')"
+        Write-UserMessage -Message "Warning: No hash in manifest. SHA256 for '$(fname $file)' is:`n    $(compute_hash $file 'sha256')" -Warning
         return $true, $null
     }
 
@@ -676,7 +680,7 @@ function compute_hash($file, $algname) {
             return [string]::join('', $hexbytes)
         }
     } catch {
-        error $_.exception.message
+        Write-UserMessage -Message $_.exception.message -Err
     } finally {
         if ($fs) { $fs.dispose() }
         if ($alg) { $alg.dispose() }
@@ -800,10 +804,10 @@ function run_uninstaller($manifest, $architecture, $dir) {
             $exe = "$dir\$($uninstaller.file)"
             $arg = args $uninstaller.args
             if (!(is_in_dir $dir $exe)) {
-                warn "Error in manifest: Installer $exe is outside the app directory, skipping."
+                Write-UserMessage -Message "Error in manifest: Installer $exe is outside the app directory, skipping." -Warning
                 $exe = $null;
             } elseif (!(test-path $exe)) {
-                warn "Uninstaller $exe is missing, skipping."
+                Write-UserMessage -Message "Uninstaller $exe is missing, skipping." -Warning
                 $exe = $null;
             }
         }
@@ -847,15 +851,15 @@ function create_shims($manifest, $dir, $global, $arch) {
 function rm_shim($name, $shimdir) {
     $shim = "$shimdir\$name.ps1"
 
+    # Handle no shim from failed install
     if (!(test-path $shim)) {
-        # handle no shim from failed install
-        warn "Shim for '$name' is missing. Skipping."
+        Write-UserMessage -Message "Shim for '$name' is missing. Skipping." -Warning
     } else {
         write-output "Removing shim for '$name'."
         Remove-Item $shim
     }
 
-    # other shim types might be present
+    # Other shim types might be present
     '', '.exe', '.shim', '.cmd' | ForEach-Object {
         if (test-path -Path "$shimdir\$name$_" -PathType leaf) {
             Remove-Item "$shimdir\$name$_"
@@ -944,7 +948,7 @@ function ensure_install_dir_not_in_path($dir, $global) {
     if (!$global) {
         $fixed, $removed = find_dir_or_subdir (env 'path' $true) "$dir"
         if ($removed) {
-            $removed | ForEach-Object { warn "Installer added '$_' to system path. You might want to remove this manually (requires admin permission)." }
+            $removed | ForEach-Object { Write-UserMessage -Message "Installer added '$_' to system path. You might want to remove this manually (requires admin permission)." -Warning }
         }
     }
 }

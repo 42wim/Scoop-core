@@ -5,10 +5,11 @@
 # If used with [query], shows app names that match the query.
 # Without [query], shows all the available apps.
 param($query)
-. "$PSScriptRoot\..\lib\core.ps1"
-. "$PSScriptRoot\..\lib\buckets.ps1"
-. "$PSScriptRoot\..\lib\manifest.ps1"
-. "$PSScriptRoot\..\lib\versions.ps1"
+
+# TODO: Refactor
+'core', 'buckets', 'manifest', 'versions' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 reset_aliases
 
@@ -114,6 +115,7 @@ Get-LocalBucket | ForEach-Object {
 
 if (!$local_results -and !(github_ratelimit_reached)) {
     $remote_results = search_remotes $query
+    # FIXME
     if (!$remote_results) { [console]::error.writeline("No matches found."); exit 1 }
     $remote_results
 }

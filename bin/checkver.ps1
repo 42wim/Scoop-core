@@ -113,7 +113,7 @@ $Queue | ForEach-Object {
 
     if ($json.checkver -eq 'github') {
         if (!$json.homepage.StartsWith('https://github.com/')) {
-            error "$name checkver expects the homepage to be a github repository"
+            Write-UserMessage -Message "$name checkver expects the homepage to be a github repository" -Err
         }
         $url = $json.homepage + '/releases/latest'
         $regex = $githubRegex
@@ -310,7 +310,7 @@ while ($in_progress -gt 0) {
             }
             autoupdate $App $Dir $json $ver $matchesHashtable
         } catch {
-            error $_.Exception.Message
+            Write-UserMessage -Message $_.Exception.Message -Err
         }
     }
 }

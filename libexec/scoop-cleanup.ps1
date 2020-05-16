@@ -9,13 +9,9 @@
 #   -g, --global       Cleanup a globally installed app
 #   -k, --cache        Remove outdated download cache
 
-. "$PSScriptRoot\..\lib\core.ps1"
-. "$PSScriptRoot\..\lib\manifest.ps1"
-. "$PSScriptRoot\..\lib\buckets.ps1"
-. "$PSScriptRoot\..\lib\versions.ps1"
-. "$PSScriptRoot\..\lib\getopt.ps1"
-. "$PSScriptRoot\..\lib\help.ps1"
-. "$PSScriptRoot\..\lib\install.ps1"
+'core', 'manifest', 'buckets', 'versions', 'getopt', 'help', 'install' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 reset_aliases
 
@@ -24,11 +20,9 @@ if ($err) { "scoop cleanup: $err"; exit 1 }
 $global = $opt.g -or $opt.global
 $cache = $opt.k -or $opt.cache
 
-if (!$apps) { 'ERROR: <app> missing'; my_usage; exit 1 }
+if (!$apps) { Write-UserMessage -Message 'ERROR: <app> missing' -Err; my_usage; exit 1 }
 
-if ($global -and !(is_admin)) {
-    'ERROR: you need admin rights to cleanup global apps'; exit 1
-}
+if ($global -and !(is_admin)) { Write-UserMessage -Message 'ERROR: you need admin rights to cleanup global apps' -Err; exit 1 }
 
 function cleanup($app, $global, $verbose, $cache) {
     $current_version = current_version $app $global
@@ -37,7 +31,7 @@ function cleanup($app, $global, $verbose, $cache) {
     }
     $versions = versions $app $global | Where-Object { $_ -ne $current_version -and $_ -ne 'current' }
     if (!$versions) {
-        if ($verbose) { success "$app is already clean" }
+        if ($verbose) { Write-UserMessage -Message "$app is already clean" -Success }
         return
     }
 
@@ -68,13 +62,9 @@ if ($apps) {
     # $apps is now a list of ($app, $global) tuples
     $apps | ForEach-Object { cleanup @_ $verbose $cache }
 
-    if ($cache) {
-        Remove-Item "$cachedir\*.download" -ErrorAction Ignore
-    }
+    if ($cache) { Remove-Item "$cachedir\*.download" -ErrorAction Ignore }
 
-    if (!$verbose) {
-        success 'Everything is shiny now!'
-    }
+    if (!$verbose) { Write-UserMessage -Message 'Everything is shiny now!' -Success }
 }
 
 exit 0

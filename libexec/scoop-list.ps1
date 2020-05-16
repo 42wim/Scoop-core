@@ -23,7 +23,7 @@ $orderInstalled = $opt.i -or $opt.installed
 $orderUpdated = $opt.u -or $opt.updated
 $reverse = $opt.r -or $opt.reverse
 # TODO: Stop-ScoopExecution
-if ($orderUpdated -and $orderInstalled) { error '--installed and --updated parameters cannot be used simultaneously'; exit 1 }
+if ($orderUpdated -and $orderInstalled) { Write-UserMessage -Message '--installed and --updated parameters cannot be used simultaneously' -Err; exit 1 }
 $def_arch = default_architecture
 
 $locA = appsdir $false

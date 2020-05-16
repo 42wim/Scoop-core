@@ -12,12 +12,13 @@ if (!$apps) {
     exit 1
 }
 
-$apps | ForEach-Object {
-    $app = $_
+$exitCode = 0
+foreach ($app in $apps) {
     $global = installed $app $true
 
     if (!(installed $app)) {
-        error "'$app' is not installed."
+        Write-UserMessage -Message "'$app' is not installed." -Err
+        $exitCode = 1
         return
     }
 
@@ -27,7 +28,7 @@ $apps | ForEach-Object {
     $json | Get-Member -MemberType Properties | ForEach-Object { $install.Add($_.Name, $json.($_.Name)) }
     $install.hold = $true
     save_install_info $install $dir
-    success "$app is now held and can not be updated anymore."
+    Write-UserMessage -Message "$app is now held and can not be updated anymore." -Success
 }
 
-exit $exitcode
+exit $exitCode

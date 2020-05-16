@@ -19,7 +19,7 @@ reset_aliases
 $opt, $application, $err = getopt $args 'sba:u:' 'skip', 'all-architectures', 'arch=', 'utility='
 if ($err) {
     # TODO: Stop-ScoopExecution
-    error "scoop install: $err"
+    Write-UserMessage -Message "scoop install: $err" -Err
     exit 1
 }
 
@@ -37,7 +37,7 @@ if ($opt.b -or $opt.'all-architectures') { $architecture = '32bit', '64bit' }
 
 if (-not $application) {
     # TODO:? Extend Stop-ScoopExecution with -Usage switch
-    error '<app> missing'
+    Write-UserMessage -Message '<app> missing' -Err
     my_usage
     exit 1
 }
@@ -65,7 +65,7 @@ foreach ($app in $application) {
         debug $cleanAppName
         debug $foundBucket
         debug $appName
-        error 'Found application name or bucket is not same as requested'
+        Write-UserMessage -Message 'Found application name or bucket is not same as requested' -Err
         continue
     }
 
@@ -73,7 +73,7 @@ foreach ($app in $application) {
     if (($null -ne $version) -and ($manifest.version -ne $version)) {
         $generated = generate_user_manifest $appName $bucket $version
         if ($null -eq $generated) {
-            error 'Manifest cannot be generated with provided version'
+            Write-UserMessage -Message 'Manifest cannot be generated with provided version' -Err
             continue
         }
         $manifest = parse_json($generated)
@@ -99,12 +99,12 @@ foreach ($app in $application) {
                         $ok, $err = check_hash $source $manifestHash (show_app $appName $bucket)
 
                         if (!$ok) {
-                            error $err
+                            Write-UserMessage -Message $err -Err
                             if (Test-Path $source) { Remove-Item $source -Force }
                             if ($url -like '*sourceforge.net*') {
-                                warn 'SourceForge.net is known for causing hash validation fails. Please try again before opening a ticket.'
+                                Write-UserMessage -Message 'SourceForge.net is known for causing hash validation fails. Please try again before opening a ticket.' -Warning
                             }
-                            error (new_issue_msg $appName $bucket 'hash check failed')
+                            Write-UserMessage -Message (new_issue_msg $appName $bucket 'hash check failed') -Err
                             continue
                         }
                     }

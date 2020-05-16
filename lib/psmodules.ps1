@@ -23,7 +23,7 @@ function install_psmodule($manifest, $dir, $global) {
     write-host "Linking $(friendly_path $linkfrom) => $(friendly_path $dir)"
 
     if (test-path $linkfrom) {
-        warn "$(friendly_path $linkfrom) already exists. It will be replaced."
+        Write-UserMessage -Message "$(friendly_path $linkfrom) already exists. It will be replaced." -Warning
         & "$env:COMSPEC" /c "rmdir `"$linkfrom`""
     }
 

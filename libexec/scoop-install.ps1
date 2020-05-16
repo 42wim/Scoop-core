@@ -39,16 +39,24 @@ function is_installed($app, $global) {
 
         $version = @(versions $app $global)[-1]
         if (!(install_info $app $version $global)) {
-            error "It looks like a previous installation of $app failed.`nRun 'scoop uninstall $app$(gf $global)' before retrying the install."
+            Write-UserMessage -Err -Message @(
+                "It looks like a previous installation of $app failed."
+                "Run 'scoop uninstall $app$(gf $global)' before retrying the install."
+            )
         }
-        warn "'$app' ($version) is already installed.`nUse 'scoop update $app$(gf $global)' to install a new version."
+        Write-UserMessage -Warning -Message @(
+            "'$app' ($version) is already installed.",
+            "Use 'scoop update $app$(gf $global)' to install a new version."
+        )
+
         return $true
     }
+
     return $false
 }
 
 $opt, $apps, $err = getopt $args 'gfiksa:' 'global', 'force', 'independent', 'no-cache', 'skip', 'arch='
-if ($err) { "scoop install: $err"; exit 1 }
+if ($err) { Write-UserMessage -Message "scoop install: $err" -Err; exit 1 }
 
 $global = $opt.g -or $opt.global
 $check_hash = !($opt.s -or $opt.skip)
@@ -61,13 +69,14 @@ try {
     abort "ERROR: $_"
 }
 
-if (!$apps) { error '<app> missing'; my_usage; exit 1 }
+if (!$apps) { Write-UserMessage -Message '<app> missing' -Err; my_usage; exit 1 }
 
 if ($global -and !(is_admin)) {
     abort 'ERROR: you need admin rights to install global apps'
 }
 
 if (is_scoop_outdated) {
+    # TODO:
     scoop update
 }
 
@@ -115,14 +124,18 @@ $apps, $skip = prune_installed $apps $global
 $skip | Where-Object { $explicit_apps -contains $_ } | ForEach-Object {
     $app, $null, $null = parse_app $_
     $version = @(versions $app $global)[-1]
-    warn "'$app' ($version) is already installed. Skipping."
+    Write-UserMessage -Message "'$app' ($version) is already installed. Skipping." -Warning
 }
 
 $suggested = @{ };
+
 if (Test-Aria2Enabled) {
-    warn "Scoop uses 'aria2c' for multi-connection downloads."
-    warn "Should it cause issues, run 'scoop config aria2-enabled false' to disable it."
+    Write-UserMessage -Warning -Message @(
+        "Scoop uses 'aria2c' for multi-connection downloads."
+        "Should it cause issues, run 'scoop config aria2-enabled false' to disable it."
+    )
 }
+
 $apps | ForEach-Object { install_app $_ $architecture $global $suggested $use_cache $check_hash }
 
 show_suggestions $suggested

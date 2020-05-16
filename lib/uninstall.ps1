@@ -49,9 +49,12 @@ function Uninstall-ScoopApplication {
         $plPr = pluralize $processes.Count 'Process' 'Processes'
         $plId = pluralize $processes.Count 'ID' 'IDs'
         $plIs = pluralize $processes.Count 'is' 'are'
-        error 'Application is still running!'
-        error "$plPr with following $plId $plIs blocking uninstallation:"
-        error ($processes.Id -join ", ")
+        Write-UserMessage -Err -Message @(
+            'Application is still running!'
+            "$plPr with following $plId $plIs blocking uninstallation:"
+            ($processes.Id -join ', ')
+        )
+
         return $false
     }
 
@@ -64,7 +67,7 @@ function Uninstall-ScoopApplication {
     try {
         Test-Path $dir -ErrorAction Stop | Out-Null
     } catch [UnauthorizedAccessException] {
-        error "Access denied: $dir. You might need to restart."
+        Write-UserMessage -Message "Access denied: $dir. You might need to restart." -Err
         return $false
     }
 
@@ -96,7 +99,7 @@ function Uninstall-ScoopApplication {
             Remove-Item $dir -Recurse -Force -ErrorAction Stop
         } catch {
             if (Test-Path $dir) {
-                error "Couldn't remove '$(friendly_path $dir)'; it may be in use."
+                Write-UserMessage -Message "Couldn't remove '$(friendly_path $dir)'; it may be in use." -Err
                 return $false
             }
         }
@@ -110,7 +113,7 @@ function Uninstall-ScoopApplication {
                 unlink_persist_data $dir
                 Remove-Item $dir -Recurse -Force -ErrorAction Stop
             } catch {
-                error "Couldn't remove '$(friendly_path $dir)'; it may be in use."
+                Write-UserMessage -Message "Couldn't remove '$(friendly_path $dir)'; it may be in use." -Err
                 return $false
             }
         }
@@ -135,7 +138,7 @@ function Uninstall-ScoopApplication {
             try {
                 Remove-Item $persist_dir -Recurse -Force -ErrorAction Stop
             } catch {
-                error "Couldn't remove '$(friendly_path $persist_dir)'"
+                Write-UserMessage -Message "Couldn't remove '$(friendly_path $persist_dir)'" -Err
                 return $false
             }
         }

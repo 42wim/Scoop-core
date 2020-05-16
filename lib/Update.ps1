@@ -187,7 +187,6 @@ function Update-Scoop {
     Write-UserMessage -Message 'Scoop was updated successfully!' -Success
 }
 
-
 function Update-App {
     <#
     .SYNOPSIS

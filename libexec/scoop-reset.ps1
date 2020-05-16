@@ -16,7 +16,7 @@ reset_aliases
 $opt, $apps, $err = getopt $args
 if ($err) { "scoop reset: $err"; exit 1 }
 
-if (!$apps) { error '<app> missing'; my_usage; exit 1 }
+if (!$apps) { Write-UserMessage -Message '<app> missing' -Err; my_usage; exit 1 }
 
 if ($apps -eq '*') {
     $local = installed_apps $false | ForEach-Object { , @($_, $false) }
@@ -24,44 +24,42 @@ if ($apps -eq '*') {
     $apps = @($local) + @($global)
 }
 
+$exitCode = 0
 $apps | ForEach-Object {
     ($app, $global) = $_
 
     $app, $bucket, $version = parse_app $app
 
-    if (($global -eq $null) -and (installed $app $true)) {
-        # set global flag when running reset command on specific app
-        $global = $true
-    }
+    # Set global flag when running reset command on specific app
+    if (($null -eq $global) -and (installed $app $true)) { $global = $true }
 
-    if ($app -eq 'scoop') {
-        # skip scoop
-        return
-    }
+    # Skip scoop
+    if ($app -eq 'scoop') { return }
 
     if (!(installed $app)) {
-        error "'$app' isn't installed"
+        Write-UserMessage -Message "'$app' isn't installed" -Err
+        $exitCode = 1
         return
     }
 
-    if ($null -eq $version) {
-        $version = current_version $app $global
-    }
+    if ($null -eq $version) { $version = current_version $app $global }
 
     $manifest = installed_manifest $app $version $global
     # if this is null we know the version they're resetting to
     # is not installed
     if ($manifest -eq $null) {
-        error "'$app ($version)' isn't installed"
+        Write-UserMessage -Message "'$app ($version)' isn't installed" -Err
+        $exitCode = 1
         return
     }
 
     if ($global -and !(is_admin)) {
-        warn "'$app' ($version) is a global app. You need admin rights to reset it. Skipping."
+        Write-UserMessage -Message "'$app' ($version) is a global app. You need admin rights to reset it. Skipping." -Warning
+        $exitCode = 1
         return
     }
 
-    write-host "Resetting $app ($version)."
+    Write-UserMessage "Resetting $app ($version)."
 
     $dir = resolve-path (versiondir $app $version $global)
     $original_dir = $dir
@@ -81,4 +79,4 @@ $apps | ForEach-Object {
     persist_permission $manifest $global
 }
 
-exit 0
+exit $exitCode

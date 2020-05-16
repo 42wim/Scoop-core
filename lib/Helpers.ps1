@@ -44,8 +44,8 @@ function Write-UserMessage {
         if ($Success) { $Severity = 'Success' }
 
         switch ($Severity) {
-            'Info' { $sev = 'INFO '; $foreColor = 'DarkGray' }
-            'Warning' { $sev = 'WARN '; $foreColor = 'DarkYellow' }
+            'Info' { $sev = 'INFO  '; $foreColor = 'DarkGray' }
+            'Warning' { $sev = 'WARN  '; $foreColor = 'DarkYellow' }
             'Error' { $sev = 'ERROR '; $foreColor = 'DarkRed' }
             'Success' { $sev = ''; $foreColor = 'DarkGreen' }
             default {

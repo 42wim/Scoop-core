@@ -38,7 +38,7 @@ function show($app) {
 
 switch ($cmd) {
     'rm' {
-        if (!$app) { 'ERROR: <app> missing'; my_usage; exit 1 }
+        if (!$app) { Write-UserMessage -Message 'ERROR: <app> missing' -Err; my_usage; exit 1 }
         Remove-Item "$cachedir\$app#*"
         if (Test-Path("$cachedir\$app.txt")) {
             Remove-Item "$cachedir\$app.txt"

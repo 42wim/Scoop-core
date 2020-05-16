@@ -115,7 +115,7 @@ function pull_requests($json, [String] $app, [String] $upstream, [String] $manif
     execute "hub push origin $branch"
 
     if ($LASTEXITCODE -gt 0) {
-        error "Push failed! (hub push origin $branch)"
+        Write-UserMessage -Message "Push failed! (hub push origin $branch)" -Err
         execute 'hub reset'
         return
     }
@@ -168,7 +168,7 @@ hub diff --name-only | ForEach-Object {
     $app = ([System.IO.Path]::GetFileNameWithoutExtension($manifest))
     $json = parse_json $manifest
     if (!$json.version) {
-        error "Invalid manifest: $manifest ..."
+        Write-UserMessage -Message "Invalid manifest: $manifest ..." -Err
         return
     }
     $version = $json.version

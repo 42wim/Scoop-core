@@ -33,8 +33,8 @@ function Show-DeprecatedWarning {
     #>
     param($Invocation, [String] $New)
 
-    warn ('"{0}" will be deprecated. Please change your code/manifest to use "{1}"' -f $Invocation.MyCommand.Name, $New)
-    Write-Host "      -> $($Invocation.PSCommandPath):$($Invocation.ScriptLineNumber):$($Invocation.OffsetInLine)" -ForegroundColor DarkGray
+    Write-UserMessage -Message ('"{0}" will be deprecated. Please change your code/manifest to use "{1}"' -f $Invocation.MyCommand.Name, $New) -Warning
+    Write-UserMessage -Message "      -> $($Invocation.PSCommandPath):$($Invocation.ScriptLineNumber):$($Invocation.OffsetInLine)" -Color DarkGray
 }
 
 function load_cfg($file) {
@@ -45,7 +45,7 @@ function load_cfg($file) {
     try {
         return (Get-Content $file -Raw | ConvertFrom-Json -ErrorAction Stop)
     } catch {
-        Write-Host "ERROR loading $file`: $($_.exception.message)"
+        Write-UserMessage -Message "loading $file`: $($_.Exception.Message)" -Err
     }
 }
 
@@ -105,7 +105,7 @@ function setup_proxy() {
             [net.webrequest]::defaultwebproxy.credentials = new-object net.networkcredential($username, $password)
         }
     } catch {
-        warn "Failed to use proxy '$proxy': $($_.exception.message)"
+        Write-UserMessage -Message "Failed to use proxy '$proxy': $($_.exception.message)" -Warning
     }
 }
 
@@ -435,10 +435,8 @@ function Invoke-ExternalCommand {
     try {
         $Process.Start() | Out-Null
     } catch {
-        if ($Activity) {
-            Write-Host "error." -ForegroundColor DarkRed
-        }
-        error $_.Exception.Message
+        if ($Activity) { Write-UserMessage -Message 'error.' -Color DarkRed }
+        Write-UserMessage -Message $_.Exception.Message -Err
         return $false
     }
     if ($LogPath -and ($FilePath -notmatch '(^|\W)msiexec($|\W)')) {
@@ -450,19 +448,15 @@ function Invoke-ExternalCommand {
             if ($Activity) {
                 Write-Host "done." -ForegroundColor DarkYellow
             }
-            warn $ContinueExitCodes[$Process.ExitCode]
+            Write-UserMessage -Message $ContinueExitCodes[$Process.ExitCode] -Warning
             return $true
         } else {
-            if ($Activity) {
-                Write-Host "error." -ForegroundColor DarkRed
-            }
-            error "Exit code was $($Process.ExitCode)!"
+            if ($Activity) { Write-UserMessage -Message 'error.' -Color DarkRed }
+            Write-UserMessage -Message "Exit code was $($Process.ExitCode)!" -Err
             return $false
         }
     }
-    if ($Activity) {
-        Write-Host "done." -ForegroundColor Green
-    }
+    if ($Activity) { Write-Host "done." -ForegroundColor Green }
     return $true
 }
 
@@ -668,22 +662,23 @@ function Confirm-InstallationStatus {
             if (installed $App $true) {
                 $Installed += , @($App, $true)
             } elseif (installed $App $false) {
-                error "'$App' isn't installed globally, but it is installed for your account."
-                warn "Try again without the --global (or -g) flag instead."
+                Write-UserMessage -Message "'$App' isn't installed globally, but it is installed for your account." -Err
+                Write-UserMessage -Message "Try again without the --global (or -g) flag instead." -Warning
             } else {
-                error "'$App' isn't installed."
+                Write-UserMessage -Message "'$App' isn't installed." -Err
             }
         } else {
             if (installed $App $false) {
                 $Installed += , @($App, $false)
             } elseif (installed $App $true) {
-                error "'$App' isn't installed for your account, but it is installed globally."
-                warn "Try again with the --global (or -g) flag instead."
+                Write-UserMessage -Message "'$App' isn't installed for your account, but it is installed globally." -Err
+                Write-UserMessage -Message "Try again with the --global (or -g) flag instead." -Warning
             } else {
-                error "'$App' isn't installed."
+                Write-UserMessage -Message "'$App' isn't installed." -Err
             }
         }
     }
+
     return , $Installed
 }
 
@@ -976,8 +971,10 @@ $configFile = "$configHome\scoop\config.json"
 if ((Test-Path "$env:USERPROFILE\.scoop") -and !(Test-Path $configFile)) {
     New-Item -ItemType Directory (Split-Path -Path $configFile) -ErrorAction Ignore | Out-Null
     Move-Item "$env:USERPROFILE\.scoop" $configFile
-    write-host "WARN  Scoop configuration has been migrated from '~/.scoop'" -f darkyellow
-    write-host "WARN  to '$configFile'" -f darkyellow
+    Write-UserMessage -Warning -Message @(
+        "Scoop configuration has been migrated from '~/.scoop'"
+        "to '$configFile'"
+    )
 }
 
 # Load Scoop config

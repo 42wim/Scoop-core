@@ -19,7 +19,8 @@ function url_manifest($url) {
         $wc.Headers.Add('User-Agent', (Get-UserAgent))
         $str = $wc.downloadstring($url)
     } catch [system.management.automation.methodinvocationexception] {
-        warn "error: $($_.exception.innerexception.message)"
+        # TODO: ???
+        Write-UserMessage -Message "error: $($_.Exception.InnerException.Message)" -Warning
     } catch {
         throw
     }
@@ -90,7 +91,7 @@ function default_architecture {
         try {
             $arch = ensure_architecture $arch
         } catch {
-            warn 'Invalid default architecture configured. Determining default system architecture'
+            Write-UserMessage -Message 'Invalid default architecture configured. Determining default system architecture' -Warning
             $arch = $system
         }
     }
@@ -116,8 +117,10 @@ function generate_user_manifest($app, $bucket, $version) {
     if ("$($manifest.version)" -eq "$version") {
         return manifest_path $app $bucket
     }
-    warn "Given version ($version) does not match manifest ($($manifest.version))"
-    warn "Attempting to generate manifest for '$app' ($version)"
+    Write-UserMessage -Warning -Message @(
+        "Given version ($version) does not match manifest ($($manifest.version))"
+        "Attempting to generate manifest for '$app' ($version)"
+    )
 
     if (!($manifest.autoupdate)) {
         abort "'$app' does not have autoupdate capability`r`ncouldn't find manifest for '$app@$version'"
