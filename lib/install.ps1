@@ -219,7 +219,7 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
         "--max-connection-per-server=$(get_config 'aria2-max-connection-per-server' 5)"
         "--min-split-size=$(get_config 'aria2-min-split-size' '5M')"
         "--console-log-level=warn"
-        "--enable-color=true"
+        "--enable-color=false"
         "--no-conf=true"
         "--follow-metalink=true"
         "--metalink-preferred-protocol=https"
@@ -282,10 +282,29 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
         # build aria2 command
         $aria2 = "& '$(Get-HelperPath -Helper Aria2)' $($options -join ' ')"
 
-        Write-Debug $aria2
+        debug $aria2
         # handle aria2 console output
         Write-Host "Starting download with aria2 ..."
-        Invoke-Expression $aria2
+        Invoke-Expression $aria2 | ForEach-Object {
+            # Skip blank lines
+            if ([String]::IsNullOrWhiteSpace($_)) { return }
+            $color = 'Gray'
+            # Prevent potential overlaping of text when one line is shorter
+            $blank = ' ' * ($Host.UI.RawUI.WindowSize.Width - $_.Length - 20)
+
+            if ($_.StartsWith('(OK):')) {
+                $noNewLine = $true
+                $color = 'Green'
+            } elseif ($_.StartsWith('[') -and $_.EndsWith(']')) {
+                $noNewLine = $true
+                $color = 'Cyan'
+            } elseif ($_.StartsWith('Download Results:')) {
+                $noNewLine = $false
+            }
+
+            Write-Host "`rDownload: $_$blank" -ForegroundColor $color -NoNewline:$noNewLine
+        }
+        Write-Host ''
 
         if ($LASTEXITCODE -gt 0) {
             Write-UserMessage -Err -Message @(
