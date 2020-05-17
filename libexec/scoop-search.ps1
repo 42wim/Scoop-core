@@ -4,14 +4,17 @@
 #
 # If used with [query], shows app names that match the query.
 # Without [query], shows all the available apps.
+
 param($query)
 
 # TODO: Refactor
-'core', 'buckets', 'manifest', 'versions' | ForEach-Object {
+'core', 'buckets', 'manifest', 'Versions' | ForEach-Object {
     . "$PSScriptRoot\..\lib\$_.ps1"
 }
 
 reset_aliases
+
+$exitCode = 0
 
 function bin_match($manifest, $query) {
     if (!$manifest.bin) { return $false }
@@ -116,8 +119,8 @@ Get-LocalBucket | ForEach-Object {
 if (!$local_results -and !(github_ratelimit_reached)) {
     $remote_results = search_remotes $query
     # FIXME
-    if (!$remote_results) { [console]::error.writeline("No matches found."); exit 1 }
+    if (!$remote_results) { Write-UserMessage -Message 'No matches found.' -Warning; exit 3 }
     $remote_results
 }
 
-exit 0
+exit $exitCode

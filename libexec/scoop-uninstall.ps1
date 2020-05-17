@@ -17,7 +17,7 @@ $opt, $apps, $err = getopt $args 'gp' 'global', 'purge'
 
 if ($err) {
     Write-UserMessage -Message "scoop uninstall: $err" -Err
-    exit 1
+    exit 2
 }
 
 $global = $opt.g -or $opt.global
@@ -31,28 +31,35 @@ if (!$apps) {
 
 if ($global -and !(is_admin)) {
     Write-UserMessage -Message 'You need admin rights to uninstall global apps.' -Err
-    exit 1
+    exit 4
 }
 
 if ($apps -eq 'scoop') {
     & "$PSScriptRoot\..\bin\uninstall.ps1" $global $purge
-    exit
+    exit $LASTEXITCODE
 }
 
 $apps = Confirm-InstallationStatus $apps -Global:$global
-if (!$apps) { exit 0 }
+if (!$apps) {
+    Write-UserMessage -Message 'No application to uninstall' -Warning
+    exit 3
+}
 
 $exitCode = 0
+$problems = 0
+# TODO: remove label
 :app_loop foreach ($_ in $apps) {
     ($app, $global) = $_
 
     $result = Uninstall-ScoopApplication -App $app -Global:$global -Purge:$purge -Older
     if ($result -eq $false) {
-        $exitCode = 1
+        ++$problems
         continue
     }
 
     Write-UserMessage -Message "'$app' was uninstalled." -Success
 }
+
+if ($problems -gt 0) { $exitCode = 10 + $problems }
 
 exit $exitCode

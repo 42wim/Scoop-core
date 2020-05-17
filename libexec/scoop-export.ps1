@@ -2,7 +2,7 @@
 # Summary: Exports (an importable) list of installed apps
 # Help: Lists all installed apps.
 
-'core', 'versions', 'manifest', 'buckets' | ForEach-Object {
+'core', 'Versions', 'manifest', 'buckets' | ForEach-Object {
     . "$PSScriptRoot\..\lib\$_.ps1"
 }
 

@@ -20,7 +20,7 @@ $opt, $application, $err = getopt $args 'sba:u:' 'skip', 'all-architectures', 'a
 if ($err) {
     # TODO: Stop-ScoopExecution
     Write-UserMessage -Message "scoop install: $err" -Err
-    exit 1
+    exit 2
 }
 
 $checkHash = -not ($opt.s -or $opt.skip)
@@ -30,7 +30,7 @@ try {
     $architecture = ensure_architecture ($opt.a + $opt.arch)
 } catch {
     # TODO: Stop-ScoopExecution
-    abort "ERROR: $_"
+    abort "ERROR: $_" 2
 }
 # Add both architectures
 if ($opt.b -or $opt.'all-architectures') { $architecture = '32bit', '64bit' }
@@ -48,6 +48,7 @@ if (($utility -eq 'aria2') -and (-not (Test-HelperInstalled -Helper Aria2))) {
 }
 #endregion Parameter validation
 
+$exitCode = 0
 foreach ($app in $application) {
     Write-Host 'Starting download for' $app -ForegroundColor Green
 
@@ -66,6 +67,7 @@ foreach ($app in $application) {
         debug $foundBucket
         debug $appName
         Write-UserMessage -Message 'Found application name or bucket is not same as requested' -Err
+        $exitCode = 3
         continue
     }
 
@@ -74,6 +76,7 @@ foreach ($app in $application) {
         $generated = generate_user_manifest $appName $bucket $version
         if ($null -eq $generated) {
             Write-UserMessage -Message 'Manifest cannot be generated with provided version' -Err
+            $exitCode = 3
             continue
         }
         $manifest = parse_json($generated)
@@ -105,6 +108,7 @@ foreach ($app in $application) {
                                 Write-UserMessage -Message 'SourceForge.net is known for causing hash validation fails. Please try again before opening a ticket.' -Warning
                             }
                             Write-UserMessage -Message (new_issue_msg $appName $bucket 'hash check failed') -Err
+                            $exitCode = 3
                             continue
                         }
                     }
@@ -115,9 +119,9 @@ foreach ($app in $application) {
         default {
             # abort could be called without any issue as it is used for all applications
             # TODO: Stop-ScoopExecution
-            abort 'Not supported download utility'
+            abort 'Not supported download utility' 2
         }
     }
 }
 
-exit 0
+exit $exitCode

@@ -1,14 +1,11 @@
 # Usage: scoop info <app>
 # Summary: Display information about an app
+
 param($app)
 
-. "$PSScriptRoot\..\lib\buckets.ps1"
-. "$PSScriptRoot\..\lib\core.ps1"
-. "$PSScriptRoot\..\lib\depends.ps1"
-. "$PSScriptRoot\..\lib\help.ps1"
-. "$PSScriptRoot\..\lib\install.ps1"
-. "$PSScriptRoot\..\lib\manifest.ps1"
-. "$PSScriptRoot\..\lib\versions.ps1"
+'buckets', 'core', 'depends', 'help', 'install', 'manifest', 'Versions' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 reset_aliases
 

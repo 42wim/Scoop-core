@@ -64,7 +64,7 @@ param(
     [String] $Version = ''
 )
 
-'core', 'manifest', 'buckets', 'autoupdate', 'json', 'versions', 'install' | ForEach-Object {
+'core', 'manifest', 'buckets', 'autoupdate', 'json', 'Versions', 'install' | ForEach-Object {
     . "$PSScriptRoot\..\lib\$_.ps1"
 }
 

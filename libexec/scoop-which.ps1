@@ -1,6 +1,7 @@
 # Usage: scoop which <command>
 # Summary: Locate a shim/executable (similar to 'which' on Linux)
 # Help: Locate the path to a shim/executable that was installed with Scoop (similar to 'which' on Linux)
+
 param([String] $Command)
 
 'core', 'help', 'commands' | ForEach-Object {
@@ -23,7 +24,7 @@ $userShims = shimdir $false | Resolve-Path
 $globalShims = fullpath (shimdir $true) # don't resolve: may not exist
 
 $FINAL_PATH = $null
-$FINAL_EXIT_CODE = 0
+$exitCode = 0
 
 if ($gcm.Path -and $gcm.Path.EndsWith('.ps1') -and (($gcm.Path -like "$userShims*") -or ($gcm.Path -like "$globalShims*"))) {
     $shimText = Get-Content $gcm.Path
@@ -40,16 +41,15 @@ if ($gcm.Path -and $gcm.Path.EndsWith('.ps1') -and (($gcm.Path -like "$userShims
 } else {
     switch ($gcm.CommandType) {
         'Application' { $FINAL_PATH = $gcm.Source }
-        'Alias' { $FINAL_PATH = exec 'which'  @{ 'Command' = $gcm.ResolvedCommandName }
-        }
+        'Alias' { $FINAL_PATH = exec 'which'  @{ 'Command' = $gcm.ResolvedCommandName } }
         default {
             Write-UserMessage -Message 'Not a scoop shim'
             $FINAL_PATH = $gcm.Path
-            $FINAL_EXIT_CODE = 2
+            $exitCode = 3
         }
     }
 }
 
 if ($FINAL_PATH) { Write-UserMessage $FINAL_PATH }
 
-exit $FINAL_EXIT_CODE
+exit $exitCode

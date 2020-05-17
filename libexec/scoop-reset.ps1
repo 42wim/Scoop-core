@@ -4,18 +4,14 @@
 # if you've installed 'python' and 'python27', you can use 'scoop reset' to switch between
 # using one or the other.
 
-. "$PSScriptRoot\..\lib\core.ps1"
-. "$PSScriptRoot\..\lib\manifest.ps1"
-. "$PSScriptRoot\..\lib\help.ps1"
-. "$PSScriptRoot\..\lib\getopt.ps1"
-. "$PSScriptRoot\..\lib\install.ps1"
-. "$PSScriptRoot\..\lib\versions.ps1"
-. "$PSScriptRoot\..\lib\shortcuts.ps1"
+'core', 'manifest', 'help', 'getopt', 'install', 'Versions', 'shortcuts' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 reset_aliases
 $opt, $apps, $err = getopt $args
-if ($err) { "scoop reset: $err"; exit 1 }
 
+if ($err) { Write-UserMessage -Message "scoop reset: $err" -Err; exit 2 }
 if (!$apps) { Write-UserMessage -Message '<app> missing' -Err; my_usage; exit 1 }
 
 if ($apps -eq '*') {
@@ -25,8 +21,9 @@ if ($apps -eq '*') {
 }
 
 $exitCode = 0
-$apps | ForEach-Object {
-    ($app, $global) = $_
+$problems = 0
+foreach ($a in $apps) {
+    ($app, $global) = $a
 
     $app, $bucket, $version = parse_app $app
 
@@ -37,9 +34,9 @@ $apps | ForEach-Object {
     if ($app -eq 'scoop') { return }
 
     if (!(installed $app)) {
+        ++$problems
         Write-UserMessage -Message "'$app' isn't installed" -Err
-        $exitCode = 1
-        return
+        continue
     }
 
     if ($null -eq $version) { $version = Select-CurrentVersion -AppName $app -Global:$global }
@@ -48,20 +45,20 @@ $apps | ForEach-Object {
     # if this is null we know the version they're resetting to
     # is not installed
     if ($manifest -eq $null) {
+        ++$problems
         Write-UserMessage -Message "'$app ($version)' isn't installed" -Err
-        $exitCode = 1
-        return
+        continue
     }
 
     if ($global -and !(is_admin)) {
         Write-UserMessage -Message "'$app' ($version) is a global app. You need admin rights to reset it. Skipping." -Warning
-        $exitCode = 1
-        return
+        ++$problems
+        continue
     }
 
     Write-UserMessage -Message "Resetting $app ($version)."
 
-    $dir = resolve-path (versiondir $app $version $global)
+    $dir = Resolve-Path (versiondir $app $version $global)
     $original_dir = $dir
     $persist_dir = persistdir $app $global
 
@@ -78,5 +75,7 @@ $apps | ForEach-Object {
     persist_data $manifest $original_dir $persist_dir
     persist_permission $manifest $global
 }
+
+if ($problems -gt 0) { $exitCode = 10 + $problems }
 
 exit $exitCode

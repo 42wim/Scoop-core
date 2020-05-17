@@ -1,24 +1,28 @@
 # Usage: scoop home <app>
 # Summary: Opens the app homepage
+
 param($app)
 
-. "$PSScriptRoot\..\lib\core.ps1"
-. "$PSScriptRoot\..\lib\help.ps1"
-. "$PSScriptRoot\..\lib\manifest.ps1"
-. "$PSScriptRoot\..\lib\buckets.ps1"
+'core', 'help', 'manifest', 'buckets' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 reset_aliases
+$exitCode = 0
 
 if ($app) {
     $manifest, $bucket = find_manifest $app
     if ($manifest) {
-        if ([string]::isnullorempty($manifest.homepage)) {
-            abort "Could not find homepage in manifest for '$app'."
+        if ([String]::IsNullOrEmpty($manifest.homepage)) {
+            $exitCode = 3
+            Write-UserMessage -Message "Could not find homepage in manifest for '$app'." -Err
+        } else {
+            Start-Process $manifest.homepage
         }
-        Start-Process $manifest.homepage
     } else {
-        abort "Could not find manifest for '$app'."
+        $exitCode = 3
+        Write-UserMessage -Message "Could not find manifest for '$app'." -Err
     }
-} else { my_usage }
+} else { my_usage; $exitCode = 1 }
 
-exit 0
+exit $exitCode

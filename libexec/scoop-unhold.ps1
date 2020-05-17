@@ -1,8 +1,9 @@
 # Usage: scoop unhold <app>
 # Summary: Unhold an app to enable updates
 
-. "$PSScriptRoot\..\lib\help.ps1"
-. "$PSScriptRoot\..\lib\manifest.ps1"
+'help', 'manifest' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 reset_aliases
 $apps = $args
@@ -17,8 +18,8 @@ foreach ($app in $apps) {
     $global = installed $app $true
 
     if (!(installed $app)) {
+        $exitCode = 3
         Write-UserMessage -Message "'$app' is not installed." -Err
-        $exitCode = 1
         return
     }
 

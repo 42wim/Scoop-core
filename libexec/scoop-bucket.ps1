@@ -7,16 +7,17 @@
 # published.
 #
 # To add a bucket:
-#     scoop bucket add <name> [<repo>]
+#   scoop bucket add <name> [<repo>]
 #
 # e.g.:
-#     scoop bucket add extras https://github.com/lukesampson/scoop-extras.git
+#   scoop bucket add extras https://github.com/lukesampson/scoop-extras.git
 #
 # Since the 'extras' bucket is known to Scoop, this can be shortened to:
-#     scoop bucket add extras
+#   scoop bucket add extras
 #
 # To list all known buckets, use:
-#     scoop bucket known
+#   scoop bucket known
+
 param($Cmd, $Name, $Repo)
 
 'buckets', 'help' | ForEach-Object {
@@ -25,10 +26,11 @@ param($Cmd, $Name, $Repo)
 
 reset_aliases
 
+# TODO: Remove
 $usage_add = 'usage: scoop bucket add <name> [<repo>]'
 $usage_rm = 'usage: scoop bucket rm <name>'
-$exitCode = 0
 
+$exitCode = 0
 switch ($Cmd) {
     'add' { add_bucket $Name $Repo }
     'rm' { rm_bucket $Name }

@@ -1,22 +1,20 @@
 # Usage: scoop status
 # Summary: Show status and check for new app versions
 
-. "$PSScriptRoot\..\lib\core.ps1"
-. "$PSScriptRoot\..\lib\manifest.ps1"
-. "$PSScriptRoot\..\lib\buckets.ps1"
-. "$PSScriptRoot\..\lib\versions.ps1"
-. "$PSScriptRoot\..\lib\depends.ps1"
-. "$PSScriptRoot\..\lib\git.ps1"
+'core', 'manifest', 'buckets', 'Versions', 'depends', 'git' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 reset_aliases
 
 # check if scoop needs updating
-$currentdir = fullpath $(versiondir 'scoop' 'current')
+$currentdir = fullpath (versiondir 'scoop' 'current')
 $needs_update = $false
 
 if (test-path "$currentdir\.git") {
     Push-Location $currentdir
     git_fetch -q origin
+    # TODO: Fix me
     $commits = $(git log "HEAD..origin/$(scoop config SCOOP_BRANCH)" --oneline)
     if ($commits) { $needs_update = $true }
     Pop-Location
@@ -37,13 +35,12 @@ $missing_deps = @()
 $onhold = @()
 $exitCode = 0
 
-$true, $false | ForEach-Object { # local and global apps
-    $global = $_
+foreach ($global in $true, $false) { # local and global apps
     $dir = appsdir $global
     if (!(test-path $dir)) { return }
 
-    Get-ChildItem $dir | Where-Object name -ne 'scoop' | ForEach-Object {
-        $app = $_.name
+    foreach ($application in Get-ChildItem $dir | Where-Object name -ne 'scoop'){
+        $app = $application.name
         $status = app_status $app $global
         if ($status.failed) {
             $failed += @{ $app = $status.version }
@@ -65,7 +62,7 @@ $true, $false | ForEach-Object { # local and global apps
 
 if ($outdated) {
     write-host -f DarkCyan 'Updates are available for:'
-    $exitCode = 1
+    $exitCode = 3
     $outdated.keys | ForEach-Object {
         $versions = $outdated.$_
         "    $_`: $($versions[0]) -> $($versions[1])"
@@ -82,7 +79,7 @@ if ($onhold) {
 
 if ($removed) {
     write-host -f DarkCyan 'These app manifests have been removed:'
-    $exitCode = 2
+    $exitCode = 3
     $removed.keys | ForEach-Object {
         "    $_"
     }
@@ -90,14 +87,14 @@ if ($removed) {
 
 if ($failed) {
     write-host -f DarkCyan 'These apps failed to install:'
-    $exitCode = 2
+    $exitCode = 3
     $failed.keys | ForEach-Object {
         "    $_"
     }
 }
 
 if ($missing_deps) {
-    $exitCode = 2
+    $exitCode = 3
     write-host -f DarkCyan 'Missing runtime dependencies:'
     $missing_deps | ForEach-Object {
         $app, $deps = $_

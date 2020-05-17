@@ -9,20 +9,20 @@
 #   -g, --global       Cleanup a globally installed app
 #   -k, --cache        Remove outdated download cache
 
-'core', 'manifest', 'buckets', 'versions', 'getopt', 'help', 'install' | ForEach-Object {
+'core', 'manifest', 'buckets', 'Versions', 'getopt', 'help', 'install' | ForEach-Object {
     . "$PSScriptRoot\..\lib\$_.ps1"
 }
 
 reset_aliases
 
 $opt, $apps, $err = getopt $args 'gk' 'global', 'cache'
-if ($err) { "scoop cleanup: $err"; exit 1 }
+if ($err) { Write-UserMessage -Message "scoop cleanup: $err" -Err; exit 2 }
 $global = $opt.g -or $opt.global
 $cache = $opt.k -or $opt.cache
 
 if (!$apps) { Write-UserMessage -Message 'ERROR: <app> missing' -Err; my_usage; exit 1 }
 
-if ($global -and !(is_admin)) { Write-UserMessage -Message 'ERROR: you need admin rights to cleanup global apps' -Err; exit 1 }
+if ($global -and !(is_admin)) { Write-UserMessage -Message 'ERROR: you need admin rights to cleanup global apps' -Err; exit 4 }
 
 function cleanup($app, $global, $verbose, $cache) {
     $currentVersion = Select-CurrentVerison -AppName $app -Global:$global

@@ -1,10 +1,11 @@
 # Usage: scoop help <command>
 # Summary: Show help for a command
+
 param($cmd)
 
-. "$PSScriptRoot\..\lib\core.ps1"
-. "$PSScriptRoot\..\lib\commands.ps1"
-. "$PSScriptRoot\..\lib\help.ps1"
+'core', 'commands', 'help' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 reset_aliases
 
@@ -32,19 +33,32 @@ function print_summaries {
     $commands.getenumerator() | Sort-Object name | Format-Table -hidetablehead -autosize -wrap
 }
 
+$exitCode = 0
 $commands = commands
 
 if (!($cmd)) {
-    "Usage: scoop <command> [<args>]
-
-Some useful commands are:"
+    Write-UserMessage -Message @(
+        'Usage: scoop <command> [<args>]'
+        ''
+        'General exit codes'
+        '   0 - Everything OK'
+        '   1 - No parameter provided or usage shown'
+        '   2 - Argument parsing error'
+        '   3 - General execution error'
+        '   4 - Permission/Privileges related issue'
+        '   10 + - Number of failed actions (installations, updates, ...)'
+        ''
+        "Type 'scoop help <command>' to get help for a specific command."
+        ''
+        'Available commands are:'
+    )
     print_summaries
-    "Type 'scoop help <command>' to get help for a specific command."
 } elseif ($commands -contains $cmd) {
     print_help $cmd
 } else {
-    "scoop help: no such command '$cmd'"; exit 1
+    $exitCode = 3
+    Write-UserMessage -Message "scoop help: no such command '$cmd'"
 }
 
-exit 0
+exit $exitCode
 

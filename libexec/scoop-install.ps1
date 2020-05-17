@@ -1,13 +1,14 @@
 # Usage: scoop install <app> [options]
 # Summary: Install apps
 # Help: e.g. The usual way to install an app (uses your local 'buckets'):
-#      scoop install git
+#   scoop install git
+#   scoop install extras/googlechrome
 #
 # To install an app from a manifest at a URL:
-#      scoop install https://raw.githubusercontent.com/ScoopInstaller/Main/master/bucket/runat.json
+#   scoop install https://raw.githubusercontent.com/ScoopInstaller/Main/master/bucket/runat.json
 #
 # To install an app from a manifest on your computer
-#      scoop install \path\to\app.json
+#   scoop install \path\to\app.json
 #
 # Options:
 #   -g, --global              Install the app globally
@@ -16,17 +17,9 @@
 #   -s, --skip                Skip hash validation (use with caution!)
 #   -a, --arch <32bit|64bit>  Use the specified architecture, if the app supports it
 
-. "$PSScriptRoot\..\lib\core.ps1"
-. "$PSScriptRoot\..\lib\manifest.ps1"
-. "$PSScriptRoot\..\lib\buckets.ps1"
-. "$PSScriptRoot\..\lib\decompress.ps1"
-. "$PSScriptRoot\..\lib\install.ps1"
-. "$PSScriptRoot\..\lib\shortcuts.ps1"
-. "$PSScriptRoot\..\lib\psmodules.ps1"
-. "$PSScriptRoot\..\lib\versions.ps1"
-. "$PSScriptRoot\..\lib\help.ps1"
-. "$PSScriptRoot\..\lib\getopt.ps1"
-. "$PSScriptRoot\..\lib\depends.ps1"
+'core', 'manifest', 'buckets', 'decompress', 'install', 'shortcuts', 'psmodules', 'Versions', 'help', 'getopt', 'depends' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 reset_aliases
 
@@ -56,7 +49,7 @@ function is_installed($app, $global) {
 }
 
 $opt, $apps, $err = getopt $args 'gfiksa:' 'global', 'force', 'independent', 'no-cache', 'skip', 'arch='
-if ($err) { Write-UserMessage -Message "scoop install: $err" -Err; exit 1 }
+if ($err) { Write-UserMessage -Message "scoop install: $err" -Err; exit 2 }
 
 $global = $opt.g -or $opt.global
 $check_hash = !($opt.s -or $opt.skip)
@@ -66,17 +59,17 @@ $architecture = default_architecture
 try {
     $architecture = ensure_architecture ($opt.a + $opt.arch)
 } catch {
-    abort "ERROR: $_"
+    abort "ERROR: $_" 2
 }
 
 if (!$apps) { Write-UserMessage -Message '<app> missing' -Err; my_usage; exit 1 }
 
 if ($global -and !(is_admin)) {
-    abort 'ERROR: you need admin rights to install global apps'
+    abort 'ERROR: you need admin rights to install global apps' 4
 }
 
 if (is_scoop_outdated) {
-    # TODO:
+    # TODO: do not call scoop externally
     scoop update
 }
 
@@ -136,8 +129,17 @@ if (Test-Aria2Enabled) {
     )
 }
 
-$apps | ForEach-Object { install_app $_ $architecture $global $suggested $use_cache $check_hash }
+$exitCode = 0
+foreach ($app in $apps) {
+    try {
+        install_app $app $architecture $global $suggested $use_cache $check_hash
+    } catch {
+        $exitCode = 3
+        Write-UserMessage -Message $_.Exception.Message -Err
+        continue
+    }
+}
 
 show_suggestions $suggested
 
-exit 0
+exit $exitCode

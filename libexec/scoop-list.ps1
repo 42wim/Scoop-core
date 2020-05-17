@@ -9,7 +9,7 @@
 #   -r, --reverse       Apps will be listed descending order.
 #                           In case of Installed or Updated, apps will be listed from newest to oldest.
 
-'core', 'buckets', 'getopt', 'versions', 'manifest' | ForEach-Object {
+'core', 'buckets', 'getopt', 'Versions', 'manifest' | ForEach-Object {
     . "$PSScriptRoot\..\lib\$_.ps1"
 }
 
@@ -17,13 +17,13 @@ reset_aliases
 
 $opt, $query, $err = getopt $args 'iur' 'installed', 'updated', 'reverse'
 # TODO: Stop-ScoopExecution
-if ($err) { "scoop install: $err"; exit 1 }
+if ($err) { Write-UserMessage -Message "scoop install: $err" -Err; exit 2 }
 
 $orderInstalled = $opt.i -or $opt.installed
 $orderUpdated = $opt.u -or $opt.updated
 $reverse = $opt.r -or $opt.reverse
 # TODO: Stop-ScoopExecution
-if ($orderUpdated -and $orderInstalled) { Write-UserMessage -Message '--installed and --updated parameters cannot be used simultaneously' -Err; exit 1 }
+if ($orderUpdated -and $orderInstalled) { Write-UserMessage -Message '--installed and --updated parameters cannot be used simultaneously' -Err; exit 2 }
 $def_arch = default_architecture
 
 $locA = appsdir $false
@@ -74,10 +74,8 @@ if ($apps) {
         Write-Host ''
     }
     Write-Host ''
-    $exitCode = 0
 } else {
-    Write-Host "There aren't any apps installed."
-    $exitCode = 1
+    Write-userMessage -Message "No application installed."
 }
 
-exit $exitCode
+exit 0

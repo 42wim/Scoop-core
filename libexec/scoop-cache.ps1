@@ -4,12 +4,13 @@
 # when you uninstall and re-install the same version of an app.
 #
 # You can use
-#     scoop cache show
+#   scoop cache show
 # to see what's in the cache, and
-#     scoop cache rm <app> to remove downloads for a specific app.
+#   scoop cache rm <app> to remove downloads for a specific app.
 #
 # To clear everything in your cache, use:
-#     scoop cache rm *
+#   scoop cache rm *
+
 param($cmd, $app)
 
 . "$PSScriptRoot\..\lib\help.ps1"
@@ -36,6 +37,7 @@ function show($app) {
     "Total: $($files.length) $(pluralize $files.length 'file' 'files'), $(filesize $total_length)"
 }
 
+$exitCode = 0
 switch ($cmd) {
     'rm' {
         if (!$app) { Write-UserMessage -Message 'ERROR: <app> missing' -Err; my_usage; exit 1 }
@@ -52,7 +54,8 @@ switch ($cmd) {
     }
     default {
         my_usage
+        $exitCode = 1
     }
 }
 
-exit 0
+exit $exitCode

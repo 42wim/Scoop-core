@@ -1,27 +1,23 @@
 # Usage: scoop depends <app>
 # Summary: List dependencies for an app
 
-. "$PSScriptRoot\..\lib\depends.ps1"
-. "$PSScriptRoot\..\lib\install.ps1"
-. "$PSScriptRoot\..\lib\manifest.ps1"
-. "$PSScriptRoot\..\lib\buckets.ps1"
-. "$PSScriptRoot\..\lib\getopt.ps1"
-. "$PSScriptRoot\..\lib\decompress.ps1"
-. "$PSScriptRoot\..\lib\help.ps1"
+'depends', 'install', 'manifest', 'buckets', 'getopt', 'decompress', 'help' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 reset_aliases
 
 $opt, $apps, $err = getopt $args 'a:' 'arch='
 $app = $apps[0]
 
-if (!$app) { Write-UserMessage -Message '<app> missing' -Err; my_usage; exit 1 }
+if ($err -or !$app) { Write-UserMessage -Message '<app> missing' -Err; my_usage; exit 1 }
 
 $architecture = default_architecture
 try {
     $architecture = ensure_architecture ($opt.a + $opt.arch)
 } catch {
     # TODO: Stop-ScoopExecution
-    abort "ERROR: $_"
+    abort "ERROR: $_" 2
 }
 
 $deps = @(deps $app $architecture)

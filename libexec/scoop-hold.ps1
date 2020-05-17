@@ -1,8 +1,9 @@
 # Usage: scoop hold <apps>
 # Summary: Hold an app to disable updates
 
-. "$PSScriptRoot\..\lib\help.ps1"
-. "$PSScriptRoot\..\lib\manifest.ps1"
+'help', 'manifest' | ForEach-Object {
+    . "$PSScriptRoot\..\lib\$_.ps1"
+}
 
 reset_aliases
 $apps = $args
@@ -18,7 +19,7 @@ foreach ($app in $apps) {
 
     if (!(installed $app)) {
         Write-UserMessage -Message "'$app' is not installed." -Err
-        $exitCode = 1
+        $exitCode = 3
         return
     }
 

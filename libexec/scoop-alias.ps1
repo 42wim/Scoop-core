@@ -35,7 +35,7 @@ switch ($Option) {
             Add-ScoopAlias -Name $Name -Command $Command -Description $Description
         } catch {
             Write-UserMessage -Message $_.Exception.Message -Err
-            $exitCode = 2
+            $exitCode = 3
         }
     }
     'rm' {
@@ -43,7 +43,7 @@ switch ($Option) {
             Remove-ScoopAlias -Name $Name
         } catch {
             Write-UserMessage -Message $_.Exception.Message -Err
-            $exitCode = 2
+            $exitCode = 3
         }
     }
     'list' { Get-ScoopAlias -Verbose:$Verbose }

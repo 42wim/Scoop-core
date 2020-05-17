@@ -13,7 +13,7 @@
 #   -s, --skip                Skip hash validation (use with caution!)
 #   -q, --quiet               Hide extraneous messages
 
-'depends', 'getopt', 'manifest', 'uninstall', 'Update', 'versions' | ForEach-Object {
+'depends', 'getopt', 'manifest', 'uninstall', 'Update', 'Versions', 'install' | ForEach-Object {
     . "$PSScriptRoot\..\lib\$_.ps1"
 }
 
@@ -21,7 +21,7 @@ reset_aliases
 
 $opt, $apps, $err = getopt $args 'gfiksq' 'global', 'force', 'independent', 'no-cache', 'skip', 'quiet'
 # TODO: Stop-ScoopExecution
-if ($err) { Write-UserMessage -Message "scoop update: $err"; exit 1 }
+if ($err) { Write-UserMessage -Message "scoop update: $err" -Err; exit 2 }
 
 # Flags/Parameters
 $global = $opt.g -or $opt.global
@@ -34,13 +34,13 @@ $independent = $opt.i -or $opt.independent
 $exitCode = 0
 if (!$apps) {
     # TODO: Stop-ScoopExecution
-    if ($global) { Write-UserMessage -Message 'scoop update: --global is invalid when <app> is not specified.'; exit 1 }
-    if (!$useCache) { Write-UserMessage -Message 'scoop update: --no-cache is invalid when <app> is not specified.'; exit 1 }
+    if ($global) { Write-UserMessage -Message 'scoop update: --global is invalid when <app> is not specified.' -Err; exit 2 }
+    if (!$useCache) { Write-UserMessage -Message 'scoop update: --no-cache is invalid when <app> is not specified.' -Err; exit 2 }
 
     Update-Scoop
 } else {
     # TODO: Stop-ScoopExecution
-    if ($global -and !(is_admin)) { Write-UserMessage -Message 'You need admin rights to update global apps.' -Err; exit 1 }
+    if ($global -and !(is_admin)) { Write-UserMessage -Message 'You need admin rights to update global apps.' -Err; exit 4 }
 
     if (is_scoop_outdated) { Update-Scoop }
     $outdatedApplications = @()
@@ -86,16 +86,17 @@ if (!$apps) {
         }
     }
 
-    foreach ($app in $outdatedApplications) {
-        # TODO: Try catch
+    foreach ($out in $outdatedApplications) {
         # $outdated is a list of ($app, $global) tuples
         try {
-            Update-App -App $app[0] -Global:$app[1] -Suggested @{ } -Quiet:$quiet -Independent:$independent -SkipCache:(!$useCache) -SkipHashCheck:(!$checkHash)
+            Update-App -App $out[0] -Global:$out[1] -Suggested @{ } -Quiet:$quiet -Independent:$independent -SkipCache:(!$useCache) -SkipHashCheck:(!$checkHash)
         } catch {
+            ++$problems
             Write-UserMessage -Message $_.Exception.Message -Err
-            $exitCode = 3
         }
     }
 }
+
+if ($problems -gt 0) { $exitCode = 10 + $problems }
 
 exit $exitCode
