@@ -32,8 +32,7 @@ function Update-ScoopCoreClone {
 
     Write-UserMessage -Message "Cloning scoop installation from $Repo ($Branch)" -Info
 
-    # TODO: Get rid of fullpath
-    $newDir = fullpath (versiondir 'scoop' 'new')
+    $newDir = versiondir 'scoop' 'new'
 
     git_clone -q --single-branch --branch $Branch $Repo "`"$newDir`""
 
@@ -145,8 +144,7 @@ function Update-Scoop {
     # TODO: CONFIG refactor adoption
     $configRepo = get_config 'SCOOP_REPO'
     $configBranch = get_config 'SCOOP_BRANCH'
-    # TODO: Get rid of fullpath
-    $currentDir = fullpath (versiondir 'scoop' 'current')
+    $currentDir = versiondir 'scoop' 'current'
 
     # Defaults
     if (!$configRepo) {
@@ -277,8 +275,7 @@ function Update-App {
 
             if (!$SkipHashCheck) {
                 $manifest_hash = hash_for_url $manifest $url $architecture
-                # TODO: Get rid of fullpath
-                $source = fullpath (cache_path $App $version $url)
+                $source = cache_path $App $version $url
                 $ok, $err = check_hash $source $manifest_hash (show_app $App $bucket)
 
                 if (!$ok) {

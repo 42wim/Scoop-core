@@ -20,8 +20,7 @@ try {
 }
 
 $userShims = shimdir $false | Resolve-Path
-# TODO: Get rid of fullpath
-$globalShims = fullpath (shimdir $true) # don't resolve: may not exist
+$globalShims = shimdir $true # don't resolve: may not exist
 
 $FINAL_PATH = $null
 $exitCode = 0

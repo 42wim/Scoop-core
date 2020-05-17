@@ -67,7 +67,6 @@ Describe "is_in_dir" -Tag 'Scoop' {
         is_in_dir "C:\test" "C:\foo" | Should -BeFalse
         is_in_dir "C:\test" "C:\test\foo\baz.zip" | Should -betrue
 
-        is_in_dir "test" "$PSScriptRoot" | Should -betrue
         is_in_dir "$PSScriptRoot\..\" "$PSScriptRoot" | Should -BeFalse
     }
 }

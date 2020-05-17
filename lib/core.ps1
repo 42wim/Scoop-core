@@ -1,5 +1,22 @@
 . "$PSScriptRoot\Helpers.ps1"
 
+function Get-AbsolutePath {
+    <#
+    .SYNOPSIS
+        Gets absolute path.
+    .PARAMETER Path
+        Specifies the path to evaluate.
+    .OUTPUTS
+        System.String
+            Absolute path, may or maynot existed.
+    #>
+    [CmdletBinding()]
+    [OutputType([String])]
+    param([Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)] [String] $Path)
+
+    process { return $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path) }
+}
+
 function Optimize-SecurityProtocol {
     # .NET Framework 4.7+ has a default security protocol called 'SystemDefault',
     # which allows the operating system to choose the best protocol to use.
@@ -369,10 +386,7 @@ function url_remote_filename($url) {
 }
 
 function ensure($dir) { if (!(test-path $dir)) { mkdir $dir > $null }; resolve-path $dir }
-function fullpath($path) {
-    # should be ~ rooted
-    $executionContext.sessionState.path.getUnresolvedProviderPathFromPSPath($path)
-}
+
 function relpath($path) { "$($myinvocation.psscriptroot)\$path" } # relative to calling script
 function friendly_path($path) {
     $h = (Get-PsProvider 'FileSystem').home; if (!$h.endswith('\')) { $h += '\' }
@@ -625,7 +639,6 @@ function search_in_path($target) {
 
 function ensure_in_path($dir, $global) {
     $path = env 'PATH' $global
-    $dir = fullpath $dir
     if ($path -notmatch [regex]::escape($dir)) {
         write-output "Adding $(friendly_path $dir) to $(if($global){'global'}else{'your'}) path."
 
@@ -689,28 +702,24 @@ function strip_path($orig_path, $dir) {
 }
 
 function add_first_in_path($dir, $global) {
-    $dir = fullpath $dir
-
-    # future sessions
+    # Future sessions
     $null, $currpath = strip_path (env 'path' $global) $dir
     env 'path' $global "$dir;$currpath"
 
-    # this session
+    # This session
     $null, $env:PATH = strip_path $env:PATH $dir
     $env:PATH = "$dir;$env:PATH"
 }
 
 function remove_from_path($dir, $global) {
-    $dir = fullpath $dir
-
-    # future sessions
+    # Future sessions
     $was_in_path, $newpath = strip_path (env 'path' $global) $dir
     if ($was_in_path) {
         Write-Output "Removing $(friendly_path $dir) from your path."
         env 'path' $global $newpath
     }
 
-    # current session
+    # Current session
     $was_in_path, $newpath = strip_path $env:PATH $dir
     if ($was_in_path) { $env:PATH = $newpath }
 }
@@ -931,13 +940,18 @@ function run($exe, $arg, $msg, $continue_exit_codes) {
 }
 
 function get_magic_bytes($file) {
-    Show-DeprecatedWarning $MyInvocation 'Get-MagicBytes'
-    return Get-MagicBytes -File $file
+    Show-DeprecatedWarning $MyInvocation 'Get-MagicByte'
+    return Get-MagicByte -File $file
 }
 
 function get_magic_bytes_pretty($file, $glue = ' ') {
-    Show-DeprecatedWarning $MyInvocation 'Get-MagicBytes'
-    return Get-MagicBytes -File $file -Glue $glue -Pretty
+    Show-DeprecatedWarning $MyInvocation 'Get-MagicByte'
+    return Get-MagicByte -File $file -Glue $glue -Pretty
+}
+
+function fullpath($path) {
+    Show-DeprecatedWarning $MyInvocation 'Get-AbsolutePath'
+    return Get-AbsolutePath -Path $path
 }
 #endregion Deprecated
 

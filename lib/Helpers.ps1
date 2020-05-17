@@ -93,7 +93,7 @@ function Out-UTF8File {
     }
 }
 
-function Get-MagicBytes {
+function Get-MagicByte {
     <#
     .SYNOPSIS
         Get file's first 8 bytes.

@@ -3,7 +3,7 @@
 }
 
 function manifest_path($app, $bucket) {
-    fullpath "$(Find-BucketDirectory $bucket)\$(sanitary_path $app).json"
+    return "$(Find-BucketDirectory $bucket)\$(sanitary_path $app).json"
 }
 
 function parse_json($path) {

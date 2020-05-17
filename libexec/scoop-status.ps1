@@ -8,7 +8,7 @@
 reset_aliases
 
 # check if scoop needs updating
-$currentdir = fullpath (versiondir 'scoop' 'current')
+$currentdir = versiondir 'scoop' 'current'
 $needs_update = $false
 
 if (test-path "$currentdir\.git") {

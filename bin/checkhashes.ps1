@@ -116,7 +116,7 @@ foreach ($current in $MANIFESTS) {
             continue
         }
 
-        $to_check = fullpath (cache_path $current.app $version $u)
+        $to_check = cache_path $current.app $version $u
         $actual_hash = compute_hash $to_check $algorithm
 
         # Append type of algorithm to both expected and actual if it's not sha256
@@ -146,10 +146,10 @@ foreach ($current in $MANIFESTS) {
         Write-Host "$($current.app): " -NoNewline
         Write-Host 'Mismatch found ' -ForegroundColor Red
         $mismatched | ForEach-Object {
-            $file = fullpath (cache_path $current.app $version $current.urls[$_])
+            $file = cache_path $current.app $version $current.urls[$_]
             Write-Host  "`tURL:`t`t$($current.urls[$_])"
             if (Test-Path $file) {
-                Write-Host  "`tFirst bytes:`t$(Get-MagicBytes $file -Pretty)"
+                Write-Host  "`tFirst bytes:`t$(Get-MagicByte -File $file -Pretty)"
             }
             Write-Host  "`tExpected:`t$($current.hashes[$_])" -ForegroundColor Green
             Write-Host  "`tActual:`t`t$($actuals[$_])" -ForegroundColor Red

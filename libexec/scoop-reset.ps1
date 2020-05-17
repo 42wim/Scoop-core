@@ -44,7 +44,7 @@ foreach ($a in $apps) {
     $manifest = installed_manifest $app $version $global
     # if this is null we know the version they're resetting to
     # is not installed
-    if ($manifest -eq $null) {
+    if ($null -eq $manifest) {
         ++$problems
         Write-UserMessage -Message "'$app ($version)' isn't installed" -Err
         continue
