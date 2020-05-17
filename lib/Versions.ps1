@@ -57,8 +57,8 @@ function Get-InstalledVersion {
         if (Test-Path $appPath -PathType Container) {
             # TODO: Keep only scoop-install.json
             $arr = @((Get-ChildItem "$appPath\*\install.json"), (Get-ChildItem "$appPath\*\scoop-install.json"))
-            $versions = @(($arr | Sort-Object -Property LastWriteTimeUtc).Directory.Name)
-            $result = $versions | Where-Object { $_ -ne 'current' }
+            $versions = @(($arr | Sort-Object -Property LastWriteTimeUtc).Directory.Name) | Where-Object { $_ -ne 'current' }
+            if ($versions.Count -gt 0) { $result = $versions }
         }
 
         return $result
