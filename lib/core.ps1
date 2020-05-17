@@ -821,25 +821,28 @@ function last_scoop_update {
     # FIXME
     $lastUpdate = scoop config 'lastupdate'
 
-    if ($null -ne $lastUpdate -and $lastUpdate.GetType() -eq [System.String]) {
+    if (($null -ne $lastUpdate) -and ($lastUpdate.GetType() -eq [System.String])) {
         try {
             $lastUpdate = [System.DateTime]::Parse($lastUpdate)
         } catch {
             $lastUpdate = $null
         }
     }
+
     return $lastUpdate
 }
 
 function is_scoop_outdated {
     $lastUpdate = last_scoop_update
     $now = [System.DateTime]::Now
+
     if ($null -eq $lastUpdate) {
         # FIXME
-        scoop config lastupdate $now.ToString('o')
+        scoop config 'lastupdate' $now.ToString('o')
         # enforce an update for the first time
         return $true
     }
+
     return $lastUpdate.AddHours(3) -lt $now.ToLocalTime()
 }
 
