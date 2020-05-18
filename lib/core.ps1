@@ -17,25 +17,6 @@ function Get-AbsolutePath {
     process { return $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path) }
 }
 
-function Show-DeprecatedWarning {
-    <#
-    .SYNOPSIS
-        Print deprecated warning for functions, which will be deleted in near future.
-    .PARAMETER Invocation
-        Invocation to identify location of line.
-        Just pass $MyInvocation.
-    .PARAMETER New
-        New command name.
-    #>
-    [CmdletBinding()]
-    param($Invocation, [Parameter(ValueFromPipeline)] [String] $New)
-
-    process {
-        Write-UserMessage -Message ('"{0}" will be deprecated. Please change your code/manifest to use "{1}"' -f $Invocation.MyCommand.Name, $New) -Warning
-        Write-UserMessage -Message "      -> $($Invocation.PSCommandPath):$($Invocation.ScriptLineNumber):$($Invocation.OffsetInLine)" -Color DarkGray
-    }
-}
-
 function Optimize-SecurityProtocol {
     # .NET Framework 4.7+ has a default security protocol called 'SystemDefault',
     # which allows the operating system to choose the best protocol to use.
@@ -53,23 +34,42 @@ function Optimize-SecurityProtocol {
     }
 }
 
-function Get-UserAgent {
+function Get-UserAgent() {
     return "Scoop/1.0 (+http://scoop.sh/) PowerShell/$($PSVersionTable.PSVersion.Major).$($PSVersionTable.PSVersion.Minor) (Windows NT $([System.Environment]::OSVersion.Version.Major).$([System.Environment]::OSVersion.Version.Minor); $(if($env:PROCESSOR_ARCHITECTURE -eq 'AMD64'){'Win64; x64; '})$(if($env:PROCESSOR_ARCHITEW6432 -eq 'AMD64'){'WOW64; '})$PSEdition)"
 }
 
+function Show-DeprecatedWarning {
+    <#
+    .SYNOPSIS
+        Print deprecated warning for functions, which will be deleted in near future.
+    .PARAMETER Invocation
+        Invocation to identify location of line.
+        Just pass $MyInvocation.
+    .PARAMETER New
+        New command name.
+    #>
+    param($Invocation, [String] $New)
+
+    Write-UserMessage -Message ('"{0}" will be deprecated. Please change your code/manifest to use "{1}"' -f $Invocation.MyCommand.Name, $New) -Warning
+    Write-UserMessage -Message "      -> $($Invocation.PSCommandPath):$($Invocation.ScriptLineNumber):$($Invocation.OffsetInLine)" -Color DarkGray
+}
+
 function load_cfg($file) {
-    if (!(Test-Path $file)) { return $null }
+    if (!(Test-Path $file)) {
+        return $null
+    }
 
     try {
         return (Get-Content $file -Raw | ConvertFrom-Json -ErrorAction Stop)
     } catch {
-        Write-UserMessage -Message "Loading ${file}: $($_.Exception.Message)" -Err
+        Write-UserMessage -Message "loading $file`: $($_.Exception.Message)" -Err
     }
 }
 
 function get_config($name, $default) {
-    if ($null -eq $scoopConfig.$name -and $null -ne $default) { return $default }
-
+    if ($null -eq $scoopConfig.$name -and $null -ne $default) {
+        return $default
+    }
     return $scoopConfig.$name
 }
 
@@ -89,18 +89,20 @@ function set_config($name, $value) {
         }
     }
 
-    if ($null -eq $value) { $scoopConfig.PSObject.Properties.Remove($name) }
+    if ($null -eq $value) {
+        $scoopConfig.PSObject.Properties.Remove($name)
+    }
 
     ConvertTo-Json $scoopConfig | Set-Content $configFile -Encoding ASCII
-
     return $scoopConfig
 }
 
 function setup_proxy() {
     # note: '@' and ':' in password must be escaped, e.g. 'p@ssword' -> p\@ssword'
     $proxy = get_config 'proxy'
-    if (!$proxy) { return }
-
+    if (!$proxy) {
+        return
+    }
     try {
         $credentials, $address = $proxy -split '(?<!\\)@'
         if (!$address) {
@@ -108,19 +110,19 @@ function setup_proxy() {
         }
 
         if ($address -eq 'none') {
-            [System.System.Net.WebRequest]::DefaultWebProxy = $null
+            [net.webrequest]::defaultwebproxy = $null
         } elseif ($address -ne 'default') {
-            [System.Net.WebRequest]::DefaultWebProxy = New-Object System.Net.WebProxy "http://$address"
+            [net.webrequest]::defaultwebproxy = new-object net.webproxy "http://$address"
         }
 
         if ($credentials -eq 'currentuser') {
-            [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
+            [net.webrequest]::defaultwebproxy.credentials = [net.credentialcache]::defaultcredentials
         } elseif ($credentials) {
             $username, $password = $credentials -split '(?<!\\):' | ForEach-Object { $_ -replace '\\([@:])', '$1' }
-            [System.Net.WebRequest]::DefaultWebProxy.Credentials = New-Object System.Net.NetworkCredential($username, $password)
+            [net.webrequest]::defaultwebproxy.credentials = new-object net.networkcredential($username, $password)
         }
     } catch {
-        Write-UserMessage -Message "Failed to use proxy '$proxy': $($_.Exception.Message)" -Warning
+        Write-UserMessage -Message "Failed to use proxy '$proxy': $($_.exception.message)" -Warning
     }
 }
 
@@ -128,23 +130,21 @@ function setup_proxy() {
 function coalesce($a, $b) { if ($a) { return $a } $b }
 
 function format($str, $hash) {
-    $hash.keys | ForEach-Object { Set-Variable $_ $hash[$_] }
-
-    $executionContext.InvokeCommand.ExpandString($str)
+    $hash.keys | ForEach-Object { set-variable $_ $hash[$_] }
+    $executionContext.invokeCommand.expandString($str)
 }
 function is_admin {
-    $admin = [Security.Principal.WindowsBuiltInRole]::Administrator
-    $id = [Security.Principal.WindowsIdentity]::GetCurrent()
-
-    return ([Security.Principal.WindowsPrincipal]($id)).IsInRole($admin)
+    $admin = [security.principal.windowsbuiltinrole]::administrator
+    $id = [security.principal.windowsidentity]::getcurrent()
+    ([security.principal.windowsprincipal]($id)).isinrole($admin)
 }
 
 # messages
-function abort($msg, [int] $exit_code = 1) { Write-Host $msg -ForegroundColor Red; exit $exit_code }
-function error($msg) { Write-Host "ERROR $msg" -ForegroundColor DarkRed }
-function warn($msg) { Write-Host "WARN  $msg" -ForegroundColor DarkYellow }
-function info($msg) { Write-Host "INFO  $msg" -ForegroundColor DarkGray }
-function message($msg) { Write-Host "$msg" }
+function abort($msg, [int] $exit_code = 1) { write-host $msg -f red; exit $exit_code }
+function error($msg) { write-host "ERROR $msg" -f darkred }
+function warn($msg) { write-host "WARN  $msg" -f darkyellow }
+function info($msg) { write-host "INFO  $msg" -f darkgray }
+function message($msg) { write-host "$msg" }
 
 function Test-ScoopDebugEnabled {
     [CmdletBinding()]
@@ -166,113 +166,118 @@ function debug($obj) {
     $msg = $obj | Out-String -Stream
 
     if ($null -eq $obj -or $null -eq $msg) {
-        Write-Host "$prefix $param = " -ForegroundColor DarkCyan -NoNewline
-        Write-Host '$null' -ForegroundColor DarkYellow -NoNewline
-        Write-Host " -> $($MyInvocation.PSCommandPath):$($MyInvocation.ScriptLineNumber):$($MyInvocation.OffsetInLine)" -ForegroundColor DarkGray
+        Write-Host "$prefix $param = " -f DarkCyan -NoNewline
+        Write-Host '$null' -f DarkYellow -NoNewline
+        Write-Host " -> $($MyInvocation.PSCommandPath):$($MyInvocation.ScriptLineNumber):$($MyInvocation.OffsetInLine)" -f DarkGray
         return
     }
 
     if ($msg.GetType() -eq [System.Object[]]) {
-        Write-Host "$prefix $param ($($obj.GetType()))" -ForegroundColor DarkCyan -NoNewline
-        Write-Host " -> $($MyInvocation.PSCommandPath):$($MyInvocation.ScriptLineNumber):$($MyInvocation.OffsetInLine)" -ForegroundColor DarkGray
+        Write-Host "$prefix $param ($($obj.GetType()))" -f DarkCyan -NoNewline
+        Write-Host " -> $($MyInvocation.PSCommandPath):$($MyInvocation.ScriptLineNumber):$($MyInvocation.OffsetInLine)" -f DarkGray
         $msg | Where-Object { ![String]::IsNullOrWhiteSpace($_) } |
         Select-Object -Skip 2 | # Skip headers
         ForEach-Object {
-            Write-Host "$prefix $param.$($_)" -ForegroundColor DarkCyan
+            Write-Host "$prefix $param.$($_)" -f DarkCyan
         }
     } else {
-        Write-Host "$prefix $param = $($msg.Trim())" -ForegroundColor DarkCyan -NoNewline
-        Write-Host " -> $($MyInvocation.PSCommandPath):$($MyInvocation.ScriptLineNumber):$($MyInvocation.OffsetInLine)" -ForegroundColor DarkGray
+        Write-Host "$prefix $param = $($msg.Trim())" -f DarkCyan -NoNewline
+        Write-Host " -> $($MyInvocation.PSCommandPath):$($MyInvocation.ScriptLineNumber):$($MyInvocation.OffsetInLine)" -f DarkGray
     }
 }
-
-function success($msg) { Write-Host $msg -ForegroundColor DarkGreen }
+function success($msg) { write-host $msg -f darkgreen }
 
 function filesize($length) {
-    $gb = [Math]::Pow(2, 30)
-    $mb = [Math]::Pow(2, 20)
-    $kb = [Math]::Pow(2, 10)
+    $gb = [math]::pow(2, 30)
+    $mb = [math]::pow(2, 20)
+    $kb = [math]::pow(2, 10)
 
-    $res = "$($length) B"
     if ($length -gt $gb) {
-        $res = "{0:n1} GB" -f ($length / $gb)
+        "{0:n1} GB" -f ($length / $gb)
     } elseif ($length -gt $mb) {
-        $res = "{0:n1} MB" -f ($length / $mb)
+        "{0:n1} MB" -f ($length / $mb)
     } elseif ($length -gt $kb) {
-        $res = "{0:n1} KB" -f ($length / $kb)
+        "{0:n1} KB" -f ($length / $kb)
+    } else {
+        "$($length) B"
     }
-
-    return $res
 }
 
 # dirs
-function basedir($global) { if ($global) { return $globaldir } else { return $scoopdir } }
-function appsdir($global) { return "$(basedir $global)\apps" }
-function shimdir($global) { return "$(basedir $global)\shims" }
-function appdir($app, $global) { return "$(appsdir $global)\$app" }
-function versiondir($app, $version, $global) { return "$(appdir $app $global)\$version" }
-function persistdir($app, $global) { return "$(basedir $global)\persist\$app" }
-function usermanifestsdir { return "$(basedir)\workspace" }
-function usermanifest($app) { return "$(usermanifestsdir)\$app.json" }
-function cache_path($app, $version, $url) { return "$cachedir\$app#$version#$($url -replace '[^\w\.\-]+', '_')" }
+function basedir($global) { if ($global) { return $globaldir } $scoopdir }
+function appsdir($global) { "$(basedir $global)\apps" }
+function shimdir($global) { "$(basedir $global)\shims" }
+function appdir($app, $global) { "$(appsdir $global)\$app" }
+function versiondir($app, $version, $global) { "$(appdir $app $global)\$version" }
+function persistdir($app, $global) { "$(basedir $global)\persist\$app" }
+function usermanifestsdir { "$(basedir)\workspace" }
+function usermanifest($app) { "$(usermanifestsdir)\$app.json" }
+function cache_path($app, $version, $url) { "$cachedir\$app#$version#$($url -replace '[^\w\.\-]+', '_')" }
 
 # apps
-function sanitary_path($path) { return [Regex]::Replace($path, '[/\\?:*<>|]', '') }
-
+function sanitary_path($path) { return [regex]::replace($path, "[/\\?:*<>|]", "") }
 function installed($app, $global = $null) {
     if ($null -eq $global) { return (installed $app $true) -or (installed $app $false) }
     # Dependencies of the format "bucket/dependency" install in a directory of form
     # "dependency". So we need to extract the bucket from the name and only give the app
     # name to is_directory
-    $app = $app.split('/')[-1]
-
+    $app = $app.split("/")[-1]
     return is_directory (appdir $app $global)
 }
-
 function installed_apps($global) {
     $dir = appsdir $global
+    if (test-path $dir) {
+        Get-ChildItem $dir | Where-Object { $_.psiscontainer -and $_.name -ne 'scoop' } | ForEach-Object { $_.name }
+    }
+}
 
-    if (Test-Path $dir) { return (Get-ChildItem $dir -Directory | Where-Object { $_.Name -ne 'scoop' }).Name }
+function file_path($app, $file) {
+    Show-DeprecatedWarning $MyInvocation 'Get-AppFilePath'
+    Get-AppFilePath -App $app -File $file
 }
 
 function Get-AppFilePath {
     [CmdletBinding()]
-    [OutputType([System.String])]
     param(
-        [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
-        [String] $App,
-        [Parameter(Mandatory, Position = 1)]
-        [String] $File
+        [Parameter(Mandatory = $true, Position = 0)]
+        [String]
+        $App,
+        [Parameter(Mandatory = $true, Position = 1)]
+        [String]
+        $File
     )
 
-    process {
-        # Normal path to file
-        $path = "$(versiondir $App 'current' $false)\$File"
-        if (Test-Path $path) { return $path }
-
-        # Global path to file
-        $path = "$(versiondir $App 'current' $true)\$File"
-        if (Test-Path $path) { return $path }
-
-        # not found
-        return $null
+    # normal path to file
+    $Path = "$(versiondir $App 'current' $false)\$File"
+    if (Test-Path $Path) {
+        return $Path
     }
+
+    # global path to file
+    $Path = "$(versiondir $App 'current' $true)\$File"
+    if (Test-Path $Path) {
+        return $Path
+    }
+
+    # not found
+    return $null
 }
 
 Function Test-CommandAvailable {
-    [CmdletBinding()]
-    [OutputType([System.Boolean])]
-    param ([Parameter(ValueFromPipeline)] [Alias('Command')] [String] $Name)
-
-    process { return [bool](Get-Command $Name -ErrorAction Ignore) }
+    param (
+        [Alias('Command')]
+        [String]$Name
+    )
+    Return [Boolean](Get-Command $Name -ErrorAction Ignore)
 }
 
 function Get-HelperPath {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [ValidateSet('7zip', 'Lessmsi', 'Innounp', 'Dark', 'Aria2')]
-        [String] $Helper
+        [String]
+        $Helper
     )
 
     process {
@@ -283,11 +288,15 @@ function Get-HelperPath {
             'Lessmsi' { $helperPath = Get-AppFilePath 'lessmsi' 'lessmsi.exe' }
             '7zip' {
                 $helperPath = Get-AppFilePath '7zip' '7z.exe'
-                if ([String]::IsNullOrEmpty($helperPath)) { $helperPath = Get-AppFilePath '7zip-zstd' '7z.exe' }
+                if ([String]::IsNullOrEmpty($helperPath)) {
+                    $helperPath = Get-AppFilePath '7zip-zstd' '7z.exe'
+                }
             }
             'Dark' {
                 $helperPath = Get-AppFilePath 'dark' 'dark.exe'
-                if ([String]::IsNullOrEmpty($helperPath)) { $helperPath = Get-AppFilePath 'wixtoolset' 'dark.exe' }
+                if ([String]::IsNullOrEmpty($helperPath)) {
+                    $helperPath = Get-AppFilePath 'wixtoolset' 'dark.exe'
+                }
             }
         }
 
@@ -297,11 +306,11 @@ function Get-HelperPath {
 
 function Test-HelperInstalled {
     [CmdletBinding()]
-    [OutputType([System.Boolean])]
     param(
-        [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
         [ValidateSet('7zip', 'Lessmsi', 'Innounp', 'Dark', 'Aria2')]
-        [String] $Helper
+        [String]
+        $Helper
     )
 
     return ![String]::IsNullOrWhiteSpace((Get-HelperPath -Helper $Helper))
@@ -345,81 +354,82 @@ function app_status($app, $global) {
     return $status
 }
 
-function appname_from_url($url) { return (Split-Path $url -Leaf) -replace '.json$', '' }
+function appname_from_url($url) {
+    (split-path $url -leaf) -replace '.json$', ''
+}
 
 # paths
-function fname($path) { return Split-Path $path -Leaf }
+function fname($path) { split-path $path -leaf }
+function strip_ext($fname) { $fname -replace '\.[^\.]*$', '' }
+function strip_filename($path) { $path -replace [regex]::escape((fname $path)) }
+function strip_fragment($url) { $url -replace (new-object uri $url).fragment }
 
-function strip_ext($fname) { return $fname -replace '\.[^\.]*$', '' }
-
-function strip_filename($path) { return $path -replace [Regex]::Escape((fname $path)) }
-
-function strip_fragment($url) { return $url -replace (New-Object uri $url).Fragment }
-
-function url_filename($url) { return (Split-Path $url -Leaf).split('?') | Select-Object -First 1 }
-
+function url_filename($url) {
+    (split-path $url -leaf).split('?') | Select-Object -First 1
+}
 # Unlike url_filename which can be tricked by appending a
 # URL fragment (e.g. #/dl.7z, useful for coercing a local filename),
 # this function extracts the original filename from the URL.
 function url_remote_filename($url) {
     $uri = (New-Object URI $url)
     $basename = Split-Path $uri.PathAndQuery -Leaf
-    if ($basename -match '.*[?=]+([\w._-]+)') {
+    If ($basename -match ".*[?=]+([\w._-]+)") {
         $basename = $matches[1]
     }
-    if (($basename -notlike '*.*') -or ($basename -match '^[v.\d]+$')) {
+    If (($basename -notlike "*.*") -or ($basename -match "^[v.\d]+$")) {
         $basename = Split-Path $uri.AbsolutePath -Leaf
     }
-    if (($basename -notlike '*.*') -and ($uri.Fragment -ne '')) {
+    If (($basename -notlike "*.*") -and ($uri.Fragment -ne "")) {
         $basename = $uri.Fragment.Trim('/', '#')
     }
-
     return $basename
 }
 
-function ensure($dir) {
-    if (!(Test-Path $dir)) { New-Item -Path $dir -ItemType Directory | Out-Null }
+function ensure($dir) { if (!(test-path $dir)) { mkdir $dir > $null }; resolve-path $dir }
 
-    return Resolve-Path $dir
-}
-
-function relpath($path) { return "$($MyInvocation.PSScriptRoot)\$path" } # relative to calling script
-
+function relpath($path) { "$($myinvocation.psscriptroot)\$path" } # relative to calling script
 function friendly_path($path) {
-    $h = (Get-PSProvider 'FileSystem').Home
-    if (!$h.EndsWith('\')) { $h += '\' }
+    $h = (Get-PsProvider 'FileSystem').home; if (!$h.endswith('\')) { $h += '\' }
     if ($h -eq '\') { return $path }
-
-    return "$path" -replace ([Regex]::Escape($h)), '~\'
+    return "$path" -replace ([regex]::escape($h)), "~\"
 }
-
-function is_local($path) { return ($path -notmatch '^https?://') -and (Test-Path $path) }
+function is_local($path) {
+    ($path -notmatch '^https?://') -and (test-path $path)
+}
 
 # operations
 
 function Invoke-ExternalCommand {
-    [CmdletBinding(DefaultParameterSetName = 'Default')]
+    [CmdletBinding(DefaultParameterSetName = "Default")]
     [OutputType([Boolean])]
     param (
-        [Parameter(Mandatory, Position = 0)]
-        [Alias('Path')]
+        [Parameter(Mandatory = $true,
+            Position = 0)]
+        [Alias("Path")]
         [ValidateNotNullOrEmpty()]
-        [String] $FilePath,
+        [String]
+        $FilePath,
         [Parameter(Position = 1)]
-        [Alias('Args')]
-        [String[]] $ArgumentList,
-        [Parameter(ParameterSetName = 'UseShellExecute')]
-        [Switch] $RunAs,
-        [Alias('Msg')]
-        [String] $Activity,
-        [Alias('cec')]
-        [Hashtable] $ContinueExitCodes,
-        [Parameter(ParameterSetName = 'Default')]
-        [Alias('Log')]
-        [String] $LogPath
+        [Alias("Args")]
+        [String[]]
+        $ArgumentList,
+        [Parameter(ParameterSetName = "UseShellExecute")]
+        [Switch]
+        $RunAs,
+        [Alias("Msg")]
+        [String]
+        $Activity,
+        [Alias("cec")]
+        [Hashtable]
+        $ContinueExitCodes,
+        [Parameter(ParameterSetName = "Default")]
+        [Alias("Log")]
+        [String]
+        $LogPath
     )
-    if ($Activity) { Write-Host "$Activity " -NoNewline }
-
+    if ($Activity) {
+        Write-Host "$Activity " -NoNewline
+    }
     $Process = New-Object System.Diagnostics.Process
     $Process.StartInfo.FileName = $FilePath
     $Process.StartInfo.Arguments = ($ArgumentList | Select-Object -Unique) -join ' '
@@ -449,9 +459,10 @@ function Invoke-ExternalCommand {
     $Process.WaitForExit()
     if ($Process.ExitCode -ne 0) {
         if ($ContinueExitCodes -and ($ContinueExitCodes.ContainsKey($Process.ExitCode))) {
-            if ($Activity) { Write-UserMessage -Message 'done.' -Color DarkYellow }
+            if ($Activity) {
+                Write-Host "done." -ForegroundColor DarkYellow
+            }
             Write-UserMessage -Message $ContinueExitCodes[$Process.ExitCode] -Warning
-
             return $true
         } else {
             if ($Activity) { Write-UserMessage -Message 'error.' -Color DarkRed }
@@ -459,8 +470,7 @@ function Invoke-ExternalCommand {
             return $false
         }
     }
-    if ($Activity) { Write-UserMessage -Message 'done.' -Color Green }
-
+    if ($Activity) { Write-Host "done." -ForegroundColor Green }
     return $true
 }
 
@@ -472,24 +482,23 @@ function dl($url, $to) {
 }
 
 function env($name, $global, $val = '__get') {
-    $target = if ($global) { 'Machine' } else { 'User' }
-
-    if ($val -eq '__get') {
-        [Environment]::GetEnvironmentVariable($name, $target)
-    } else {
-        [Environment]::SetEnvironmentVariable($name, $val, $target)
-    }
+    $target = 'User'; if ($global) { $target = 'Machine' }
+    if ($val -eq '__get') { [environment]::getEnvironmentVariable($name, $target) }
+    else { [environment]::setEnvironmentVariable($name, $val, $target) }
 }
 
 function isFileLocked([string]$path) {
     $file = New-Object System.IO.FileInfo $path
 
-    if (!(Test-Path -Path $path)) { return $false }
+    if ((Test-Path -Path $path) -eq $false) {
+        return $false
+    }
 
     try {
         $stream = $file.Open([System.IO.FileMode]::Open, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
-        if ($stream) { $stream.Close() }
-
+        if ($stream) {
+            $stream.Close()
+        }
         return $false
     } catch {
         # file is locked by a process.
@@ -498,7 +507,7 @@ function isFileLocked([string]$path) {
 }
 
 function is_directory([String] $path) {
-    return (Test-Path $path) -and ((Get-Item $path) -is [System.IO.DirectoryInfo])
+    return (Test-Path $path) -and (Get-Item $path) -is [System.IO.DirectoryInfo]
 }
 
 function movedir($from, $to) {
@@ -523,36 +532,42 @@ function movedir($from, $to) {
 
     # wait for robocopy to terminate its threads
     1..10 | ForEach-Object {
-        if (Test-Path $from) { Start-Sleep -Milliseconds 100 }
+        if (Test-Path $from) {
+            Start-Sleep -Milliseconds 100
+        }
     }
 }
 
 function get_app_name($path) {
-    $result = ''
-    if ($path -match '([^/\\]+)[/\\]current[/\\]') { $result = $matches[1].Tolower() }
-
-    return $result
+    if ($path -match '([^/\\]+)[/\\]current[/\\]') {
+        return $matches[1].tolower()
+    }
+    return ''
 }
 
 function get_app_name_from_ps1_shim($shim_ps1) {
-    if (!(Test-Path $shim_ps1)) { return '' }
+    if (!(Test-Path($shim_ps1))) {
+        return ''
+    }
     $content = (Get-Content $shim_ps1 -Encoding utf8) -join ' '
-
     return get_app_name $content
 }
 
 function warn_on_overwrite($shim_ps1, $path) {
-    if (!(Test-Path $shim_ps1)) { return }
+    if (!(Test-Path($shim_ps1))) {
+        return
+    }
     $shim_app = get_app_name_from_ps1_shim $shim_ps1
     $path_app = get_app_name $path
-    if ($shim_app -eq $path_app) { return }
-
+    if ($shim_app -eq $path_app) {
+        return
+    }
     $filename = [System.IO.Path]::GetFileName($path)
-    Write-UserMessage -Message "Overwriting shim to $filename installed from $shim_app" -Warning
+    warn "Overwriting shim to $filename installed from $shim_app"
 }
 
 function shim($path, $global, $name, $arg) {
-    if (!(Test-Path $path)) { abort "Can't shim '$(fname $path)': couldn't find '$path'." }
+    if (!(test-path $path)) { abort "Can't shim '$(fname $path)': couldn't find '$path'." }
     $abs_shimdir = ensure (shimdir $global)
     if (!$name) { $name = strip_ext (fname $path) }
 
@@ -562,37 +577,37 @@ function shim($path, $global, $name, $arg) {
 
     # convert to relative path
     Push-Location $abs_shimdir
-    $relative_path = Resolve-Path $path -Relative
+    $relative_path = resolve-path -relative $path
     Pop-Location
-    $resolved_path = Resolve-Path $path
+    $resolved_path = resolve-path $path
 
     # if $path points to another drive resolve-path prepends .\ which could break shims
     if ($relative_path -match "^(.\\[\w]:).*$") {
-        Write-Output "`$path = `"$path`"" | Out-File "$shim.ps1" -encoding utf8
+        write-output "`$path = `"$path`"" | out-file "$shim.ps1" -encoding utf8
     } else {
         # Setting PSScriptRoot in Shim if it is not defined, so the shim doesn't break in PowerShell 2.0
         Write-Output "if (!(Test-Path Variable:PSScriptRoot)) { `$PSScriptRoot = Split-Path `$MyInvocation.MyCommand.Path -Parent }" | Out-File "$shim.ps1" -Encoding utf8
-        Write-Output "`$path = join-path `"`$PSScriptRoot`" `"$relative_path`"" | Out-File "$shim.ps1" -Encoding utf8 -Append
+        write-output "`$path = join-path `"`$PSScriptRoot`" `"$relative_path`"" | out-file "$shim.ps1" -Encoding utf8 -Append
     }
 
     if ($path -match '\.jar$') {
-        "if(`$myinvocation.expectingInput) { `$input | & java -jar `$path $arg @args } else { & java -jar `$path $arg @args }" | Out-File "$shim.ps1" -encoding utf8 -append
+        "if(`$myinvocation.expectingInput) { `$input | & java -jar `$path $arg @args } else { & java -jar `$path $arg @args }" | out-file "$shim.ps1" -encoding utf8 -append
     } else {
-        "if(`$myinvocation.expectingInput) { `$input | & `$path $arg @args } else { & `$path $arg @args }" | Out-File "$shim.ps1" -encoding utf8 -append
+        "if(`$myinvocation.expectingInput) { `$input | & `$path $arg @args } else { & `$path $arg @args }" | out-file "$shim.ps1" -encoding utf8 -append
     }
 
     if ($path -match '\.(exe|com)$') {
         # for programs with no awareness of any shell
         Copy-Item "$(versiondir 'scoop' 'current')\supporting\shimexe\bin\shim.exe" "$shim.exe" -force
-        Write-Output "path = $resolved_path" | Out-File "$shim.shim" -encoding utf8
+        write-output "path = $resolved_path" | out-file "$shim.shim" -encoding utf8
         if ($arg) {
-            Write-Output "args = $arg" | Out-File "$shim.shim" -encoding utf8 -append
+            write-output "args = $arg" | out-file "$shim.shim" -encoding utf8 -append
         }
     } elseif ($path -match '\.(bat|cmd)$') {
         # shim .bat, .cmd so they can be used by programs with no awareness of PSH
-        "@`"$resolved_path`" $arg %*" | Out-File "$shim.cmd" -encoding ascii
+        "@`"$resolved_path`" $arg %*" | out-file "$shim.cmd" -encoding ascii
 
-        "#!/bin/sh`nMSYS2_ARG_CONV_EXCL=/C cmd.exe /C `"$resolved_path`" $arg `"$@`"" | Out-File $shim -encoding ascii
+        "#!/bin/sh`nMSYS2_ARG_CONV_EXCL=/C cmd.exe /C `"$resolved_path`" $arg `"$@`"" | out-file $shim -encoding ascii
     } elseif ($path -match '\.ps1$') {
         # make ps1 accessible from cmd.exe
         "@echo off
@@ -604,26 +619,28 @@ set args=%args:(=``(%
 set args=%args:)=``)%
 set invalid=`"='
 if !args! == !invalid! ( set args= )
-powershell -noprofile -ex unrestricted `"& '$resolved_path' $arg %args%;exit `$lastexitcode`"" | Out-File "$shim.cmd" -encoding ascii
+powershell -noprofile -ex unrestricted `"& '$resolved_path' $arg %args%;exit `$lastexitcode`"" | out-file "$shim.cmd" -encoding ascii
 
-        "#!/bin/sh`npowershell.exe -noprofile -ex unrestricted `"$resolved_path`" $arg `"$@`"" | Out-File $shim -encoding ascii
+        "#!/bin/sh`npowershell.exe -noprofile -ex unrestricted `"$resolved_path`" $arg `"$@`"" | out-file $shim -encoding ascii
     } elseif ($path -match '\.jar$') {
-        "@java -jar `"$resolved_path`" $arg %*" | Out-File "$shim.cmd" -encoding ascii
-        "#!/bin/sh`njava -jar `"$resolved_path`" $arg `"$@`"" | Out-File $shim -encoding ascii
+        "@java -jar `"$resolved_path`" $arg %*" | out-file "$shim.cmd" -encoding ascii
+        "#!/bin/sh`njava -jar `"$resolved_path`" $arg `"$@`"" | out-file $shim -encoding ascii
     }
 }
 
 function search_in_path($target) {
     $path = (env 'PATH' $false) + ";" + (env 'PATH' $true)
     foreach ($dir in $path.split(';')) {
-        if (Test-Path "$dir\$target" -PathType Leaf) { return "$dir\$target" }
+        if (test-path "$dir\$target" -pathType leaf) {
+            return "$dir\$target"
+        }
     }
 }
 
 function ensure_in_path($dir, $global) {
     $path = env 'PATH' $global
     if ($path -notmatch [regex]::escape($dir)) {
-        Write-UserMessage -Message "Adding $(friendly_path $dir) to $(if($global){'global'}else{'your'}) path."
+        write-output "Adding $(friendly_path $dir) to $(if($global){'global'}else{'your'}) path."
 
         env 'PATH' $global "$dir;$path" # for future sessions...
         $env:PATH = "$dir;$env:PATH" # for this session
@@ -631,8 +648,9 @@ function ensure_in_path($dir, $global) {
 }
 
 function ensure_architecture($architecture_opt) {
-    if (!$architecture_opt) { return default_architecture }
-
+    if (!$architecture_opt) {
+        return default_architecture
+    }
     $architecture_opt = $architecture_opt.ToString().ToLower()
     switch ($architecture_opt) {
         { @('64bit', '64', 'x64', 'amd64', 'x86_64', 'x86-64') -contains $_ } { return '64bit' }
@@ -642,56 +660,44 @@ function ensure_architecture($architecture_opt) {
 }
 
 function Confirm-InstallationStatus {
-    <#
-    .SYNOPSIS
-        Test application's installation status
-    .PARAMETER Apps
-        Specifies application to check.
-    .PARAMETER Global
-        Specifies globally installed application.
-    #>
     [CmdletBinding()]
-    [OutputType([System.Object[]])]
     param(
-        [Parameter(Mandatory)]
-        [String[]] $Apps,
-        [Switch] $Global
+        [Parameter(Mandatory = $true)]
+        [String[]]
+        $Apps,
+        [Switch]
+        $Global
     )
-
-    begin { $installed = @() }
-
-    process {
-        $Apps | Select-Object -Unique | Where-Object { $_.Name -ne 'scoop' } | ForEach-Object {
-            $app, $null, $null = parse_app $_
-            if ($Global) {
-                if (installed $app $true) {
-                    $installed += , @($app, $true)
-                } elseif (installed $app $false) {
-                    Write-UserMessage -Message "'$app' isn't installed globally, but it is installed for your account." -Err
-                    Write-UserMessage -Message "Try again without the --global (or -g) flag instead." -Warning
-                } else {
-                    Write-UserMessage -Message "'$app' isn't installed." -Err
-                }
+    $Installed = @()
+    $Apps | Select-Object -Unique | Where-Object { $_.Name -ne 'scoop' } | ForEach-Object {
+        $App, $null, $null = parse_app $_
+        if ($Global) {
+            if (installed $App $true) {
+                $Installed += , @($App, $true)
+            } elseif (installed $App $false) {
+                Write-UserMessage -Message "'$App' isn't installed globally, but it is installed for your account." -Err
+                Write-UserMessage -Message "Try again without the --global (or -g) flag instead." -Warning
             } else {
-                if (installed $app $false) {
-                    $installed += , @($app, $false)
-                } elseif (installed $App $true) {
-                    Write-UserMessage -Message "'$app' isn't installed for your account, but it is installed globally." -Err
-                    Write-UserMessage -Message "Try again with the --global (or -g) flag instead." -Warning
-                } else {
-                    Write-UserMessage -Message "'$app' isn't installed." -Err
-                }
+                Write-UserMessage -Message "'$App' isn't installed." -Err
+            }
+        } else {
+            if (installed $App $false) {
+                $Installed += , @($App, $false)
+            } elseif (installed $App $true) {
+                Write-UserMessage -Message "'$App' isn't installed for your account, but it is installed globally." -Err
+                Write-UserMessage -Message "Try again with the --global (or -g) flag instead." -Warning
+            } else {
+                Write-UserMessage -Message "'$App' isn't installed." -Err
             }
         }
     }
 
-    end { return , $installed }
+    return , $Installed
 }
 
 function strip_path($orig_path, $dir) {
     if ($null -eq $orig_path) { $orig_path = '' }
-    $stripped = [String]::Join(';', @( $orig_path.split(';') | Where-Object { $_ -and $_ -ne $dir } ))
-
+    $stripped = [string]::join(';', @( $orig_path.split(';') | Where-Object { $_ -and $_ -ne $dir } ))
     return ($stripped -ne $orig_path), $stripped
 }
 
@@ -709,7 +715,7 @@ function remove_from_path($dir, $global) {
     # Future sessions
     $was_in_path, $newpath = strip_path (env 'path' $global) $dir
     if ($was_in_path) {
-        Write-UserMessage -Message "Removing $(friendly_path $dir) from your path."
+        Write-Output "Removing $(friendly_path $dir) from your path."
         env 'path' $global $newpath
     }
 
@@ -725,7 +731,9 @@ function ensure_scoop_in_path($global) {
 }
 
 function ensure_robocopy_in_path {
-    if (!(Test-CommandAvailable robocopy)) { shim "C:\Windows\System32\Robocopy.exe" $false }
+    if (!(Test-CommandAvailable robocopy)) {
+        shim "C:\Windows\System32\Robocopy.exe" $false
+    }
 }
 
 function wraptext($text, $width) {
@@ -746,30 +754,34 @@ function wraptext($text, $width) {
 }
 
 function pluralize($count, $singular, $plural) {
-    $word = if ($count -eq 1) { $singular } else { $plural }
-
-    return $word
+    if ($count -eq 1) { $singular } else { $plural }
 }
 
 function reset_alias($name, $value) {
-    if ($existing = Get-Alias -Name $name -ErrorAction Ignore | Where-Object { $_.Options -match 'readonly' }) {
-        if ($existing.Definition -ne $value) { Write-UserMessage -Message "Alias $name is read-only; can't reset it." -Color DarkYellow }
+    if ($existing = get-alias $name -ea ignore | Where-Object { $_.options -match 'readonly' }) {
+        if ($existing.definition -ne $value) {
+            write-host "Alias $name is read-only; can't reset it." -f darkyellow
+        }
         return # already set
     }
     if ($value -is [scriptblock]) {
-        if (!(Test-Path "function:script:$name")) { New-Item -Path function: -Name "script:$name" -Value $value | Out-Null }
+        if (!(test-path -path "function:script:$name")) {
+            new-item -path function: -name "script:$name" -value $value | out-null
+        }
         return
     }
 
-    Set-Alias -Name $name -Value $value -Scope Script -Option AllScope
+    set-alias $name $value -scope script -option allscope
 }
 
 function reset_aliases() {
     # for aliases where there's a local function, re-alias so the function takes precedence
-    $aliases = Get-Alias | Where-Object { $_.options -notmatch 'readonly|allscope' } | ForEach-Object { $_.name }
-    Get-ChildItem function: | ForEach-Object {
+    $aliases = get-alias | Where-Object { $_.options -notmatch 'readonly|allscope' } | ForEach-Object { $_.name }
+    get-childitem function: | ForEach-Object {
         $fn = $_.name
-        if ($aliases -contains $fn) { Set-Alias $fn local:$fn -Scope Script }
+        if ($aliases -contains $fn) {
+            set-alias $fn local:$fn -scope script
+        }
     }
 
     # for dealing with user aliases
@@ -782,7 +794,7 @@ function reset_aliases() {
         'gm'     = 'get-member'
         'iex'    = 'invoke-expression'
         'ls'     = 'get-childitem'
-        'mkdir'  = { New-Item -Type Directory @args }
+        'mkdir'  = { new-item -type directory @args }
         'mv'     = 'move-item'
         'rm'     = 'remove-item'
         'sc'     = 'set-content'
@@ -797,7 +809,6 @@ function reset_aliases() {
 # convert list of apps to list of ($app, $global) tuples
 function applist($apps, $global) {
     if (!$apps) { return @() }
-
     return , @($apps | ForEach-Object { , @($_, $global) })
 }
 
@@ -805,45 +816,45 @@ function parse_app([string] $app) {
     if ($app -match '(?:(?<bucket>[a-zA-Z0-9-]+)\/)?(?<app>.*.json$|[a-zA-Z0-9-_.]+)(?:@(?<version>.*))?') {
         return $matches['app'], $matches['bucket'], $matches['version']
     }
-
     return $app, $null, $null
 }
 
 function show_app($app, $bucket, $version) {
-    if ($bucket) { $app = "$bucket/$app" }
-    if ($version) { $app = "$app@$version" }
-
+    if ($bucket) {
+        $app = "$bucket/$app"
+    }
+    if ($version) {
+        $app = "$app@$version"
+    }
     return $app
 }
 
-function last_scoop_update {
+function last_scoop_update() {
     # PowerShell 6 returns an DateTime Object
-    # FIXME
-    $lastUpdate = scoop config 'lastupdate'
+    $last_update = (scoop config lastupdate)
 
-    if (($null -ne $lastUpdate) -and ($lastUpdate.GetType() -eq [System.String])) {
+    if ($null -ne $last_update -and $last_update.GetType() -eq [System.String]) {
         try {
-            $lastUpdate = [System.DateTime]::Parse($lastUpdate)
+            $last_update = [System.DateTime]::Parse($last_update)
         } catch {
-            $lastUpdate = $null
+            $last_update = $null
         }
     }
 
-    return $lastUpdate
+    return $last_update
 }
 
-function is_scoop_outdated {
-    $lastUpdate = last_scoop_update
+function is_scoop_outdated() {
+    $last_update = $(last_scoop_update)
     $now = [System.DateTime]::Now
 
-    if ($null -eq $lastUpdate) {
-        # FIXME
-        scoop config 'lastupdate' $now.ToString('o')
+    if ($null -eq $last_update) {
+        scoop config lastupdate $now.ToString('o')
         # enforce an update for the first time
         return $true
     }
 
-    return $lastUpdate.AddHours(3) -lt $now.ToLocalTime()
+    return $last_update.AddHours(3) -lt $now.ToLocalTime()
 }
 
 function substitute($entity, [Hashtable] $params, [Bool]$regexEscape = $false) {
@@ -857,7 +868,6 @@ function substitute($entity, [Hashtable] $params, [Bool]$regexEscape = $false) {
                 $entity = $entity.Replace($_.Name, [Regex]::Escape($_.Value))
             }
         }
-
         return $entity
     }
 }
@@ -871,7 +881,6 @@ function format_hash([String] $hash) {
         128 { $hash = "sha512:$hash" } # sha512
         default { $hash = $null }
     }
-
     return $hash
 }
 
@@ -884,7 +893,6 @@ function format_hash_aria2([String] $hash) {
         128 { $hash = "sha-512=$hash" } # sha512
         default { $hash = $null }
     }
-
     return $hash
 }
 
@@ -904,26 +912,27 @@ function get_hash([String] $multihash) {
 
 function handle_special_urls($url) {
     # FossHub.com
-    if ($url -match '^(?:.*fosshub.com\/)(?<name>.*)(?:\/|\?dwl=)(?<filename>.*)$') {
+    if ($url -match "^(?:.*fosshub.com\/)(?<name>.*)(?:\/|\?dwl=)(?<filename>.*)$") {
         $Body = @{
-            'projectUri'      = $Matches.name
-            'fileName'        = $Matches.filename
-            'isLatestVersion' = $true
+            projectUri      = $Matches.name;
+            fileName        = $Matches.filename;
+            isLatestVersion = $true
         }
         if ((Invoke-RestMethod -Uri $url) -match '"p":"(?<pid>[a-f0-9]{24}).*?"r":"(?<rid>[a-f0-9]{24})') {
-            $Body.Add('projectId', $Matches.pid)
-            $Body.Add('releaseId', $Matches.rid)
+            $Body.Add("projectId", $Matches.pid)
+            $Body.Add("releaseId", $Matches.rid)
         }
-        $url = Invoke-RestMethod -Uri 'https://api.fosshub.com/download/' -Method Post -ContentType 'application/json' -Body (ConvertTo-Json $Body -Compress)
-        if ($null -eq $url.error) { $url = $url.data.url }
+        $url = Invoke-RestMethod -Method Post -Uri "https://api.fosshub.com/download/" -ContentType "application/json" -Body (ConvertTo-Json $Body -Compress)
+        if ($null -eq $url.error) {
+            $url = $url.data.url
+        }
     }
 
     # Sourceforge.net
-    if ($url -match '(?:downloads\.)?sourceforge.net\/projects?\/(?<project>[^\/]+)\/(?:files\/)?(?<file>.*?)(?:$|\/download|\?)') {
+    if ($url -match "(?:downloads\.)?sourceforge.net\/projects?\/(?<project>[^\/]+)\/(?:files\/)?(?<file>.*?)(?:$|\/download|\?)") {
         # Reshapes the URL to avoid redirections
         $url = "https://downloads.sourceforge.net/project/$($matches['project'])/$($matches['file'])"
     }
-
     return $url
 }
 
@@ -946,11 +955,6 @@ function get_magic_bytes_pretty($file, $glue = ' ') {
 function fullpath($path) {
     Show-DeprecatedWarning $MyInvocation 'Get-AbsolutePath'
     return Get-AbsolutePath -Path $path
-}
-
-function file_path($app, $file) {
-    Show-DeprecatedWarning $MyInvocation 'Get-AppFilePath'
-    return Get-AppFilePath -App $app -File $file
 }
 #endregion Deprecated
 
