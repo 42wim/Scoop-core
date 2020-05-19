@@ -986,7 +986,7 @@ function env_add_path($manifest, $dir, $global, $arch) {
     $env_add_path = arch_specific 'env_add_path' $manifest $arch
 
     if ($env_add_path) {
-        [Array]::Reverse($env:add_path)
+        [Array]::Reverse($env_add_path)
         $env_add_path | Where-Object { $_ } | ForEach-Object {
             $path_dir = Join-Path $dir $_
             if (!(is_in_dir $dir $path_dir)) {
