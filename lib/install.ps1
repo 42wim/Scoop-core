@@ -263,7 +263,7 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
             $has_downloads = $true
             # create aria2 input file content
             $urlstxt_content += "$(handle_special_urls $url)`n"
-            if (!$url.Contains('sourceforge.net')) {
+            if (($url -notlike '*sourceforge.net/*') -or ($url -notlike '*portableapps.com/*')) {
                 $urlstxt_content += "    referer=$(strip_filename $url)`n"
             }
             $urlstxt_content += "    dir=$cachedir`n"
@@ -368,7 +368,7 @@ function dl($url, $to, $cookies, $progress) {
     $wreq = [net.webrequest]::create($reqUrl)
     if ($wreq -is [net.httpwebrequest]) {
         $wreq.useragent = Get-UserAgent
-        if (-not ($url -imatch "sourceforge\.net")) {
+        if (($url -notlike '*.sourceforge.net/*') -or ($url -notlike '*.portableapps.com/*')) {
             $wreq.referer = strip_filename $url
         }
         if ($cookies) {
