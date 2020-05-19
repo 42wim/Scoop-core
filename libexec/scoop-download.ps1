@@ -79,9 +79,14 @@ foreach ($app in $application) {
             $exitCode = 3
             continue
         }
-        $manifest = parse_json($generated)
+        $manifest = parse_json $generated
     }
+
     if (-not $version) { $version = $manifest.version }
+    if ($version -eq 'nightly') {
+        $version = nightly_version (Get-Date)
+        $checkHash = $false
+    }
 
     # TODO: Rework with proper wrappers after #3149
     switch ($utility) {
