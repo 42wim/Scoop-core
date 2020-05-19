@@ -17,7 +17,7 @@
 #   -s, --skip                Skip hash validation (use with caution!)
 #   -a, --arch <32bit|64bit>  Use the specified architecture, if the app supports it
 
-'core', 'manifest', 'buckets', 'decompress', 'install', 'shortcuts', 'psmodules', 'Versions', 'help', 'getopt', 'depends' | ForEach-Object {
+'core', 'manifest', 'buckets', 'decompress', 'install', 'shortcuts', 'psmodules', 'Update', 'Versions', 'help', 'getopt', 'depends' | ForEach-Object {
     . "$PSScriptRoot\..\lib\$_.ps1"
 }
 
@@ -70,7 +70,7 @@ if ($global -and !(is_admin)) {
 
 if (is_scoop_outdated) {
     # TODO: do not call scoop externally
-    scoop update
+    Update-Scoop
 }
 
 if ($apps.length -eq 1) {

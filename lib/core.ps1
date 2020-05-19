@@ -1,6 +1,9 @@
 . "$PSScriptRoot\Helpers.ps1"
 
-function Get-AbsolutePath {
+# Such format is need to prevent automatic conversion of JSON date https://github.com/Ash258/Scoop-Core/issues/26
+$UPDATE_DATE_FORMAT = '258|yyyy-MM-dd HH:mm:ss'
+
+ function Get-AbsolutePath {
     <#
     .SYNOPSIS
         Gets absolute path.
@@ -830,31 +833,33 @@ function show_app($app, $bucket, $version) {
 }
 
 function last_scoop_update() {
-    # PowerShell 6 returns an DateTime Object
-    $last_update = (scoop config lastupdate)
+    # FIXME
+    $lastUpdate = scoop config 'lastupdate'
 
-    if ($null -ne $last_update -and $last_update.GetType() -eq [System.String]) {
+    if ($null -ne $lastUpdate) {
         try {
-            $last_update = [System.DateTime]::Parse($last_update)
+            $lastUpdate = Get-Date ($lastUpdate.Substring(4))
         } catch {
-            $last_update = $null
+            Write-UserMessage -Message 'Config: Incorrect update date format' -Info
+            $lastUpdate = $null
         }
     }
 
-    return $last_update
+    return $lastUpdate
 }
 
 function is_scoop_outdated() {
-    $last_update = $(last_scoop_update)
-    $now = [System.DateTime]::Now
+    $lastUp = last_scoop_update
+    $now = Get-Date
+    $res = $true
 
-    if ($null -eq $last_update) {
-        scoop config lastupdate $now.ToString('o')
-        # enforce an update for the first time
-        return $true
+    if ($null -eq $lastUp) {
+        scoop config 'lastupdate' ($now.ToString($UPDATE_DATE_FORMAT))
+    } else {
+        $res = $lastUp.AddHours(3) -lt $now.ToLocalTime()
     }
 
-    return $last_update.AddHours(3) -lt $now.ToLocalTime()
+    return $res
 }
 
 function substitute($entity, [Hashtable] $params, [Bool]$regexEscape = $false) {

@@ -181,7 +181,7 @@ function Update-Scoop {
 
     Get-LocalBucket | Update-ScoopLocalBucket
 
-    set_config 'lastupdate' ([System.DateTime]::Now.ToString('o')) | Out-Null
+    set_config 'lastupdate' ((Get-Date).ToString($UPDATE_DATE_FORMAT)) | Out-Null
     Write-UserMessage -Message 'Scoop was updated successfully!' -Success
 }
 
