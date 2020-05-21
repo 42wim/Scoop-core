@@ -215,7 +215,9 @@ function versiondir($app, $version, $global) { "$(appdir $app $global)\$version"
 function persistdir($app, $global) { "$(basedir $global)\persist\$app" }
 function usermanifestsdir { "$(basedir)\workspace" }
 function usermanifest($app) { "$(usermanifestsdir)\$app.json" }
-function cache_path($app, $version, $url) { "$cachedir\$app#$version#$($url -replace '[^\w\.\-]+', '_')" }
+function cache_path($app, $version, $url) {
+    return Join-Path $SCOOP_CACHE_DIRECTORY "$app#$version#$($url -replace '[^\w\.\-]+', '_')"
+}
 
 # apps
 function sanitary_path($path) { return [regex]::replace($path, "[/\\?:*<>|]", "") }
