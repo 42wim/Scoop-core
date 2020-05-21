@@ -263,7 +263,8 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
             $has_downloads = $true
             # create aria2 input file content
             $urlstxt_content += "$(handle_special_urls $url)`n"
-            if (($url -notlike '*sourceforge.net/*') -or ($url -notlike '*portableapps.com/*')) {
+            if (($url -notlike '*sourceforge.net/*') -and ($url -notlike '*portableapps.com/*')) {
+                Write-Host 'ANO' -f red
                 $urlstxt_content += "    referer=$(strip_filename $url)`n"
             }
             $urlstxt_content += "    dir=$cachedir`n"
@@ -290,7 +291,8 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
             if ([String]::IsNullOrWhiteSpace($_)) { return }
             $color = 'Gray'
             # Prevent potential overlaping of text when one line is shorter
-            $blank = ' ' * ($Host.UI.RawUI.WindowSize.Width - $_.Length - 20)
+            $len = $Host.UI.RawUI.WindowSize.Width - $_.Length - 20
+            $blank = if ($len -gt 0) { ' ' * $len } else { '' }
 
             if ($_.StartsWith('(OK):')) {
                 $noNewLine = $true
@@ -368,7 +370,7 @@ function dl($url, $to, $cookies, $progress) {
     $wreq = [net.webrequest]::create($reqUrl)
     if ($wreq -is [net.httpwebrequest]) {
         $wreq.useragent = Get-UserAgent
-        if (($url -notlike '*.sourceforge.net/*') -or ($url -notlike '*.portableapps.com/*')) {
+        if (($url -notlike '*.sourceforge.net/*') -and ($url -notlike '*.portableapps.com/*')) {
             $wreq.referer = strip_filename $url
         }
         if ($cookies) {
