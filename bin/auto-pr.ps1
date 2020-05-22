@@ -21,6 +21,8 @@
     An array of manifests, which should be updated all the time. (-ForceUpdate parameter to checkver)
 .PARAMETER SkipUpdated
     Updated manifests will not be shown.
+.PARAMETER SkipCheckver
+    Specifies to skip checkver execution.
 .EXAMPLE
     PS BUCKETROOT > .\bin\auto-pr.ps1 'someUsername/repository:branch' -Request
 .EXAMPLE
@@ -51,7 +53,8 @@ param(
     [Switch] $Request,
     [Switch] $Help,
     [string[]] $SpecialSnowflakes,
-    [Switch] $SkipUpdated
+    [Switch] $SkipUpdated,
+    [Switch] $SkipCheckver
 )
 
 'manifest', 'json' | ForEach-Object {
@@ -151,11 +154,13 @@ if ($Push) {
     execute 'hub push origin master'
 }
 
-. "$PSScriptRoot\checkver.ps1" -App $App -Dir $Dir -Update -SkipUpdated:$SkipUpdated
-if ($SpecialSnowflakes) {
-    Write-Host "Forcing update on our special snowflakes: $($SpecialSnowflakes -join ',')" -ForegroundColor DarkCyan
-    $SpecialSnowflakes -split ',' | ForEach-Object {
-        . "$PSScriptRoot\checkver.ps1" $_ -Dir $Dir -ForceUpdate
+if (!$SkipCheckver) {
+    . "$PSScriptRoot\checkver.ps1" -App $App -Dir $Dir -Update -SkipUpdated:$SkipUpdated
+    if ($SpecialSnowflakes) {
+        Write-UserMessage -Message "Forcing update on our special snowflakes: $($SpecialSnowflakes -join ',')" -Color DarkCyan
+        $SpecialSnowflakes -split ',' | ForEach-Object {
+            . "$PSScriptRoot\checkver.ps1" $_ -Dir $Dir -ForceUpdate
+        }
     }
 }
 
