@@ -12,8 +12,16 @@ function nightly_version($date, $quiet = $false) {
 }
 
 function install_app($app, $architecture, $global, $suggested, $use_cache = $true, $check_hash = $true) {
+    # TODO:
     $app, $bucket, $null = parse_app $app
+    # TODO:
     $app, $manifest, $bucket, $url = Find-Manifest $app $bucket
+
+    Write-Host $app
+    Write-host $manifest -f green
+    Write-host $bucket -f green
+    Write-host $url -f green
+    exit
 
     if (!$manifest) {
         # TODO: Stop-ScoopExecution Try catch throw needed
@@ -370,7 +378,7 @@ function dl($url, $to, $cookies, $progress) {
     $wreq = [net.webrequest]::create($reqUrl)
     if ($wreq -is [net.httpwebrequest]) {
         $wreq.useragent = Get-UserAgent
-        if (($url -notlike '*.sourceforge.net/*') -and ($url -notlike '*.portableapps.com/*')) {
+        if (($url -notlike '*sourceforge.net*') -and ($url -notlike '*portableapps.com*')) {
             $wreq.referer = strip_filename $url
         }
         if ($cookies) {
@@ -1074,7 +1082,7 @@ function prune_installed($apps, $global) {
 # check whether the app failed to install
 function failed($app, $global) {
     if (is_directory (appdir $app $global)) {
-        return !(install_info $app (current_version $app $global) $global)
+        return !(install_info $app (Select-CurrentVersion -App $app -Global:$global) $global)
     } else {
         return $false
     }
