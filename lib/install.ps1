@@ -12,16 +12,8 @@ function nightly_version($date, $quiet = $false) {
 }
 
 function install_app($app, $architecture, $global, $suggested, $use_cache = $true, $check_hash = $true) {
-    # TODO:
     $app, $bucket, $null = parse_app $app
-    # TODO:
     $app, $manifest, $bucket, $url = Find-Manifest $app $bucket
-
-    Write-Host $app
-    Write-host $manifest -f green
-    Write-host $bucket -f green
-    Write-host $url -f green
-    exit
 
     if (!$manifest) {
         # TODO: Stop-ScoopExecution Try catch throw needed
@@ -271,8 +263,7 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
             $has_downloads = $true
             # create aria2 input file content
             $urlstxt_content += "$(handle_special_urls $url)`n"
-            if (($url -notlike '*sourceforge.net/*') -and ($url -notlike '*portableapps.com/*')) {
-                Write-Host 'ANO' -f red
+            if (($url -notlike '*sourceforge.net*') -and ($url -notlike '*portableapps.com*')) {
                 $urlstxt_content += "    referer=$(strip_filename $url)`n"
             }
             $urlstxt_content += "    dir=$cachedir`n"
