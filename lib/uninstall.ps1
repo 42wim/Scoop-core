@@ -88,8 +88,8 @@ function Uninstall-ScoopApplication {
     $refdir = unlink_current $dir
 
     uninstall_psmodule $manifest $refdir $Global
-    env_rm_path $manifest $refdir $Global
-    env_rm $manifest $Global
+    env_rm_path $manifest $refdir $Global $architecture
+    env_rm $manifest $Global $architecture
 
     # Remove older versions
     if ($Older) {
