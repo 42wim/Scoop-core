@@ -1,4 +1,4 @@
-'core', 'manifest', 'install', 'shortcuts', 'psmodules', 'Versions' | ForEach-Object {
+'Helpers', 'core', 'manifest', 'install', 'shortcuts', 'psmodules', 'Versions' | ForEach-Object {
     . "$PSScriptRoot\$_.ps1"
 }
 
@@ -62,7 +62,7 @@ function Uninstall-ScoopApplication {
     $dir = versiondir $App $version $Global
     $persist_dir = persistdir $App $Global
 
-    Write-UserMessage -Message "Uninstalling '$App' ($version)"
+    Write-UserMessage -Message "Uninstalling '$App' ($version)" -Output:$false
 
     try {
         Test-Path $dir -ErrorAction Stop | Out-Null
