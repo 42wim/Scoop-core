@@ -1,4 +1,7 @@
-. "$PSScriptRoot\Helpers.ps1"
+'Helpers', 'commands' | ForEach-Object {
+    . "$PSScriptRoot\$_.ps1"
+}
+
 
 # Such format is need to prevent automatic conversion of JSON date https://github.com/Ash258/Scoop-Core/issues/26
 $UPDATE_DATE_FORMAT = '258|yyyy-MM-dd HH:mm:ss'
@@ -835,8 +838,7 @@ function show_app($app, $bucket, $version) {
 }
 
 function last_scoop_update() {
-    # FIXME
-    $lastUpdate = scoop config 'lastupdate'
+    $lastUpdate = Invoke-ScoopCommand 'config' @{ 'name' = 'lastupdate' }
 
     if ($null -ne $lastUpdate) {
         try {
@@ -856,7 +858,7 @@ function is_scoop_outdated() {
     $res = $true
 
     if ($null -eq $lastUp) {
-        scoop config 'lastupdate' ($now.ToString($UPDATE_DATE_FORMAT))
+        Invoke-ScoopCommand 'config' @{ 'name' = 'lastupdate'; 'value' = ($now.ToString($UPDATE_DATE_FORMAT)) } | Out-Null
     } else {
         $res = $lastUp.AddHours(3) -lt $now.ToLocalTime()
     }
@@ -992,7 +994,8 @@ $cachedir = $SCOOP_CACHE_DIRECTORY
 
 # Scoop config file migration
 $configHome = $env:XDG_CONFIG_HOME, "$env:USERPROFILE\.config" | Select-Object -First 1
-$configFile = "$configHome\scoop\config.json"
+$SCOOP_CONFIGURATION_FILE = Join-Path $configHome 'scoop\config.json'
+$configFile = $SCOOP_CONFIGURATION_FILE
 if ((Test-Path "$env:USERPROFILE\.scoop") -and !(Test-Path $configFile)) {
     New-Item -ItemType Directory (Split-Path -Path $configFile) -ErrorAction Ignore | Out-Null
     Move-Item "$env:USERPROFILE\.scoop" $configFile
@@ -1003,7 +1006,8 @@ if ((Test-Path "$env:USERPROFILE\.scoop") -and !(Test-Path $configFile)) {
 }
 
 # Load Scoop config
-$scoopConfig = load_cfg $configFile
+$SCOOP_CONFIGURATION = load_cfg $SCOOP_CONFIGURATION_FILE
+$scoopConfig = $SCOOP_CONFIGURATION
 
 # Setup proxy globally
 setup_proxy
