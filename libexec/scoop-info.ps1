@@ -42,6 +42,7 @@ $dir = versiondir $app 'current' $global
 $original_dir = versiondir $app $manifest.version $global
 $persist_dir = persistdir $app $global
 
+$architecture = default_architecture
 if ($status.installed) {
     $manifest_file = manifest_path $app $install.bucket
     if ($install.url) {
@@ -52,7 +53,9 @@ if ($status.installed) {
     } else {
         $version_output = "$($status.version) (Update to $($manifest.version) available)"
     }
+    $architecture = $install.architecture
 }
+
 
 Write-Output "Name: $app"
 if ($manifest.description) {
@@ -61,6 +64,7 @@ if ($manifest.description) {
 Write-Output "Version: $version_output"
 Write-Output "Website: $($manifest.homepage)"
 # Show license
+# TODO: Rework
 if ($manifest.license) {
     $license = $manifest.license
     if ($manifest.license.identifier -and $manifest.license.url) {
@@ -92,7 +96,7 @@ if ($status.installed) {
     Write-Output "Installed: No"
 }
 
-$binaries = @(arch_specific 'bin' $manifest $install.architecture)
+$binaries = @(arch_specific 'bin' $manifest $architecture)
 if ($binaries) {
     $binary_output = "Binaries:`n "
     $binaries | ForEach-Object {
@@ -105,24 +109,28 @@ if ($binaries) {
     Write-Output $binary_output
 }
 
-if ($manifest.env_set -or $manifest.env_add_path) {
+$env_set = arch_specific 'env_set' $manifest $architecture
+$env_add_path = @(arch_specific 'env_add_path' $manifest $architecture)
+
+if ($env_set -or $env_add_path) {
     if ($status.installed) {
         Write-Output "Environment:"
     } else {
         Write-Output "Environment: (simulated)"
     }
 }
-if ($manifest.env_set) {
-    $manifest.env_set | Get-Member -member noteproperty | ForEach-Object {
+
+if ($env_set) {
+    $env_set | Get-Member -MemberType NoteProperty | ForEach-Object {
         $value = env $_.name $global
         if (!$value) {
-            $value = format $manifest.env_set.$($_.name) @{ "dir" = $dir }
+            $value = format $env_set.$($_.name) @{ "dir" = $dir }
         }
         Write-Output "  $($_.name)=$value"
     }
 }
-if ($manifest.env_add_path) {
-    $manifest.env_add_path | Where-Object { $_ } | ForEach-Object {
+if ($env_add_path) {
+    $env_add_path | Where-Object { $_ } | ForEach-Object {
         if ($_ -eq '.') {
             Write-Output "  PATH=%PATH%;$dir"
         } else {
