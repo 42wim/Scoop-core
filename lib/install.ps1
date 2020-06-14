@@ -40,6 +40,28 @@ function install_app($app, $architecture, $global, $suggested, $use_cache = $tru
     $buc = if ($bucket) { " [$bucket]" } else { '' }
     Write-UserMessage -Message "Installing '$app' ($version) [$architecture]$buc"
 
+    # Show license
+    $license = $manifest.license
+    if ($license -and ($license -ne 'Unknown')) {
+        $id = if ($license.identifier) { $license.identifier } else { $license }
+        # Remove [|,]...
+        if ($id -like '*...') { $id = $id -replace '[|,]\.{3}' }
+        $id = $id -split ','
+        $id = $id -split '\|'
+
+        if ($license.url) {
+            $s = if ($id.Count -eq 1) { $id } else { $id -join ', ' }
+            $toShow = $s + ' (' + $license.url + ')'
+        } else {
+            $line = if ($id.Count -gt 1) { "`r`n  " } else { '' }
+            $id | ForEach-Object {
+                $toShow += "$line$_ (https://spdx.org/licenses/$_.html)"
+            }
+        }
+
+        Write-UserMessage -Message "By installing you accept following $(pluralize $id.Count 'license' 'licenses'): $toShow" -Warn
+    }
+
     $dir = ensure (versiondir $app $version $global)
     $original_dir = $dir # keep reference to real (not linked) directory
     $persist_dir = persistdir $app $global
