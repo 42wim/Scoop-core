@@ -269,6 +269,7 @@ foreach ($q in $Queue) {
         'replace'  = $replace
     }
 
+    debug $state.url
     debug $state.regex
     debug $state.reverse
     debug $state.replace
