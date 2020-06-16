@@ -68,7 +68,8 @@ param(
 $Dir = Resolve-Path $Dir
 $Search = $App
 $Queue = @()
-$GITHUB_REGEX = '/releases/tag/[vV]?([\d.]+)'
+$UNIVERSAL_REGEX = '[vV]?([\d.]+)'
+$GITHUB_REGEX = "/releases/tag/$UNIVERSAL_REGEX"
 
 #region Functions
 function next($AppName, $Err) {
@@ -251,7 +252,9 @@ foreach ($q in $Queue) {
     if ($json.checkver.jsonpath) { $jsonpath = $json.checkver.jsonpath }
     if ($json.checkver.xpath) { $xpath = $json.checkver.xpath }
     if ($json.checkver.replace -and $json.checkver.replace.GetType() -eq [System.String]) { $replace = $json.checkver.replace }
-    if (!$jsonpath -and !$regex -and !$xpath) { $regex = $json.checkver }
+    if (!$jsonpath -and !$regex -and !$xpath) {
+        $regex = if ($json.checkver -is [System.String]) { $json.checkver } else { $UNIVERSAL_REGEX }
+    }
 
     $url = substitute $url $substitutions
 
@@ -265,6 +268,10 @@ foreach ($q in $Queue) {
         'reverse'  = $reverse
         'replace'  = $replace
     }
+
+    debug $state.regex
+    debug $state.reverse
+    debug $state.replace
 
     $wc.Headers.Add('Referer', (strip_filename $url))
     $wc.DownloadStringAsync($url, $state)
