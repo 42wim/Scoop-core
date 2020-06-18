@@ -130,9 +130,7 @@ function Out-UTF8Content {
         $Content
     )
 
-    process {
-        Out-UTF8File -File $File -Content $Content
-    }
+    process { Out-UTF8File -File $File -Content $Content }
 }
 
 function Get-MagicByte {
