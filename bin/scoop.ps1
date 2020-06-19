@@ -4,7 +4,7 @@ param($cmd)
 Set-StrictMode -Off
 
 'core', 'buckets', 'commands', 'Git' | ForEach-Object {
-    . "$PSScriptRoot\..\lib\$_.ps1"
+    . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
 reset_aliases

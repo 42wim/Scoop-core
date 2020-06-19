@@ -33,20 +33,15 @@
 param(
     [Parameter(Mandatory = $true)]
     [ValidateScript( {
-        if (!($_ -match '^(.*)\/(.*):(.*)$')) {
-            throw 'Upstream must be in this format: <user>/<repo>:<branch>'
-        }
+        if (!($_ -match '^(.*)\/(.*):(.*)$')) { throw 'Upstream must be in this format: <user>/<repo>:<branch>' }
         $true
     })]
     [String] $Upstream,
     [String] $App = '*',
     [Parameter(Mandatory = $true)]
     [ValidateScript( {
-        if (!(Test-Path $_ -Type Container)) {
-            throw "$_ is not a directory!"
-        } else {
-            $true
-        }
+        if (!(Test-Path $_ -Type Container)) { throw "$_ is not a directory!" }
+        $true
     })]
     [String] $Dir,
     [Switch] $Push,
@@ -58,7 +53,7 @@ param(
 )
 
 'manifest', 'json' | ForEach-Object {
-    . "$PSScriptRoot\..\lib\$_.ps1"
+    . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
 $Dir = Resolve-Path $Dir
@@ -89,9 +84,8 @@ function execute($cmd) {
     Write-Host $cmd -ForegroundColor Green
     $output = Invoke-Expression $cmd
 
-    if ($LASTEXITCODE -gt 0) {
-        abort "^^^ Error! See above ^^^ (last command: $cmd)"
-    }
+    # TODO: Stop-ScoopExecution
+    if ($LASTEXITCODE -gt 0) { abort "^^^ Error! See above ^^^ (last command: $cmd)" }
 
     return $output
 }
@@ -166,9 +160,7 @@ if (!$SkipCheckver) {
 
 hub diff --name-only | ForEach-Object {
     $manifest = $_
-    if (!$manifest.EndsWith('.json')) {
-        return
-    }
+    if (!$manifest.EndsWith('.json')) { return }
 
     $app = ([System.IO.Path]::GetFileNameWithoutExtension($manifest))
     $json = parse_json $manifest

@@ -5,7 +5,7 @@
 # using one or the other.
 
 'core', 'manifest', 'help', 'getopt', 'install', 'Versions', 'shortcuts' | ForEach-Object {
-    . "$PSScriptRoot\..\lib\$_.ps1"
+    . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
 reset_aliases
@@ -27,11 +27,11 @@ foreach ($a in $apps) {
 
     $app, $bucket, $version = parse_app $app
 
-    # Set global flag when running reset command on specific app
-    if (($null -eq $global) -and (installed $app $true)) { $global = $true }
-
     # Skip scoop
     if ($app -eq 'scoop') { return }
+
+    # Set global flag when running reset command on specific app
+    if (($null -eq $global) -and (installed $app $true)) { $global = $true }
 
     if (!(installed $app)) {
         ++$problems

@@ -1,8 +1,8 @@
 # Usage: scoop unhold <app>
 # Summary: Unhold an app to enable updates
 
-'help', 'manifest' | ForEach-Object {
-    . "$PSScriptRoot\..\lib\$_.ps1"
+'help', 'Helpers', 'manifest' | ForEach-Object {
+    . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
 reset_aliases

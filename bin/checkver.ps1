@@ -62,7 +62,7 @@ param(
 )
 
 'core', 'manifest', 'buckets', 'autoupdate', 'json', 'Versions', 'install' | ForEach-Object {
-    . "$PSScriptRoot\..\lib\$_.ps1"
+    . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
 $Dir = Resolve-Path $Dir
@@ -100,8 +100,10 @@ function Invoke-Check {
     $err = $Event.SourceEventArgs.Error
 
     if (Test-ScoopDebugEnabled) { Join-Path $PWD 'checkver-page.html' | Out-UTF8Content -Content $page }
-    if ($json.checkver.script) { $page = $json.checkver.script -join "`r`n" | Invoke-Expression }
-    if (Test-ScoopDebugEnabled) { Join-Path $PWD 'checkver-page-script.html' | Out-UTF8Content -Content $page }
+    if ($json.checkver.script) {
+        $page = $json.checkver.script -join "`r`n" | Invoke-Expression
+        if (Test-ScoopDebugEnabled) { Join-Path $PWD 'checkver-page-script.html' | Out-UTF8Content -Content $page }
+    }
 
     if ($err) { next $appName "$($err.Message)`r`nURL $url is not valid" }
     if (!$regex -and $replace) { next $appName "'replace' requires 're' or 'regex'" }
@@ -201,8 +203,8 @@ function Invoke-Check {
 Get-Event | ForEach-Object { Remove-Event $_.SourceIdentifier }
 
 #region Main
-Get-ChildItem $Dir "$App.json" | ForEach-Object {
-    $m = parse_json (Join-Path $Dir\ $_.Name)
+Get-ChildItem $Dir "$App.*" -File | ForEach-Object {
+    $m = parse_json $_.FullName
     if ($m.checkver) { $Queue += , @($_.Name, $m) }
 }
 
@@ -211,7 +213,7 @@ foreach ($q in $Queue) {
 
     $substitutions = get_version_substitutions $json.version
 
-    $wc = New-Object Net.Webclient
+    $wc = New-Object System.Net.Webclient
     $ua = $json.checkver.useragent
     $ua = if ($ua) { substitute $ua $substitutions } else { Get-UserAgent }
     $wc.Headers.Add('User-Agent', $ua)

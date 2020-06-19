@@ -2,7 +2,7 @@
 # Summary: Hold an app to disable updates
 
 'help', 'manifest' | ForEach-Object {
-    . "$PSScriptRoot\..\lib\$_.ps1"
+    . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
 reset_aliases

@@ -1,10 +1,10 @@
 # Usage: scoop cat <app>
 # Summary: Show content of specified manifest.
 
-param([Parameter(ValueFromRemainingArguments)][String[]] $Application)
+param([Parameter(ValueFromRemainingArguments)] [String[]] $Application)
 
 'help', 'Helpers', 'install', 'manifest' | ForEach-Object {
-    . "$PSScriptRoot\..\lib\$_.ps1"
+    . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
 if (!$Application) {

@@ -1,8 +1,8 @@
 # Usage: scoop status
 # Summary: Show status and check for new app versions
 
-'core', 'manifest', 'buckets', 'Versions', 'depends', 'Git' | ForEach-Object {
-    . "$PSScriptRoot\..\lib\$_.ps1"
+'core', 'Helpers', 'manifest', 'buckets', 'Versions', 'depends', 'Git' | ForEach-Object {
+    . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
 reset_aliases

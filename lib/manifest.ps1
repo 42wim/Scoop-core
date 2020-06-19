@@ -6,10 +6,12 @@ function manifest_path($app, $bucket) {
     return "$(Find-BucketDirectory $bucket)\$(sanitary_path $app).json"
 }
 
-function parse_json($path) {
-    if (!(Test-Path $path)) { return $null }
+function parse_json {
+    param([Parameter(Mandatory, ValueFromPipeline)] [System.IO.FileInfo] $Path)
 
-    return Get-Content $path -Raw -Encoding UTF8 | ConvertFrom-Json -ErrorAction Stop
+    if (!(Test-Path $Path)) { return $null }
+
+    return Get-Content $Path -Raw -Encoding UTF8 | ConvertFrom-Json -ErrorAction Stop
 }
 
 function url_manifest($url) {

@@ -10,7 +10,7 @@
 #   -b, --all-architectures         All avaible files across all architectures will be downloaded.
 
 'getopt', 'help', 'manifest', 'install' | ForEach-Object {
-    . "$PSScriptRoot\..\lib\$_.ps1"
+    . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
 reset_aliases

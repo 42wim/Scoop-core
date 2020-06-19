@@ -1,9 +1,9 @@
 'core', 'Git' | ForEach-Object {
-    . "$PSScriptRoot\$_.ps1"
+    . (Join-Path $PSScriptRoot "$_.ps1")
 }
 
-$bucketsdir = "$scoopdir\buckets"
-$SCOOP_BUCKETS_DIRECTORY = $bucketsdir
+$SCOOP_BUCKETS_DIRECTORY = Join-Path $SCOOP_ROOT_DIRECTORY 'buckets'
+$bucketsdir = $SCOOP_BUCKETS_DIRECTORY
 
 function Find-BucketDirectory {
     <#

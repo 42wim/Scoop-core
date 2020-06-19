@@ -4,7 +4,7 @@
 param($app)
 
 'buckets', 'core', 'depends', 'help', 'install', 'manifest', 'Versions' | ForEach-Object {
-    . "$PSScriptRoot\..\lib\$_.ps1"
+    . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
 reset_aliases
@@ -27,9 +27,8 @@ if ($app -match '^(ht|f)tps?://|\\\\') {
     $manifest, $bucket = find_manifest $app $bucket
 }
 
-if (!$manifest) {
-    abort "Could not find manifest for '$(show_app $app $bucket)'."
-}
+# TODO: Stop-ScoopExecution
+if (!$manifest) { abort "Could not find manifest for '$(show_app $app $bucket)'." }
 
 $install = install_info $app $status.version $global
 $status.installed = $install.bucket -eq $bucket
@@ -56,13 +55,11 @@ if ($status.installed) {
     $architecture = $install.architecture
 }
 
-
 Write-Output "Name: $app"
-if ($manifest.description) {
-    Write-Output "Description: $($manifest.description)"
-}
+if ($manifest.description) { Write-Output "Description: $($manifest.description)" }
 Write-Output "Version: $version_output"
 Write-Output "Website: $($manifest.homepage)"
+
 # Show license
 # TODO: Rework
 if ($manifest.license) {
@@ -72,7 +69,7 @@ if ($manifest.license) {
     } elseif ($manifest.license -match '^((ht)|f)tps?://') {
         $license = "$($manifest.license)"
     } elseif ($manifest.license -match '[|,]') {
-        $licurl = $manifest.license.Split("|,") | ForEach-Object { "https://spdx.org/licenses/$_.html" }
+        $licurl = $manifest.license.Split('|,') | ForEach-Object { "https://spdx.org/licenses/$_.html" }
         $license = "$($manifest.license) ($($licurl -join ', '))"
     } else {
         $license = "$($manifest.license) (https://spdx.org/licenses/$($manifest.license).html)"
@@ -124,7 +121,7 @@ if ($env_set) {
     $env_set | Get-Member -MemberType NoteProperty | ForEach-Object {
         $value = env $_.name $global
         if (!$value) {
-            $value = format $env_set.$($_.name) @{ "dir" = $dir }
+            $value = format $env_set.$($_.name) @{ 'dir' = $dir }
         }
         Write-Output "  $($_.name)=$value"
     }

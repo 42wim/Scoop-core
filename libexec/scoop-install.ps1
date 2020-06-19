@@ -17,8 +17,8 @@
 #   -s, --skip                Skip hash validation (use with caution!)
 #   -a, --arch <32bit|64bit>  Use the specified architecture, if the app supports it
 
-'core', 'manifest', 'buckets', 'decompress', 'install', 'shortcuts', 'psmodules', 'Update', 'Versions', 'help', 'getopt', 'depends' | ForEach-Object {
-    . "$PSScriptRoot\..\lib\$_.ps1"
+'Helpers', 'core', 'manifest', 'buckets', 'decompress', 'install', 'shortcuts', 'psmodules', 'Update', 'Versions', 'help', 'getopt', 'depends' | ForEach-Object {
+    . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
 reset_aliases
@@ -68,10 +68,7 @@ if ($global -and !(is_admin)) {
     abort 'ERROR: you need admin rights to install global apps' 4
 }
 
-if (is_scoop_outdated) {
-    # TODO: do not call scoop externally
-    Update-Scoop
-}
+if (is_scoop_outdated) { Update-Scoop }
 
 if ($apps.length -eq 1) {
     $app, $null, $version = parse_app $apps

@@ -24,14 +24,14 @@ param(
 )
 
 'core', 'Helpers', 'manifest', 'json' | ForEach-Object {
-    . "$PSScriptRoot\..\lib\$_.ps1"
+    . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
 $Dir = Resolve-Path $Dir
 
 function _infoMes ($name, $mes) { Write-UserMessage -Message "${name}: $mes" -Info }
 
-foreach ($m in Get-ChildItem $Dir "$App.*") {
+foreach ($m in Get-ChildItem $Dir "$App.*" -File) {
     $path = $m.Fullname
 
     if ($m.Extension -notin '.json', '.yml', '.yaml') { continue }
