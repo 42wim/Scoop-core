@@ -1,5 +1,5 @@
 'Helpers', 'core', 'manifest', 'install', 'shortcuts', 'psmodules', 'Versions' | ForEach-Object {
-    . "$PSScriptRoot\$_.ps1"
+    . (Join-Path $PSScriptRoot "$_.ps1")
 }
 
 # TODO: Refactor
@@ -94,7 +94,7 @@ function Uninstall-ScoopApplication {
     # Remove older versions
     if ($Older) {
         try {
-            # unlink all potential old link before doing recursive Remove-Item
+            # Unlink all potential old link before doing recursive Remove-Item
             unlink_persist_data $dir
             Remove-Item $dir -Recurse -Force -ErrorAction Stop
         } catch {
@@ -105,13 +105,13 @@ function Uninstall-ScoopApplication {
         }
 
         Get-InstalledVersion -AppName $App -Global:$Global | ForEach-Object {
-            message "Removing older version ($_)."
+            Write-UserMessage -Message "Removing older version ($_)." -Output:$false
 
             $dir = versiondir $app $_ $Global
             try {
-                # unlink all potential old link before doing recursive Remove-Item
+                # Unlink all potential old link before doing recursive Remove-Item
                 unlink_persist_data $dir
-                Remove-Item $dir -Recurse -Force -ErrorAction Stop
+                Remove-Item $dir -ErrorAction Stop -Recurse -Force
             } catch {
                 Write-UserMessage -Message "Couldn't remove '$(friendly_path $dir)'; it may be in use." -Err
                 return $false
@@ -121,9 +121,9 @@ function Uninstall-ScoopApplication {
         if ((Get-InstalledVersion -AppName $App -Global:$Global).Count -eq 0) {
             $appdir = appdir $App $Global
             try {
-                # if last install failed, the directory seems to be locked and this
+                # If last install failed, the directory seems to be locked and this
                 # will throw an error about the directory not existing
-                Remove-Item $appdir -Recurse -Force -ErrorAction Stop
+                Remove-Item $appdir -ErrorAction Stop -Recurse -Force
             } catch {
                 if ((Test-Path $appdir)) { return $false } # only throw if the dir still exists
             }
@@ -131,12 +131,12 @@ function Uninstall-ScoopApplication {
     }
 
     if ($Purge) {
-        message 'Removing persisted data.'
+        Write-UserMessage -Message 'Removing persisted data.' -Output:$false
         $persist_dir = persistdir $App $Global
 
         if (Test-Path $persist_dir) {
             try {
-                Remove-Item $persist_dir -Recurse -Force -ErrorAction Stop
+                Remove-Item $persist_dir -ErrorAction Stop -Recurse -Force
             } catch {
                 Write-UserMessage -Message "Couldn't remove '$(friendly_path $persist_dir)'" -Err
                 return $false

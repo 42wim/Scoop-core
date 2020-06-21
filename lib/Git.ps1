@@ -1,5 +1,5 @@
 'core' | ForEach-Object {
-    . "$PSScriptRoot\$_.ps1"
+    . (Join-Path $PSScriptRoot "$_.ps1")
 }
 
 function Invoke-GitCmd {

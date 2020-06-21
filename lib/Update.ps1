@@ -1,5 +1,5 @@
-'core', 'Git', 'buckets', 'install' | ForEach-Object {
-    . "$PSScriptRoot\$_.ps1"
+'core', 'Git', 'Helpers', 'buckets', 'install' | ForEach-Object {
+    . (Join-Path $PSScriptRoot "$_.ps1")
 }
 
 # TODO: Change
@@ -31,11 +31,10 @@ function Update-ScoopCoreClone {
     Write-UserMessage -Message "Cloning scoop installation from $Repo ($Branch)" -Info
 
     $newDir = versiondir 'scoop' 'new'
-
     Invoke-GitCmd -Command 'clone' -Argument '--quiet', '--single-branch', '--branch', """$Branch""", $Repo, """$newDir""" -Proxy
 
-    # TODO: Stop-ScoopExecution
     # Check if scoop was successful downloaded
+    # TODO: Stop-ScoopExecution
     if (!(Test-Path $newDir -PathType Container)) { abort 'Scoop update failed.' }
 
     # Replace non-git scoop with the git version
@@ -69,8 +68,8 @@ function Update-ScoopCorePull {
     $currentRepo = Invoke-GitCmd @target -Command 'config' -Argument '--get', 'remote.origin.url'
     $currentBranch = Invoke-GitCmd @target -Command 'branch' -Argument '--show-current'
 
-    $isRepoChanged = !($currentRepo -eq $Repo)
-    $isBranchChanged = !($currentBranch -eq $Branch)
+    $isRepoChanged = $currentRepo -ne $Repo
+    $isBranchChanged = $currentBranch -ne $Branch
 
     # Change remote url if the repo is changed
     if ($isRepoChanged) { Invoke-GitCmd @target -Cmd 'config' -Argument 'remote.origin.url', """$Repo""" }
@@ -171,7 +170,7 @@ function Update-Scoop {
     }
 
     ensure_scoop_in_path
-    shim "$currentDir\bin\scoop.ps1" $false
+    shim (Join-Path $currentDir 'bin\scoop.ps1') $false
 
     Get-LocalBucket | Update-ScoopLocalBucket
 
@@ -298,7 +297,7 @@ function Update-App {
     if ($Force -and ($oldVersion -eq $version)) {
         $dir = versiondir $App $oldVersion $Global
 
-        $old = "$dir/../_$version.old"
+        $old = Join-Path $dir "..\_$version.old"
         if (Test-Path $old -PathType Container) {
             $i = 1
             while (Test-Path "$old($i)") { ++$i }
