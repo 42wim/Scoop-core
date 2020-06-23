@@ -85,6 +85,11 @@ function Invoke-Check {
 
     $state = $Event.SourceEventArgs.UserState
 
+    debug $state.url
+    debug $state.regex
+    debug $state.reverse
+    debug $state.replace
+
     $appName = $state.app
     $json = $state.json
     $url = $state.url
@@ -270,11 +275,6 @@ foreach ($q in $Queue) {
         'reverse'  = $reverse
         'replace'  = $replace
     }
-
-    debug $state.url
-    debug $state.regex
-    debug $state.reverse
-    debug $state.replace
 
     $wc.Headers.Add('Referer', (strip_filename $url))
     $wc.DownloadStringAsync($url, $state)

@@ -54,7 +54,6 @@ function Test-WindowsDefender {
         }
     }
 
-
     return $true
 }
 
