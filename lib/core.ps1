@@ -1002,7 +1002,7 @@ $SCOOP_CACHE_DIRECTORY = $env:SCOOP_CACHE, (get_config 'cachePath'), "$SCOOP_ROO
 $cachedir = $SCOOP_CACHE_DIRECTORY
 
 # Scoop config file migration
-$configHome = $env:XDG_CONFIG_HOME, "$env:USERPROFILE\.config'" | Select-Object -First 1
+$configHome = $env:XDG_CONFIG_HOME, "$env:USERPROFILE\.config" | Select-Object -First 1
 $SCOOP_CONFIGURATION_FILE = Join-Path $configHome 'scoop\config.json'
 $configFile = $SCOOP_CONFIGURATION_FILE
 $oldConfigPath = Join-Path $env:USERPROFILE '.scoop'
