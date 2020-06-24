@@ -984,12 +984,13 @@ function fullpath($path) {
 #       for all communication with api.github.com
 Optimize-SecurityProtocol
 
+# Path gluing has to remaing in these global variables to not fail in case user do not have some environment configured (most likely linux case)
 # Scoop root directory
-$SCOOP_ROOT_DIRECTORY = $env:SCOOP, (get_config 'rootPath'), (Join-Path $env:USERPROFILE 'scoop') | Where-Object { -not [String]::IsNullOrEmpty($_) } | Select-Object -First 1
+$SCOOP_ROOT_DIRECTORY = $env:SCOOP, (get_config 'rootPath'), "$env:USERPROFILE\scoop" | Where-Object { -not [String]::IsNullOrEmpty($_) } | Select-Object -First 1
 $scoopdir = $SCOOP_ROOT_DIRECTORY
 
 # Scoop global apps directory
-$SCOOP_GLOBAL_ROOT_DIRECTORY = $env:SCOOP_GLOBAL, (get_config 'globalPath'), (Join-Path $env:ProgramData 'scoop') | Where-Object { -not [String]::IsNullOrEmpty($_) } | Select-Object -First 1
+$SCOOP_GLOBAL_ROOT_DIRECTORY = $env:SCOOP_GLOBAL, (get_config 'globalPath'), "$env:ProgramData\scoop" | Where-Object { -not [String]::IsNullOrEmpty($_) } | Select-Object -First 1
 $globaldir = $SCOOP_GLOBAL_ROOT_DIRECTORY
 
 # Scoop cache directory
@@ -997,11 +998,11 @@ $globaldir = $SCOOP_GLOBAL_ROOT_DIRECTORY
 #       is experimental and untested. There may be concurrency issues when
 #       multiple users write and access cached files at the same time.
 #       Use at your own risk.
-$SCOOP_CACHE_DIRECTORY = $env:SCOOP_CACHE, (get_config 'cachePath'), (Join-Path $SCOOP_ROOT_DIRECTORY 'cache') | Where-Object { -not [String]::IsNullOrEmpty($_) } | Select-Object -First 1
+$SCOOP_CACHE_DIRECTORY = $env:SCOOP_CACHE, (get_config 'cachePath'), "$SCOOP_ROOT_DIRECTORY\cache" | Where-Object { -not [String]::IsNullOrEmpty($_) } | Select-Object -First 1
 $cachedir = $SCOOP_CACHE_DIRECTORY
 
 # Scoop config file migration
-$configHome = $env:XDG_CONFIG_HOME, (Join-Path $env:USERPROFILE '.config') | Select-Object -First 1
+$configHome = $env:XDG_CONFIG_HOME, "$env:USERPROFILE\.config'" | Select-Object -First 1
 $SCOOP_CONFIGURATION_FILE = Join-Path $configHome 'scoop\config.json'
 $configFile = $SCOOP_CONFIGURATION_FILE
 $oldConfigPath = Join-Path $env:USERPROFILE '.scoop'
