@@ -1,5 +1,5 @@
 'Helpers', 'commands' | ForEach-Object {
-    . "$PSScriptRoot\$_.ps1"
+    . (Join-Path $PSScriptRoot "$_.ps1")
 }
 
 # Such format is need to prevent automatic conversion of JSON date https://github.com/Ash258/Scoop-Core/issues/26
@@ -60,12 +60,12 @@ function Show-DeprecatedWarning {
 }
 
 function load_cfg($file) {
-    if (! (Test-Path $file)) { return $null }
+    if (!(Test-Path $file)) { return $null }
 
     try {
         return (Get-Content $file -Raw | ConvertFrom-Json -ErrorAction Stop)
     } catch {
-        Write-UserMessage -Message "loading $file`: $($_.Exception.Message)" -Err
+        Write-UserMessage -Message "loading ${file}: $($_.Exception.Message)" -Err
     }
 }
 
@@ -99,7 +99,7 @@ function set_config($name, $value) {
 }
 
 function setup_proxy() {
-    # note: '@' and ':' in password must be escaped, e.g. 'p@ssword' -> p\@ssword'
+    # '@' and ':' in password must be escaped, e.g. 'p@ssword' -> p\@ssword'
     $proxy = get_config 'proxy' 'none'
 
     if ($proxy -eq 'none') { return }
@@ -107,7 +107,7 @@ function setup_proxy() {
     try {
         $credentials, $address = $proxy -split '(?<!\\)@'
         if (!$address) {
-            $address, $credentials = $credentials, $null # no credentials supplied
+            $address, $credentials = $credentials, $null # No credentials supplied
         }
 
         if ($address -eq 'none') {
