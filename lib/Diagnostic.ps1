@@ -4,7 +4,7 @@ Return $true if the test passed, otherwise $false.
 Use 'Write-UserMessage -Warning' to highlight the issue, and follow up with the recommended actions to rectify.
 #>
 
-'core', 'buckets', 'decompress' | ForEach-Object {
+'core', 'buckets', 'decompress', 'Helpers' | ForEach-Object {
     . (Join-Path $PSScriptRoot "$_.ps1")
 }
 
@@ -206,15 +206,18 @@ function Test-Config {
 }
 
 function Test-CompletionRegistered {
-    $result = (Get-Content $PROFILE) -like '*\supporting\completion*'
-    if (!$result) {
+    $module = Get-Module 'Scoop-Completion'
+
+    if (($null -eq $module) -or ($module.Author -notlike 'Jakub*')) {
         $path = Join-Path $PSScriptRoot '..\supporting\completion\Scoop-Completion.psd1' -Resolve
-        Write-UserMessage -Message 'Automatic completion module is not imported in $PROFILE' -Warning
+        Write-UserMessage -Message 'Native tab completion module is not imported' -Warning
         Write-UserMessage -Message @(
-            '  Consider importing module for automatic commands/parameters completion'
+            '  Consider importing native module for automatic commands/parameters completion:'
             "    Add-Content `$PROFILE 'Import-Module ''$path'' -ErrorAction SilentlyContinue'"
         )
+
+        return $false
     }
 
-    return $result
+    return $true
 }
