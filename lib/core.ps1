@@ -342,11 +342,11 @@ function app_status($app, $global) {
         return !(installed $app)
     }
 
-    if ($deps) {
-        $status.missing_deps += , $deps
-    }
+if ($deps) {
+    $status.missing_deps += , $deps
+}
 
-    return $status
+return $status
 }
 
 function appname_from_url($url) { return (Split-Path $url -Leaf) -replace '\.json$' }
@@ -926,13 +926,14 @@ function handle_special_urls($url) {
     # FossHub.com
     if ($url -match "^(?:.*fosshub.com\/)(?<name>.*)(?:\/|\?dwl=)(?<filename>.*)$") {
         $Body = @{
-            projectUri      = $Matches.name
-            fileName        = $Matches.filename
-            isLatestVersion = $true
+            'projectUri'      = $Matches.name
+            'fileName'        = $Matches.filename
+            'source'          = 'CF'
+            'isLatestVersion' = $true
         }
         if ((Invoke-RestMethod -Uri $url) -match '"p":"(?<pid>[a-f0-9]{24}).*?"r":"(?<rid>[a-f0-9]{24})') {
-            $Body.Add("projectId", $Matches.pid)
-            $Body.Add("releaseId", $Matches.rid)
+            $Body.Add('projectId', $Matches.pid)
+            $Body.Add('releaseId', $Matches.rid)
         }
         $url = Invoke-RestMethod -Method Post -Uri "https://api.fosshub.com/download/" -ContentType "application/json" -Body (ConvertTo-Json $Body -Compress)
         if ($null -eq $url.error) {
