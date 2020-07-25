@@ -593,6 +593,7 @@ function shim($path, $global, $name, $arg) {
     Pop-Location
     $resolved_path = Resolve-Path $path
 
+    #region PS1 shim
     # if $path points to another drive resolve-path prepends .\ which could break shims
     if ($relative_path -match '^(.\\[\w]:).*$') {
         Out-UTF8File -Path "$shim.ps1" -Content "`$path = `"$path`""
@@ -605,10 +606,12 @@ function shim($path, $global, $name, $arg) {
     }
 
     if ($path -match '\.jar$') {
-        "if(`$MyInvocation.ExpectingInput) { `$input | & java -jar `$path $arg @args } else { & java -jar `$path $arg @args }" | Out-File "$shim.ps1" -Encoding utf8 -append
+        "if(`$MyInvocation.ExpectingInput) { `$input | & java -jar `$path $arg @args } else { & java -jar `$path $arg @args }" | Out-File "$shim.ps1" -Encoding utf8 -Append
     } else {
         "if(`$MyInvocation.ExpectingInput) { `$input | & `$path $arg @args } else { & `$path $arg @args }" | Out-File "$shim.ps1" -Encoding utf8 -Append
     }
+    Add-Content "$shim.ps1" 'exit $LASTEXITCODE' -Encoding utf8
+    #endregion PS1 shim
 
     if ($path -match '\.(exe|com)$') {
         # for programs with no awareness of any shell
@@ -632,7 +635,7 @@ set args=%args:(=``(%
 set args=%args:)=``)%
 set invalid=`"='
 if !args! == !invalid! ( set args= )
-powershell -noprofile -ex unrestricted `"& '$resolved_path' $arg %args%;exit `$lastexitcode`"" | Out-File "$shim.cmd" -Encoding Ascii
+powershell -noprofile -ex unrestricted `"& '$resolved_path' $arg %args%;exit `$LASTEXITCODE`"" | Out-File "$shim.cmd" -Encoding Ascii
 
     "#!/bin/sh`npowershell.exe -noprofile -ex unrestricted `"$resolved_path`" $arg `"$@`"" | Out-File $shim -Encoding Ascii
 } elseif ($path -match '\.jar$') {
