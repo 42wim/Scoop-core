@@ -78,7 +78,10 @@ function Get-ScoopAlias {
     param([Switch] $Verbose)
     $aliases = @()
 
-    (Get-AliasesFromConfig).PSObject.Properties.GetEnumerator() | ForEach-Object {
+    $props = @((Get-AliasesFromConfig).PSObject.Properties | Where-Object -Property MemberType -EQ -Value NoteProperty)
+    if ($props.Count -eq 0) { $props = @() }
+
+    $props.GetEnumerator() | ForEach-Object {
         $content = Get-Content (command_path $_.Name)
         $cmd = ($content | Select-Object -Skip 1).Trim()
         $sum = (summary $content).Trim()
