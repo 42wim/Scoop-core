@@ -54,11 +54,11 @@ function find_hash_in_textfile([String] $url, [Hashtable] $substitutions, [Strin
 
     debug $regex
 
-    if ($hashfile -match $regex) { $hash = $matches[1] -replace '\s' }
+    if ($hashfile -match $regex) { $hash = $Matches[1] -replace '\s' }
 
     # Convert base64 encoded hash values
     if ($hash -match '^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{4})$') {
-        $base64 = $matches[0]
+        $base64 = $Matches[0]
         if (!($hash -match '^[a-fA-F0-9]+$') -and $hash.Length -notin @(32, 40, 64, 128)) {
             try {
                 $hash = ([System.Convert]::FromBase64String($base64) | ForEach-Object { $_.ToString('x2') }) -join ''
@@ -73,11 +73,11 @@ function find_hash_in_textfile([String] $url, [Hashtable] $substitutions, [Strin
         $filenameRegex = "([a-fA-F0-9]{32,128})[\x20\t]+.*`$basename(?:[\x20\t]+\d+)?"
         $filenameRegex = substitute $filenameRegex $substitutions $true
         if ($hashfile -match $filenameRegex) {
-            $hash = $matches[1]
+            $hash = $Matches[1]
         }
         $metalinkRegex = '<hash[^>]+>([a-fA-F0-9]{64})'
         if ($hashfile -match $metalinkRegex) {
-            $hash = $matches[1]
+            $hash = $Matches[1]
         }
     }
 
@@ -152,7 +152,7 @@ function find_hash_in_headers([String] $url) {
         $res = $req.GetResponse()
         if (([int]$response.StatusCode -ge 300) -and ([int]$response.StatusCode -lt 400)) {
             if ($res.Headers['Digest'] -match 'SHA-256=([^,]+)' -or $res.Headers['Digest'] -match 'SHA=([^,]+)' -or $res.Headers['Digest'] -match 'MD5=([^,]+)') {
-                $hash = ([System.Convert]::FromBase64String($matches[1]) | ForEach-Object { $_.ToString('x2') }) -join ''
+                $hash = ([System.Convert]::FromBase64String($Matches[1]) | ForEach-Object { $_.ToString('x2') }) -join ''
                 debug $hash
             }
         }
@@ -252,7 +252,7 @@ function get_hash_for_app([String] $app, $config, [String] $version, [String] $u
         }
         'sourceforge' {
             # Change the URL because downloads.sourceforge.net doesn't have checksums
-            $hashfile_url = (strip_filename (strip_fragment "https://sourceforge.net/projects/$($matches['project'])/files/$($matches['file'])")).TrimEnd('/')
+            $hashfile_url = (strip_filename (strip_fragment "https://sourceforge.net/projects/$($Matches['project'])/files/$($Matches['file'])")).TrimEnd('/')
             $hash = find_hash_in_textfile $hashfile_url $substitutions '"$basename":.*?"sha1":\s"([a-fA-F0-9]{40})"'
         }
     }
@@ -341,8 +341,8 @@ function get_version_substitutions([String] $version, [Hashtable] $customMatches
         '$preReleaseVersion' = $lastPart
     }
     if ($version -match '(?<head>\d+\.\d+(?:\.\d+)?)(?<tail>.*)') {
-        $versionVariables.Set_Item('$matchHead', $matches['head'])
-        $versionVariables.Set_Item('$matchTail', $matches['tail'])
+        $versionVariables.Set_Item('$matchHead', $Matches['head'])
+        $versionVariables.Set_Item('$matchTail', $Matches['tail'])
     }
     if ($customMatches) {
         $customMatches.GetEnumerator() | ForEach-Object {
@@ -355,13 +355,12 @@ function get_version_substitutions([String] $version, [Hashtable] $customMatches
     return $versionVariables
 }
 
-# TODO: debt: Rename $matches
-function autoupdate([String] $app, $dir, $json, [String] $version, [Hashtable] $matches) {
+function autoupdate([String] $app, $dir, $json, [String] $version, [Hashtable] $MatchesHashtable) {
     Write-UserMessage -Message "Autoupdating $app" -Color DarkCyan
     $has_changes = $false
     $has_errors = $false
     [bool] $valid = $true
-    $substitutions = get_version_substitutions $version $matches
+    $substitutions = get_version_substitutions $version $MatchesHashtable
 
     if ($json.url) {
         # Create new url
