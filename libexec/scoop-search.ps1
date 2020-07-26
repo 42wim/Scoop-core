@@ -34,13 +34,6 @@ function search_bucket($bucket, $query) {
     }
 
     if ($query) {
-        try {
-            $query = New-Object System.Text.RegularExpressions.Regex $query, 'IgnoreCase'
-        } catch {
-            # TODO: Stop-ScoopExecution
-            abort "Invalid regular expression: $($_.Exception.InnerException.Message)"
-        }
-
         $apps = $apps | Where-Object {
             if ($_.name -match $query) { return $true }
             $bin = bin_match (manifest $_.name $bucket) $query
@@ -102,6 +95,12 @@ function search_remotes($query) {
     }
 }
 
+try {
+    $query = New-Object System.Text.RegularExpressions.Regex $query, 'IgnoreCase'
+} catch {
+    Stop-ScoopExecution -Message "Invalid regular expression: $($_.Exception.InnerException.Message)"
+}
+
 Get-LocalBucket | ForEach-Object {
     $res = search_bucket $_ $query
     $local_results = $local_results -or $res
@@ -120,7 +119,7 @@ Get-LocalBucket | ForEach-Object {
 
 if (!$local_results -and !(github_ratelimit_reached)) {
     $remote_results = search_remotes $query
-    if (!$remote_results) { Stop-ScoopExecution -Message 'No matches found' }
+    if (!$remote_results) { Stop-ScoopExecution -Message 'No matches found' -SkipSeverity }
     $remote_results
 }
 

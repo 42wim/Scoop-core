@@ -6,7 +6,8 @@
 # You can use
 #   scoop cache show
 # to see what's in the cache, and
-#   scoop cache rm <app> to remove downloads for a specific app.
+#   scoop cache rm <app>
+# to remove downloads for a specific app.
 #
 # To clear everything in your cache, use:
 #   scoop cache rm *
@@ -40,19 +41,15 @@ function show($app) {
 $exitCode = 0
 switch ($cmd) {
     'rm' {
-        if (!$app) { Write-UserMessage -Message 'ERROR: <app> missing' -Err; my_usage; exit 1 }
-        Join-Path $SCOOP_CACHE_DIRECTORY "$app#*"|  Remove-Item -Force -Recurse
-        Join-Path $SCOOP_CACHE_DIRECTORY "$app.txt"|  Remove-Item -ErrorAction SilentlyContinue -Force -Recurse
+        if (!$app) { Stop-ScoopExecution -Message 'Parameter <app> missing' -Usage (my_usage) }
+        Join-Path $SCOOP_CACHE_DIRECTORY "$app#*"| Remove-Item -Force -Recurse
+        Join-Path $SCOOP_CACHE_DIRECTORY "$app.txt"| Remove-Item -ErrorAction SilentlyContinue -Force -Recurse
     }
     'show' {
         show $app
     }
-    '' {
-        show
-    }
     default {
-        my_usage
-        $exitCode = 1
+        show
     }
 }
 
