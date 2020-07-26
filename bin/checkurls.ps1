@@ -28,6 +28,8 @@ param(
     . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
+$Timeout | Out-Null # PowerShell/PSScriptAnalyzer#1472
+
 $Dir = Resolve-Path $Dir
 $Queue = @()
 

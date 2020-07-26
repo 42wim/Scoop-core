@@ -65,6 +65,11 @@ param(
     . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
+$ForceUpdate | Out-Null # PowerShell/PSScriptAnalyzer#1472
+$SkipUpdated | Out-Null # PowerShell/PSScriptAnalyzer#1472
+$Update | Out-Null # PowerShell/PSScriptAnalyzer#1472
+$Version | Out-Null # PowerShell/PSScriptAnalyzer#1472
+
 $Dir = Resolve-Path $Dir
 $Search = $App
 $Queue = @()
@@ -81,7 +86,7 @@ function next($AppName, $Err) {
 }
 
 function Invoke-Check {
-    param([Parameter(Mandatory, ValueFromPipeline)] [System.Management.Automation.PSEventArgs] $EventToCheck)
+    param([Parameter(Mandatory)] [System.Management.Automation.PSEventArgs] $EventToCheck)
 
     $state = $EventToCheck.SourceEventArgs.UserState
 
