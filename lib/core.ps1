@@ -262,7 +262,7 @@ function Test-CommandAvailable {
     [OutputType([bool])]
     param ([Parameter(Mandatory, ValueFromPipeline)] [Alias('Command')] [String] $Name)
 
-    return [bool] (Get-Command $Name -ErrorAction Ignore)
+    process { return [bool] (Get-Command $Name -ErrorAction Ignore) }
 }
 
 function Get-HelperPath {
