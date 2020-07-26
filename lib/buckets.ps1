@@ -33,6 +33,15 @@ function Find-BucketDirectory {
     return $bucket
 }
 
+function Get-LocalBucket {
+    <#
+    .SYNOPSIS
+        List all local buckets.
+    #>
+
+    return (Get-ChildItem -Directory $SCOOP_BUCKETS_DIRECTORY).Name
+}
+
 function known_bucket_repos {
     $json = Join-Path $PSScriptRoot '..\buckets.json'
 
@@ -45,21 +54,19 @@ function known_bucket_repo($name) {
     return $buckets.$name
 }
 
-function known_buckets {
-    known_bucket_repos | ForEach-Object { $_.PSObject.Properties | Select-Object -ExpandProperty 'name' }
+function Get-KnownBucket {
+    <#
+    .SYNOPSIS
+        List names of all known buckets
+    #>
+    [CmdletBinding()]
+    param()
+
+    return known_bucket_repos | ForEach-Object { $_.PSObject.Properties | Select-Object -ExpandProperty 'Name' }
 }
 
 function apps_in_bucket($dir) {
     return Get-ChildItem $dir | Where-Object { $_.Name.EndsWith('.json') } | ForEach-Object { $_.Name -replace '.json$' }
-}
-
-function Get-LocalBucket {
-    <#
-    .SYNOPSIS
-        List all local buckets.
-    #>
-
-    return (Get-ChildItem -Directory $SCOOP_BUCKETS_DIRECTORY).Name
 }
 
 function find_manifest($app, $bucket) {
@@ -75,53 +82,53 @@ function find_manifest($app, $bucket) {
     }
 }
 
-function add_bucket($name, $repo) {
-    # TODO: Stop-ScoopExecution
-    # TODO: Eliminate $usage_add
-    if (!$name) { "<name> missing"; $usage_add; exit 1 }
-    if (!$repo) {
-        $repo = known_bucket_repo $name
-        # TODO: Eliminate $usage_add
-        if (!$repo) { "Unknown bucket '$name'. Try specifying <repo>."; $usage_add; exit 1 }
+function Add-Bucket {
+    <#
+    .SYNOPSIS
+        Add scoop bucket.
+    .PARAMETER Name
+        Specifies the name of bucket to be added.
+    .PARAMETER RepositoryUrl
+        Specifies the url of the git repository.
+    #>
+    param([Parameter(Mandatory)][String] $Name, [String] $RepositoryUrl)
+
+    if (!$RepositoryUrl) {
+        $RepositoryUrl = known_bucket_repo $Name
+        if (!$RepositoryUrl) {
+            throw "Specified bucket '$Name' is not known and cannot be added without providing URL."
+        }
     }
 
-    if (!(Test-CommandAvailable git)) {
-        # TODO: Stop-ScoopExecution: throw
-        abort "Git is required for buckets. Run 'scoop install git' and try again."
+    if (!(Test-CommandAvailable 'git')) {
+        throw "Git is required for manipulating with buckets. Run 'scoop install git' and try again."
     }
 
-    $dir = Find-BucketDirectory $name -Root
-    if (Test-Path $dir) {
-        # TODO: Stop-ScoopExecution: throw
-        Write-UserMessage -Message "The '$name' bucket already exists. Use 'scoop bucket rm $name' to remove it." -Warning
-        exit 0
-    }
+    $bucketDirectory = Find-BucketDirectory -Name $Name -Root
+    if (Test-Path $bucketDirectory) { throw "Bucket with name '$Name' already exists." }
 
-    Write-Host 'Checking repo... ' -NoNewline
-    $out = Invoke-GitCmd -Command 'ls-remote' -Argument """$repo""" -Proxy 2>&1
-    if ($lastexitcode -ne 0) {
-        # TODO: Stop-ScoopExecution: throw
-        abort "'$repo' doesn't look like a valid git repository`n`nError given:`n$out"
+    Write-UserMessage -Message 'Checking repository... ' -Output:$false
+    $out = Invoke-GitCmd -Command 'ls-remote' -Argument """$RepositoryUrl""" -Proxy 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "'$RepositoryUrl' is not valid git repository ($out)"
     }
-    Write-Host 'ok'
 
     ensure $SCOOP_BUCKETS_DIRECTORY | Out-Null
-    $dir = ensure $dir
-    Invoke-GitCmd -Command 'clone' -Argument '--quiet', """$repo""", """$dir""" -Proxy
+    $bucketDirectory = (ensure $bucketDirectory).Path
+    Invoke-GitCmd -Command 'clone' -Argument '--quiet', """$RepositoryUrl""", """$bucketDirectory""" -Proxy
 
     Write-UserMessage -Message "The $name bucket was added successfully." -Success
 }
 
-function rm_bucket($name) {
-    # TODO: Stop-ScoopExecution: throw
-    if (!$name) { "<name> missing"; $usage_rm; exit 1 }
-    $dir = Find-BucketDirectory $name -Root
-    if (!(Test-Path $dir)) {
-        # TODO: Stop-ScoopExecution: throw
-        abort "'$name' bucket not found."
-    }
+function Remove-Bucket {
+    [CmdletBinding()]
+    param([Parameter(Mandatory, ValueFromPipeline)] [String] $Name)
 
-    Remove-Item $dir -ErrorAction Stop -Force -Recurse
+    $bucketDirectory = Find-BucketDirectory $Name -Root
+
+    if (!(Test-Path $bucketDirectory)) { throw "'$Name' bucket not found" }
+
+    Remove-Item $bucketDirectory -Force -Recurse
 }
 
 # TODO: Migrate to helpers
@@ -173,5 +180,23 @@ function buckets {
     Show-DeprecatedWarning $MyInvocation 'Get-LocalBucket'
 
     return Get-LocalBucket
+}
+
+function known_buckets {
+    Show-DeprecatedWarning $MyInvocation 'Get-KnownBucket'
+
+    return Get-KnownBucket
+}
+
+function rm_bucket($name) {
+    Show-DeprecatedWarning $MyInvocation 'Remove-Bucket'
+
+    Remove-Bucket -Name $name
+}
+
+function add_bucket($name, $repo) {
+    Show-DeprecatedWarning $MyInvocation 'Add-Bucket'
+
+    Add-Bucket -Name $name -RepositoryUrl $repo
 }
 #endregion Deprecated
