@@ -307,7 +307,7 @@ function Test-HelperInstalled {
         [String] $Helper
     )
 
-    return ![String]::IsNullOrWhiteSpace((Get-HelperPath -Helper $Helper))
+    process { return ![String]::IsNullOrWhiteSpace((Get-HelperPath -Helper $Helper)) }
 }
 
 function Test-Aria2Enabled {
@@ -682,6 +682,7 @@ function Confirm-InstallationStatus {
         [String[]] $Apps,
         [Switch] $Global
     )
+    $Global | Out-Null # PowerShell/PSScriptAnalyzer#1472
     $Installed = @()
     $Apps | Select-Object -Unique | Where-Object { $_.Name -ne 'scoop' } | ForEach-Object {
         $App, $null, $null = parse_app $_

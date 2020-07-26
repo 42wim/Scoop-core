@@ -105,7 +105,6 @@ foreach ($current in $MANIFESTS) {
     foreach ($u in $current.urls) {
         $algorithm, $expected = get_hash $current.hashes[$count]
         $version = 'HASH_CHECK'
-        $tmp = $expected_hash -split ':'
         try {
             dl_with_cache $current.app $version $u $null $null -use_cache:$UseCache
         } catch {

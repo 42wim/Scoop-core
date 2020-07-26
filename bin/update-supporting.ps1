@@ -25,7 +25,7 @@ foreach ($sup in $Sups) {
     $manifest = parse_json $sup.FullName
     ensure $dir | Out-Null
 
-    $fname = dl_urls $name $manifest.version $manifest '' default_architecture $dir $true $true
+    dl_urls $name $manifest.version $manifest '' default_architecture $dir $true $true | Out-Null
     # Pre install is enough now
     pre_install $manifest $architecture
 

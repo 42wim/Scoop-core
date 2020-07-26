@@ -24,49 +24,51 @@ function Invoke-GitCmd {
         [String[]] $Argument
     )
 
-    $preAction = if ($Repository) { '-C', """$Repository""" } else { @() }
+    begin { $preAction = if ($Repository) { '-C', """$Repository""" } else { @() } }
 
-    switch ($Command) {
-        'CurrentCommit' {
-            $action = 'rev-parse'
-            $Argument = $Argument + @('HEAD')
+    process {
+        switch ($Command) {
+            'CurrentCommit' {
+                $action = 'rev-parse'
+                $Argument = $Argument + @('HEAD')
+            }
+            'Update' {
+                $action = 'pull'
+                $Argument += '--rebase=false'
+            }
+            'UpdateLog' {
+                $preAction += '--no-pager'
+                $action = 'log'
+                $para = @(
+                    '--no-decorate'
+                    '--format="tformat: * %C(yellow)%h%Creset %<|(72,trunc)%s %C(cyan)%cr%Creset"'
+                    '--grep="\[\(scoop\|shovel\) skip\]"'
+                    '--invert-grep'
+                )
+                $Argument = $para + $Argument
+            }
+            'VersionLog' {
+                $preAction += '--no-pager'
+                $action = 'log'
+                $Argument += '--oneline', '--max-count=1', 'HEAD'
+            }
+            default { $action = $Command }
         }
-        'Update' {
-            $action = 'pull'
-            $Argument += '--rebase=false'
-        }
-        'UpdateLog' {
-            $preAction += '--no-pager'
-            $action = 'log'
-            $para = @(
-                '--no-decorate'
-                '--format="tformat: * %C(yellow)%h%Creset %<|(72,trunc)%s %C(cyan)%cr%Creset"'
-                '--grep="\[\(scoop\|shovel\) skip\]"'
-                '--invert-grep'
-            )
-            $Argument = $para + $Argument
-        }
-        'VersionLog' {
-            $preAction += '--no-pager'
-            $action = 'log'
-            $Argument += '--oneline', '--max-count=1', 'HEAD'
-        }
-        default { $action = $Command }
-    }
 
-    $commandToRun = 'git', ($preAction -join ' '), $action, ($Argument -join ' ') -join ' '
+        $commandToRun = 'git', ($preAction -join ' '), $action, ($Argument -join ' ') -join ' '
 
-    if ($Proxy) {
-        $prox = get_config 'proxy' 'none'
+        if ($Proxy) {
+            $prox = get_config 'proxy' 'none'
+
+            # TODO: Drop comspec
+            if ($prox -and ($prox -ne 'none')) { $commandToRun = "SET HTTPS_PROXY=$prox && SET HTTP_PROXY=$prox && $commandToRun" }
+        }
+
+        debug $commandToRun
 
         # TODO: Drop comspec
-        if ($prox -and ($prox -ne 'none')) { $commandToRun = "SET HTTPS_PROXY=$prox && SET HTTP_PROXY=$prox && $commandToRun" }
+        & "$env:ComSpec" /c $commandToRun
     }
-
-    debug $commandToRun
-
-    # TODO: Drop comspec
-    & "$env:ComSpec" /c $commandToRun
 }
 
 #region Deprecated

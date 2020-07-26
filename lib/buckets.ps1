@@ -122,13 +122,17 @@ function Add-Bucket {
 
 function Remove-Bucket {
     [CmdletBinding()]
-    param([Parameter(Mandatory, ValueFromPipeline)] [String] $Name)
+    param([Parameter(Mandatory, ValueFromPipeline)] [String[]] $Name)
 
-    $bucketDirectory = Find-BucketDirectory $Name -Root
+    process {
+        foreach ($b in $Name) {
+            $bucketDirectory = Find-BucketDirectory $b -Root
 
-    if (!(Test-Path $bucketDirectory)) { throw "'$Name' bucket not found" }
+            if (!(Test-Path $bucketDirectory)) { throw "'$b' bucket not found" }
 
-    Remove-Item $bucketDirectory -Force -Recurse
+            Remove-Item $bucketDirectory -Force -Recurse
+        }
+    }
 }
 
 # TODO: Migrate to helpers

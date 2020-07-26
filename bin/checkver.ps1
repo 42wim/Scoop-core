@@ -210,7 +210,7 @@ function Invoke-Check {
 Get-Event | ForEach-Object { Remove-Event $_.SourceIdentifier }
 
 #region Main
-Get-ChildItem $Dir "$App.*" -File | ForEach-Object {
+Get-ChildItem $Dir "$Search.*" -File | ForEach-Object {
     $m = parse_json $_.FullName
     if ($m.checkver) { $Queue += , @($_.Name, $m) }
 }

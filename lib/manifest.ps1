@@ -12,9 +12,11 @@ function manifest_path($app, $bucket) {
 function parse_json {
     param([Parameter(Mandatory, ValueFromPipeline)] [System.IO.FileInfo] $Path)
 
-    if (!(Test-Path $Path)) { return $null }
+    process {
+        if (!(Test-Path $Path)) { return $null }
 
-    return Get-Content $Path -Raw -Encoding UTF8 | ConvertFrom-Json -ErrorAction Stop
+        return Get-Content $Path -Raw -Encoding UTF8 | ConvertFrom-Json -ErrorAction Stop
+    }
 }
 
 function url_manifest($url) {
