@@ -248,7 +248,7 @@ function _resetAlias($name, $value) {
 
     if ($existing -and ($existing | Where-Object -Property Options -Match 'readonly')) {
         if ($existing.Definition -ne $value) {
-            Write-UserMessage "Alias $name is read-only; can't reset it." -Warning
+            Write-UserMessage "Alias $name is read-only; cannot reset it." -Warning
         }
 
         # Already set

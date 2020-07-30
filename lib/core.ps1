@@ -582,7 +582,7 @@ function warn_on_overwrite($shim_ps1, $path) {
 }
 
 function shim($path, $global, $name, $arg) {
-    if (!(Test-Path $path)) { Set-TerminatingError -Title "Shim creation fail|-Can not shim '$(fname $path)': could not find '$path'" }
+    if (!(Test-Path $path)) { Set-TerminatingError -Title "Shim creation fail|-Cannot shim '$(fname $path)': could not find '$path'" }
 
     $abs_shimdir = shimdir $global | ensure
     if (!$name) { $name = strip_ext (fname $path) }

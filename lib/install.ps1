@@ -889,7 +889,7 @@ function create_shims($manifest, $dir, $global, $arch) {
             $bin = search_in_path $target
         }
 
-        if (!$bin) { Set-TerminatingError -Title "Shim creation fail|-Can not shim '$target': File does not exist" }
+        if (!$bin) { Set-TerminatingError -Title "Shim creation fail|-Cannot shim '$target': File does not exist" }
 
         shim $bin $global $name (substitute $arg @{ '$dir' = $dir; '$original_dir' = $original_dir; '$persist_dir' = $persist_dir })
     }

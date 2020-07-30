@@ -225,14 +225,14 @@ function Expand-ZipArchive {
                 Expand-7zipArchive $Path $DestinationPath -Removal:$Removal
                 return
             } else {
-                Set-TerminatingError -Title "Ignore|-Unzip failed: Windows can not handle the long paths in this zip file.`nRun 'scoop install 7zip' and try again."
+                Set-TerminatingError -Title "Ignore|-Unzip failed: Windows cannot handle the long paths in this zip file.`nRun 'scoop install 7zip' and try again."
             }
         } catch [System.IO.IOException] {
             if (Test-HelperInstalled -Helper 7zip) {
                 Expand-7zipArchive $Path $DestinationPath -Removal:$Removal
                 return
             } else {
-                Set-TerminatingError -Title "Ignore|-Unzip failed: Windows can not handle the file names in this zip file.`nRun 'scoop install 7zip' and try again."
+                Set-TerminatingError -Title "Ignore|-Unzip failed: Windows cannot handle the file names in this zip file.`nRun 'scoop install 7zip' and try again."
             }
         } catch {
             Set-TerminatingError -Title "Decompress error|-Unzip failed: $_"
