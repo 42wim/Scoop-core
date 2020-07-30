@@ -523,9 +523,13 @@ function isFileLocked([string]$path) {
 
 function is_directory([String] $path) { return (Test-Path $path) -and (Get-Item $path) -is [System.IO.DirectoryInfo] }
 
-function movedir($from, $to) {
-    $from = $from.trimend('\')
-    $to = $to.trimend('\')
+function movedir {
+    [CmdletBinding()]
+    param ($from, $to)
+
+    $from = $from.TrimEnd('\')
+    $parent = Split-Path $from -Parent
+    $to = $to.TrimEnd('\')
 
     $proc = New-Object System.Diagnostics.Process
     $proc.StartInfo.FileName = 'robocopy.exe'
@@ -540,7 +544,8 @@ function movedir($from, $to) {
 
     if ($proc.ExitCode -ge 8) {
         debug $out
-        throw "Could not find '$(fname $from)'! (error $($proc.ExitCode))"
+        # TODO: Consider different title
+        Set-TerminatingError -Title "Decompress Error|-Could not find '$(fname $from) in $parent'! (error $($proc.ExitCode))"
     }
 
     # Wait for robocopy to terminate its threads
@@ -577,8 +582,7 @@ function warn_on_overwrite($shim_ps1, $path) {
 }
 
 function shim($path, $global, $name, $arg) {
-    # TODO: Stop-ScoopExecution: throw
-    if (!(Test-Path $path)) { abort "Can't shim '$(fname $path)': couldn't find '$path'." }
+    if (!(Test-Path $path)) { Set-TerminatingError -Title "Shim creation fail|-Cannot shim '$(fname $path)': could not find '$path'" }
 
     $abs_shimdir = shimdir $global | ensure
     if (!$name) { $name = strip_ext (fname $path) }

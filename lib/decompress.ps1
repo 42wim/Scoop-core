@@ -1,3 +1,8 @@
+# TODO: Core import is messing up with download progress 🤷‍♂️🤷‍♂️
+'Helpers' | ForEach-Object {
+    . (Join-Path $PSScriptRoot "$_.ps1")
+}
+
 function Test-7zipRequirement {
     [CmdletBinding(DefaultParameterSetName = 'URL')]
     [OutputType([Boolean])]
@@ -51,8 +56,7 @@ function Expand-7zipArchive {
         try {
             $7zPath = (Get-Command '7z' -CommandType Application | Select-Object -First 1).Source
         } catch [System.Management.Automation.CommandNotFoundException] {
-            # TODO: Stop-ScoopExecution: throw
-            abort "Cannot find external 7-Zip (7z.exe) while '7ZIPEXTRACT_USE_EXTERNAL' is 'true'!`nRun 'scoop config 7ZIPEXTRACT_USE_EXTERNAL false' or install 7-Zip manually and try again."
+            Set-TerminatingError -Title "Ignore|-Cannot find external 7-Zip (7z.exe) while '7ZIPEXTRACT_USE_EXTERNAL' is 'true'!`nRun 'scoop config 7ZIPEXTRACT_USE_EXTERNAL false' or install 7-Zip manually and try again."
         }
     } else {
         $7zPath = Get-HelperPath -Helper 7zip
@@ -77,12 +81,11 @@ function Expand-7zipArchive {
     try {
         $Status = Invoke-ExternalCommand $7zPath $ArgList -LogPath $LogPath
     } catch [System.Management.Automation.ParameterBindingException] {
-        Write-UserMessage -Message '''7zip'' is not installed or cannot be used' -Err
+        Set-TerminatingError -Title 'Ignore|-''7zip'' is not installed or cannot be used'
     }
 
     if (!$Status) {
-        # TODO: Stop-ScoopExecution: throw
-        abort "Failed to extract files from $Path.`nLog file:`n  $(friendly_path $LogPath)`n$(new_issue_msg $app $bucket 'decompress error')"
+        Set-TerminatingError -Title "Decompress error|-Failed to extract files from $Path.`nLog file:`n  $(friendly_path $LogPath)"
     }
     if (!$IsTar -and $ExtractDir) {
         movedir (Join-Path $DestinationPath $ExtractDir) $DestinationPath | Out-Null
@@ -96,8 +99,7 @@ function Expand-7zipArchive {
             $TarFile = (Get-Content -Path $LogPath)[-4] -replace '.{53}(.*)', '$1' # get inner tar file name
             Expand-7zipArchive -Path (Join-Path $DestinationPath $TarFile) -DestinationPath $DestinationPath -ExtractDir $ExtractDir -Removal
         } else {
-            # TODO: Stop-ScoopExecution
-            abort "Failed to list files in $Path.`nNot a 7-Zip supported archive file."
+            Set-TerminatingError -Title "Decompress error|-Failed to list files in $Path.`nNot a 7-Zip supported archive file."
         }
     }
 
@@ -136,8 +138,7 @@ function Expand-MsiArchive {
 
     $Status = Invoke-ExternalCommand $MsiPath $ArgList -LogPath $LogPath
     if (!$Status) {
-        # TODO: Stop-ScoopExecution
-        abort "Failed to extract files from $Path.`nLog file:`n  $(friendly_path $LogPath)`n$(new_issue_msg $app $bucket 'decompress error')"
+        Set-TerminatingError -Title "Decompress error|-Failed to extract files from $Path.`nLog file:`n  $(friendly_path $LogPath)"
     }
 
     $sourceDir = Join-Path $DestinationPath 'SourceDir'
@@ -154,6 +155,7 @@ function Expand-MsiArchive {
     $fnamePath = Join-Path $DestinationPath (fname $Path)
     if (($DestinationPath -ne (Split-Path $Path)) -and (Test-Path $fnamePath)) { Remove-Item $fnamePath -Force }
     if (Test-Path $LogPath) { Remove-Item $LogPath -Force }
+
     # Remove original archive file
     if ($Removal) { Remove-Item $Path -Force }
 }
@@ -181,15 +183,17 @@ function Expand-InnoArchive {
     if ($Switches) { $ArgList += (-split $Switches) }
 
     try {
+        # TODO: Find out extract_dir issue.
+        # When there is no specified directory in archive innounp will just exit with 0 and version of file
         $Status = Invoke-ExternalCommand (Get-HelperPath -Helper Innounp) $ArgList -LogPath $LogPath
     } catch [System.Management.Automation.ParameterBindingException] {
-        Write-UserMessage -Message '''innounp'' is not installed or cannot be used' -Err
+        Set-TerminatingError -Title 'Ignore|-''innounp'' is not installed or cannot be used'
     }
     if (!$Status) {
-        # TODO: Stop-ScoopExecution: throw
-        abort "Failed to extract files from $Path.`nLog file:`n  $(friendly_path $LogPath)`n$(new_issue_msg $app $bucket 'decompress error')"
+        Set-TerminatingError -Title "Decompress error|-Failed to extract files from $Path.`nLog file:`n  $(friendly_path $LogPath)"
     }
     if (Test-Path $LogPath) { Remove-Item $LogPath -Force }
+
     # Remove original archive file
     if ($Removal) { Remove-Item $Path -Force }
 }
@@ -216,25 +220,22 @@ function Expand-ZipArchive {
         try {
             [System.IO.Compression.ZipFile]::ExtractToDirectory($Path, $DestinationPath)
         } catch [System.IO.PathTooLongException] {
-            # try to fall back to 7zip if path is too long
+            # Try to fall back to 7zip if path is too long
             if (Test-HelperInstalled -Helper 7zip) {
                 Expand-7zipArchive $Path $DestinationPath -Removal:$Removal
                 return
             } else {
-                # TODO: Stop-ScoopExecution: throw
-                abort "Unzip failed: Windows can't handle the long paths in this zip file.`nRun 'scoop install 7zip' and try again."
+                Set-TerminatingError -Title "Ignore|-Unzip failed: Windows cannot handle the long paths in this zip file.`nRun 'scoop install 7zip' and try again."
             }
         } catch [System.IO.IOException] {
             if (Test-HelperInstalled -Helper 7zip) {
                 Expand-7zipArchive $Path $DestinationPath -Removal:$Removal
                 return
             } else {
-                # TODO: Stop-ScoopExecution: throw
-                abort "Unzip failed: Windows can't handle the file names in this zip file.`nRun 'scoop install 7zip' and try again."
+                Set-TerminatingError -Title "Ignore|-Unzip failed: Windows cannot handle the file names in this zip file.`nRun 'scoop install 7zip' and try again."
             }
         } catch {
-            # TODO: Stop-ScoopExecution: throw
-            abort "Unzip failed: $_"
+            Set-TerminatingError -Title "Decompress error|-Unzip failed: $_"
         }
     } else {
         # Use Expand-Archive to unzip in PowerShell 5+
@@ -268,13 +269,13 @@ function Expand-DarkArchive {
     try {
         $Status = Invoke-ExternalCommand (Get-HelperPath -Helper Dark) $ArgList -LogPath $LogPath
     } catch [System.Management.Automation.ParameterBindingException] {
-        Write-UserMessage -Message '''dark'' is not installed or cannot be used' -Err
+        Set-TerminatingError -Title 'Ignore|-''dark'' is not installed or cannot be used'
     }
     if (!$Status) {
-        # TODO: Stop-ScoopExecution: throw
-        abort "Failed to extract files from $Path.`nLog file:`n  $(friendly_path $LogPath)`n$(new_issue_msg $app $bucket 'decompress error')"
+        Set-TerminatingError -Title "Decompress error|-Failed to extract files from $Path.`nLog file:`n  $(friendly_path $LogPath)"
     }
     if (Test-Path $LogPath) { Remove-Item $LogPath -Force }
+
     # Remove original archive file
     if ($Removal) { Remove-Item $Path -Force }
 }
