@@ -93,7 +93,7 @@ function Set-TerminatingError {
     .PARAMETER ID
         Specifies the global identifier of the error condition.
     #>
-    param([String] $Title, [String] $ID = 'Scoop')
+    param([Alias('Message')] [String] $Title, [String] $ID = 'Scoop')
 
     if ($PSCmdlet) {
         $PSCmdlet.ThrowTerminatingError(
