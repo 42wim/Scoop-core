@@ -7,7 +7,15 @@
 function install_order($apps, $arch) {
     $res = @()
     foreach ($app in $apps) {
-        foreach ($dep in deps $app $arch) {
+        $deps = @()
+        try {
+            $deps = deps $app $arch
+        } catch {
+            Write-UserMessage -Message $_.Exception.Message -Err
+            continue
+        }
+
+        foreach ($dep in $deps) {
             if ($res -notcontains $dep) { $res += $dep }
         }
         if ($res -notcontains $app) { $res += $app }
@@ -21,22 +29,25 @@ function deps($app, $arch) {
     $resolved = New-Object System.Collections.ArrayList
     dep_resolve $app $arch $resolved @()
 
-    if ($resolved.count -eq 1) { return @() } # No dependencies
+    if ($resolved.Count -eq 1) { return @() } # No dependencies
 
-    return $resolved[0..($resolved.count - 2)]
+    return $resolved[0..($resolved.Count - 2)]
 }
 
 function dep_resolve($app, $arch, $resolved, $unresolved) {
+    #[out]$resolved
+    #[out]$unresolved
+
     $app, $bucket, $null = parse_app $app
     $unresolved += $app
     $null, $manifest, $null, $null = Find-Manifest $app $bucket
 
     if (!$manifest) {
-        if (((Get-LocalBucket) -notcontains $bucket) -and $bucket) {
+        if ($bucket -and ((Get-LocalBucket) -notcontains $bucket)) {
             Write-UserMessage -Message "Bucket '$bucket' not installed. Add it with 'scoop bucket add $bucket' or 'scoop bucket add $bucket <repo>'." -Warning
         }
-        # TODO: Stop-ScoopExecution: Throw
-        abort "Couldn't find manifest for '$app'$(if(!$bucket) { '.' } else { " from '$bucket' bucket." })"
+
+        Set-TerminatingError -Title "Ignore|-Could not find manifest for '$app'$(if(!$bucket) { '.' } else { " from '$bucket' bucket." })"
     }
 
     $deps = @(install_deps $manifest $arch) + @(runtime_deps $manifest) | Select-Object -Unique
@@ -44,7 +55,7 @@ function dep_resolve($app, $arch, $resolved, $unresolved) {
     foreach ($dep in $deps) {
         if ($resolved -notcontains $dep) {
             if ($unresolved -contains $dep) {
-                abort "Circular dependency detected: '$app' -> '$dep'."
+                Set-TerminatingError -Title  "Invalid manifest|-Circular dependency detected: '$app' -> '$dep'."
             }
             dep_resolve $dep $arch $resolved $unresolved
         }

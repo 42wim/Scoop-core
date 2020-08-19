@@ -16,15 +16,13 @@ function install_app($app, $architecture, $global, $suggested, $use_cache = $tru
     $app, $manifest, $bucket, $url = Find-Manifest $app $bucket
 
     if (!$manifest) {
-        # TODO: Stop-ScoopExecution: Throw
-        abort "Couldn't find manifest for '$app'$(if($url) { " at the URL $url" })."
+        Set-TerminatingError -Title "Ignore|-Could not find manifest for '$app'$(if($url){ " at the URL $url" })."
     }
 
     $version = $manifest.version
-    if (!$version) { abort "Manifest doesn't specify a version." }
+    if (!$version) { Set-TerminatingError -Title "Version property missing|-Manifest '$app' does not specify a version." }
     if ($version -match '[^\w\.\-\+_]') {
-        # TODO: Stop-ScoopExecution: throw
-        abort "Manifest version has unsupported character '$($matches[0])'."
+        Set-TerminatingError -Title "Unsupported version|-Manifest version has unsupported character '$($matches[0])'."
     }
 
     $is_nightly = $version -eq 'nightly'
@@ -150,8 +148,8 @@ function do_dl($url, $to, $cookies) {
         dl $url $to $cookies $progress
     } catch {
         $e = $_.Exception
-        if ($e.InnerException) { $e = $e.InnerException }
-        throw $e
+        if ($e.InnerException) { Write-UserMessage -Message $e.InnerException -Err }
+        Set-TerminatingError -Title "Download failed|-$($e.Message)"
     }
 }
 
@@ -332,14 +330,14 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
         Write-Host ''
 
         if ($LASTEXITCODE -gt 0) {
+            $mes = "Download failed! (Error $LASTEXITCODE) $(aria_exit_code $LASTEXITCODE)"
             Write-UserMessage -Err -Message @(
-                "Download failed! (Error $LASTEXITCODE) $(aria_exit_code $LASTEXITCODE)"
+                $mes
                 $urlstxt_content
                 $aria2
             )
 
-            # TODO: Stop-ScoopExecution: Throw
-            abort (new_issue_msg $app $bucket "download via aria2 failed")
+            Set-TerminatingError -Title "Download via aria2 failed|-$mes"
         }
 
         # Remove aria2 input file when done
@@ -358,21 +356,17 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
             $manifest_hash = hash_for_url $manifest $url $architecture
             $ok, $err = check_hash $data.$url.source $manifest_hash $(show_app $app $bucket)
             if (!$ok) {
-                Write-UserMessage -Message $err -Err
                 if (Test-Path $data.$url.source) { Remove-Item $data.$url.source -Force }
                 if ($url.Contains('sourceforge.net')) {
                     Write-UserMessage -Message 'SourceForge.net is known for causing hash validation fails. Please try again before opening a ticket.' -Color Yellow
                 }
-                # TODO: Stop-ScoopExecution: throw
-                abort (new_issue_msg $app $bucket "hash check failed")
+
+                Set-TerminatingError -Title "Hash check failed|-$err"
             }
         }
 
         # Copy or move file to target location
-        if (!(Test-Path $data.$url.source) ) {
-            # TODO: Stop-ScoopExecution: throw
-            abort $(new_issue_msg $app $bucket "cached file not found")
-        }
+        if (!(Test-Path $data.$url.source) ) { Set-TerminatingError -Title 'Ignore|-Cached file not found' }
 
         if ($dir -ne $SCOOP_CACHE_DIRECTORY) {
             if ($use_cache) {
@@ -566,19 +560,12 @@ function dl_urls($app, $version, $manifest, $bucket, $architecture, $dir, $use_c
         foreach ($url in $urls) {
             $fname = url_filename $url
 
-            try {
-                dl_with_cache $app $version $url (Join-Path $dir $fname) $cookies $use_cache
-            } catch {
-                Write-Host $_ -Color DarkRed
-                # TODO: Stop-ScoopExecution: throw
-                abort "URL $url is not valid"
-            }
+            dl_with_cache $app $version $url (Join-Path $dir $fname) $cookies $use_cache
 
             if ($check_hash) {
                 $manifest_hash = hash_for_url $manifest $url $architecture
                 $ok, $err = check_hash (Join-Path $dir $fname) $manifest_hash $(show_app $app $bucket)
                 if (!$ok) {
-                    Write-UserMessage -Message $err -Err
                     $cached = cache_path $app $version $url
                     if (Test-Path $cached) {
                         # rm cached file
@@ -587,8 +574,7 @@ function dl_urls($app, $version, $manifest, $bucket, $architecture, $dir, $use_c
                     if ($url.Contains('sourceforge.net')) {
                         Write-Host -f yellow 'SourceForge.net is known for causing hash validation fails. Please try again before opening a ticket.'
                     }
-                    # TODO: Stop-ScoopExecution: Throw
-                    abort $(new_issue_msg $app $bucket "hash check failed")
+                    Set-TerminatingError "Hash check failed|-$err"
                 }
             }
         }
@@ -665,8 +651,7 @@ function hash_for_url($manifest, $url, $arch) {
     $urls = @(url $manifest $arch)
 
     $index = [array]::IndexOf($urls, $url)
-    # TODO: Stop-ScoopExecution: throw
-    if ($index -eq -1) { abort "Couldn't find hash in manifest for '$url'." }
+    if ($index -eq -1) { Set-TerminatingError -Title "Invalid manifest|-Could not find hash in manifest for '$url'." }
 
     @($hashes)[$index]
 }
@@ -674,7 +659,7 @@ function hash_for_url($manifest, $url, $arch) {
 # returns (ok, err)
 function check_hash($file, $hash, $app_name) {
     if (!$hash) {
-        Write-UserMessage -Message "Warning: No hash in manifest. SHA256 for '$(fname $file)' is:`n    $(compute_hash $file 'sha256')" -Warning
+        Write-UserMessage -Message "No hash in manifest. SHA256 for '$(fname $file)' is:`n    $(compute_hash $file 'sha256')" -Warning
         return $true, $null
     }
 
@@ -753,14 +738,10 @@ function run_installer($fname, $manifest, $architecture, $dir, $global) {
 # deprecated (see also msi_installed)
 function install_msi($fname, $dir, $msi) {
     $msifile = Join-Path $dir (coalesce $msi.File "$fname")
-    if (!(is_in_dir $dir $msifile)) {
-        # TODO: Stop-ScoopExecution: throw
-        abort "Error in manifest: MSI file $msifile is outside the app directory."
-    }
-    # TODO: Stop-ScoopExecution: throw
-    if (!($msi.code)) { abort 'Error in manifest: Could not find MSI code.' }
-    # TODO: Stop-ScoopExecution: throw
-    if (msi_installed $msi.code) { abort 'The MSI package is already installed on this system.' }
+
+    if (!(is_in_dir $dir $msifile)) { Set-TerminatingError -Title "Invalid manifest|-MSI file '$msifile' is outside the app directory." }
+    if (!($msi.code)) { Set-TerminatingError -Title 'Invalid manifest|-Could not find MSI code.' }
+    if (msi_installed $msi.code) { Set-TerminatingError -Title 'Ignore|-The MSI package is already installed on this system.' }
 
     $logfile = Join-Path $dir 'install.log'
 
@@ -773,8 +754,7 @@ function install_msi($fname, $dir, $msi) {
 
     $installed = Invoke-ExternalCommand 'msiexec' $arg -Activity 'Running installer...' -ContinueExitCodes $continue_exit_codes
     if (!$installed) {
-        # TODO: Stop-ScoopExecution: throw
-        abort "Installation aborted. You might need to run 'scoop uninstall $app' before trying again."
+        Set-TerminatingError -Title "Ignore|-Installation aborted. You might need to run 'scoop uninstall $app' before trying again."
     }
     Remove-Item $logfile
     Remove-Item $msifile
@@ -797,18 +777,17 @@ function msi_installed($code) {
 function install_prog($fname, $dir, $installer, $global) {
     $prog = Join-Path $dir (coalesce $installer.file "$fname")
     if (!(is_in_dir $dir $prog)) {
-        # TODO: Stop-ScoopExecution: throw
-        abort "Error in manifest: Installer $prog is outside the app directory."
+        Set-TerminatingError -Title "Invalid manifest|-Error in manifest: Installer '$prog' is outside the app directory."
     }
     $arg = @(args $installer.args $dir $global)
 
-    if ($prog.endswith('.ps1')) {
+    if ($prog.EndsWith('.ps1')) {
         & $prog @arg
+        # TODO: Handle $LASTEXITCODE
     } else {
         $installed = Invoke-ExternalCommand $prog $arg -Activity 'Running installer...'
         if (!$installed) {
-            # TODO: Stop-ScoopExecution: throw
-            abort "Installation aborted. You might need to run 'scoop uninstall $app' before trying again."
+            Set-TerminatingError -Title "Ignore|-Installation aborted. You might need to run 'scoop uninstall $app' before trying again."
         }
 
         # Don't remove installer if "keep" flag is set to true
@@ -861,8 +840,7 @@ function run_uninstaller($manifest, $architecture, $dir) {
                 & $exe @arg
             } else {
                 $uninstalled = Invoke-ExternalCommand $exe $arg -Activity 'Running uninstaller...' -ContinueExitCodes $continue_exit_codes
-                # TODO: Stop-ScoopExecution: throw
-                if (!$uninstalled) { abort 'Uninstallation aborted.' }
+                if (!$uninstalled) { Set-TerminatingError -Title 'Ignore|-Uninstallation aborted.' }
             }
         }
     }
@@ -945,8 +923,7 @@ function link_current($versiondir) {
     Write-UserMessage -Message "Linking $(friendly_path $currentdir) => $(friendly_path $versiondir)" -Output:$false
 
     if ($currentdir -eq $versiondir) {
-        # TODO: Stop-ScoopExecution: throw
-        abort "Version 'current' is not allowed!"
+        Set-TerminatingError -Title "Ignore|-Version 'current' is not allowed!"
     }
 
     if (Test-Path $currentdir) {
@@ -1024,8 +1001,7 @@ function env_add_path($manifest, $dir, $global, $arch) {
         $env_add_path | Where-Object { $_ } | ForEach-Object {
             $path_dir = Join-Path $dir $_
             if (!(is_in_dir $dir $path_dir)) {
-                # TODO: Stop-ScoopExecution: Throw
-                abort "env_add_path '$_' is outside the app directory."
+                Set-TerminatingError -Title "Invalid manifest|-env_add_path '$_' is outside the app directory."
             }
             add_first_in_path $path_dir $global
         }
@@ -1115,12 +1091,17 @@ function failed($app, $global) {
 }
 
 function ensure_none_failed($apps, $global) {
+    $new = @()
     foreach ($app in $apps) {
         if (failed $app $global) {
-            # TODO: Stop-ScoopExecution: throw
-            abort "'$app' install failed previously. Please uninstall it and try again."
+            Write-UserMessage -Message "'$app' install failed previously. Please uninstall it and try again." -Err
+            continue
+        } else {
+            $new += $app
         }
     }
+
+    return $new
 }
 
 function show_suggestions($suggested) {

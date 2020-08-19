@@ -63,7 +63,7 @@ $architecture = default_architecture
 try {
     $architecture = ensure_architecture ($opt.a + $opt.arch)
 } catch {
-    Stop-ScoopExecution -Message "ERROR: $_" -ExitCode 2
+    Stop-ScoopExecution -Message "$_" -ExitCode 2
 }
 if (!$apps) { Stop-ScoopExecution -Message 'Parameter <apps> missing' -Usage (my_usage) }
 if ($global -and !(is_admin)) { Stop-ScoopExecution -Message 'Admin privileges are required to manipulate with globally installed apps' -ExitCode 4 }
@@ -108,9 +108,23 @@ $apps = @(($specific_versions_paths + $difference) | Where-Object { $_ } | Sort-
 $explicit_apps = $apps
 
 if (!$independent) {
-    $apps = install_order $apps $architecture # adds dependencies
+    try {
+        $apps = install_order $apps $architecture # adds dependencies
+    } catch {
+        $title, $body = $_.Exception.Message -split '\|-'
+        Write-UserMessage -Message $body -Err
+        if ($title -ne 'Ignore') {
+            New-IssuePrompt -Application $app -Title $title -Body $body
+        }
+    }
 }
-ensure_none_failed $apps $global
+
+# This should not be breaking error in case there are other apps specified
+if ($apps.Count -eq 0) { Stop-ScoopExecution -Message 'Nothing to install' }
+
+$apps = ensure_none_failed $apps $global
+
+if ($apps.Count -eq 0) { Stop-ScoopExecution -Message 'Nothing to install' }
 
 $apps, $skip = prune_installed $apps $global
 
@@ -121,13 +135,36 @@ $skip | Where-Object { $explicit_apps -contains $_ } | ForEach-Object {
 }
 
 $suggested = @{ }
+$failedDependencies = @()
 
 foreach ($app in $apps) {
+    $bucket = $cleanApp = $null
+    $applicationSpecificDependencies = @(deps $app $architecture)
+    $cmp = Compare-Object $applicationSpecificDependencies $failedDependencies -ExcludeDifferent
+    # Skip Installation because required depency failed
+    if ($cmp -and ($cmp.InputObject.Count -gt 0)) {
+        $f = $cmp.InputObject -join ', '
+        Write-UserMessage -Message "'$app' cannot be installed due to failed dependency installation ($f)" -Err
+        ++$problems
+        continue
+    }
+
+    $cleanApp, $bucket = parse_app $app
+
+    # Install
     try {
         install_app $app $architecture $global $suggested $use_cache $check_hash
     } catch {
         ++$problems
-        Write-UserMessage -Message $_.Exception.Message -Err
+
+        # Register failed dependencies
+        if ($explicit_apps -notcontains $app) { $failedDependencies += $app }
+
+        $title, $body = $_.Exception.Message -split '\|-'
+        if (!$body) { $body = $title }
+        Write-UserMessage -Message $body -Err
+        if ($title -ne 'Ignore' -and ($title -ne $body)) { New-IssuePrompt -Application $cleanApp -Bucket $bucket -Title $title -Body $body }
+
         continue
     }
 }

@@ -326,6 +326,7 @@ function app_status($app, $global) {
     $status.hold = ($install_info.hold -eq $true)
 
     $manifest = manifest $app $install_info.bucket $install_info.url
+    $status.bucket = $install_info.bucket
     $status.removed = (!$manifest)
     if ($manifest.version) {
         $status.latest_version = $manifest.version
@@ -337,16 +338,16 @@ function app_status($app, $global) {
     }
 
     $status.missing_deps = @()
+    # TODO: Eliminate
+    . (Join-Path $PSScriptRoot 'depends.ps1')
     $deps = @(runtime_deps $manifest) | Where-Object {
         $app, $bucket, $null = parse_app $_
         return !(installed $app)
     }
 
-if ($deps) {
-    $status.missing_deps += , $deps
-}
+    if ($deps) { $status.missing_deps += , $deps }
 
-return $status
+    return $status
 }
 
 function appname_from_url($url) { return (Split-Path $url -Leaf) -replace '\.json$' }
@@ -578,7 +579,7 @@ function warn_on_overwrite($shim_ps1, $path) {
     if ($shim_app -eq $path_app) { return }
 
     $filename = [System.IO.Path]::GetFileName($path)
-    warn "Overwriting shim to $filename installed from $shim_app"
+    Write-UserMessage -Message "Overwriting shim to $filename installed from $shim_app" -Warning
 }
 
 function shim($path, $global, $name, $arg) {
@@ -619,6 +620,7 @@ function shim($path, $global, $name, $arg) {
 
     if ($path -match '\.(exe|com)$') {
         # for programs with no awareness of any shell
+        # TODO: Use relative path from this file
         versiondir 'scoop' 'current' | Join-Path -ChildPath 'supporting\shimexe\bin\shim.exe' | Copy-Item -Destination "$shim.exe" -Force
         $result = @("path = $resolved_path")
         if ($arg) { $result += "args = $arg" }
@@ -641,11 +643,11 @@ set invalid=`"='
 if !args! == !invalid! ( set args= )
 powershell -noprofile -ex unrestricted `"& '$resolved_path' $arg %args%;exit `$LASTEXITCODE`"" | Out-File "$shim.cmd" -Encoding Ascii
 
-    "#!/bin/sh`npowershell.exe -noprofile -ex unrestricted `"& '$resolved_path'`" $arg `"$@`"" | Out-File $shim -Encoding Ascii
-} elseif ($path -match '\.jar$') {
-    "@java -jar `"$resolved_path`" $arg %*" | Out-File "$shim.cmd" -Encoding Ascii
-    "#!/bin/sh`njava -jar `"$resolved_path`" $arg `"$@`"" | Out-File $shim -Encoding Ascii
-}
+        "#!/bin/sh`npowershell.exe -noprofile -ex unrestricted `"& '$resolved_path'`" $arg `"$@`"" | Out-File $shim -Encoding Ascii
+    } elseif ($path -match '\.jar$') {
+        "@java -jar `"$resolved_path`" $arg %*" | Out-File "$shim.cmd" -Encoding Ascii
+        "#!/bin/sh`njava -jar `"$resolved_path`" $arg `"$@`"" | Out-File $shim -Encoding Ascii
+    }
 }
 
 function search_in_path($target) {
@@ -690,9 +692,10 @@ function Confirm-InstallationStatus {
     $Installed = @()
     $Apps | Select-Object -Unique | Where-Object { $_.Name -ne 'scoop' } | ForEach-Object {
         $App, $null, $null = parse_app $_
+        $buc = (app_status $App $Global).bucket
         if ($Global) {
             if (installed $App $true) {
-                $Installed += , @($App, $true)
+                $Installed += , @($App, $true, $buc)
             } elseif (installed $App $false) {
                 Write-UserMessage -Message "'$App' isn't installed globally, but it is installed for your account." -Err
                 Write-UserMessage -Message "Try again without the --global (or -g) flag instead." -Warning
@@ -701,7 +704,7 @@ function Confirm-InstallationStatus {
             }
         } else {
             if (installed $App $false) {
-                $Installed += , @($App, $false)
+                $Installed += , @($App, $false, $buc)
             } elseif (installed $App $true) {
                 Write-UserMessage -Message "'$App' isn't installed for your account, but it is installed globally." -Err
                 Write-UserMessage -Message "Try again with the --global (or -g) flag instead." -Warning
@@ -711,7 +714,7 @@ function Confirm-InstallationStatus {
         }
     }
 
-return , $Installed
+    return , $Installed
 }
 
 function strip_path($orig_path, $dir) {
@@ -764,25 +767,20 @@ function wraptext($text, $width) {
             elseif ($line.length + $_.length + 1 -le $width) { $line += " $_" }
             else { $lines += , $line; $line = $_ }
         }
-    $lines += , $line
-}
+        $lines += , $line
+    }
 
-$lines -join "`n"
+    $lines -join "`n"
 }
 
 function pluralize($count, $singular, $plural) {
     if ($count -eq 1) { $singular } else { $plural }
 }
 
-function reset_aliases() {
-    Show-DeprecatedWarning $MyInvocation 'Reset-Alias'
-    Reset-Alias
-}
-
-# convert list of apps to list of ($app, $global) tuples
-function applist($apps, $global) {
+# convert list of apps to list of ($app, $global, $bucket) tuples
+function applist($apps, $global, $bucket = $null) {
     if (!$apps) { return @() }
-    return , @($apps | ForEach-Object { , @($_, $global) })
+    return , @($apps | ForEach-Object { , @($_, $global, $bucket) })
 }
 
 function parse_app([string] $app) {
@@ -913,6 +911,11 @@ function handle_special_urls($url) {
 }
 
 #region Deprecated
+function reset_aliases() {
+    Show-DeprecatedWarning $MyInvocation 'Reset-Alias'
+    Reset-Alias
+}
+
 function file_path($app, $file) {
     Show-DeprecatedWarning $MyInvocation 'Get-AppFilePath'
     return Get-AppFilePath -App $app -File $file

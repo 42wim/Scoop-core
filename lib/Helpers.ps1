@@ -95,7 +95,7 @@ function Set-TerminatingError {
     #>
     param([Alias('Message')] [String] $Title, [String] $ID = 'Scoop')
 
-    if ($PSCmdlet) {
+    if ($PSCmdlet -and $IsWindows) {
         $PSCmdlet.ThrowTerminatingError(
             [System.Management.Automation.ErrorRecord]::new(
                 ([ScoopException]::new($Title)),
@@ -314,6 +314,7 @@ function New-IssuePrompt {
     #>
     param([String] $Application, [String] $Bucket, [String] $Title, [String[]] $Body)
 
+    $Bucket = $Bucket.Trim()
     $app, $manifest, $Bucket, $url = Find-Manifest $Application $Bucket
     $url = known_bucket_repo $Bucket
     $bucketPath = Join-Path $SCOOP_BUCKETS_DIRECTORY $bucket

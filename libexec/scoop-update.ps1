@@ -51,13 +51,15 @@ if (!$apps) {
 
     if ($apps) {
         foreach ($_ in $apps) {
-            ($app, $global) = $_
+            ($app, $global, $bb) = $_
             $status = app_status $app $global
+            $bb = $status.bucket
+
             if ($force -or $status.outdated) {
                 if ($status.hold) {
                     Write-UserMessage "'$app' is held to version $($status.version)"
                 } else {
-                    $outdatedApplications += applist $app $global
+                    $outdatedApplications += applist $app $global $bb
                     $globText = if ($global) { ' (global)' } else { '' }
                     Write-UserMessage -Message "${app}: $($status.version) -> $($status.latest_version)$globText" -Warning -SkipSeverity
                 }
@@ -76,12 +78,16 @@ if (!$apps) {
     }
 
     foreach ($out in $outdatedApplications) {
-        # $outdated is a list of ($app, $global) tuples
         try {
             Update-App -App $out[0] -Global:$out[1] -Suggested @{ } -Quiet:$quiet -Independent:$independent -SkipCache:(!$useCache) -SkipHashCheck:(!$checkHash)
         } catch {
             ++$problems
-            Write-UserMessage -Message $_.Exception.Message -Err
+
+            $title, $body = $_.Exception.Message -split '\|-'
+            if (!$body) { $body = $title }
+            Write-UserMessage -Message $body -Err
+            if ($title -ne 'Ignore' -and ($title -ne $body)) { New-IssuePrompt -Application $out[0] -Bucket $out[2] -Title $title -Body $body }
+
             continue
         }
     }

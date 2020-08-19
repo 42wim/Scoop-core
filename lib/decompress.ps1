@@ -225,7 +225,7 @@ function Expand-ZipArchive {
                 Expand-7zipArchive $Path $DestinationPath -Removal:$Removal
                 return
             } else {
-                Set-TerminatingError -Title "Ignore|-Unzip failed: Windows cannot handle the long paths in this zip file.`nRun 'scoop install 7zip' and try again."
+                Set-TerminatingError -Title "Ignore|-Unzip failed: Windows cannot handle long paths in this zip file.`nRun 'scoop install 7zip' and try again."
             }
         } catch [System.IO.IOException] {
             if (Test-HelperInstalled -Helper 7zip) {
