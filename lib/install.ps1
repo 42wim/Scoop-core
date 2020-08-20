@@ -149,7 +149,7 @@ function do_dl($url, $to, $cookies) {
     } catch {
         $e = $_.Exception
         if ($e.InnerException) { Write-UserMessage -Message $e.InnerException -Err }
-        Set-TerminatingError -Title "Download failed|-$($e.Message)"
+        Set-TerminatingError -Title "Download failed|-$($e.Message)" -ForceThrow
     }
 }
 

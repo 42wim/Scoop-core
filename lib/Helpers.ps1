@@ -93,9 +93,9 @@ function Set-TerminatingError {
     .PARAMETER ID
         Specifies the global identifier of the error condition.
     #>
-    param([Alias('Message')] [String] $Title, [String] $ID = 'Scoop')
+    param([Alias('Message')] [String] $Title, [String] $ID = 'Scoop', [Switch] $ForceThrow)
 
-    if ($PSCmdlet -and $IsWindows) {
+    if (!$ForceThrow -and ($PSCmdlet -and $IsWindows)) {
         $PSCmdlet.ThrowTerminatingError(
             [System.Management.Automation.ErrorRecord]::new(
                 ([ScoopException]::new($Title)),
