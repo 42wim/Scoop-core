@@ -151,6 +151,8 @@ foreach ($app in $apps) {
 
     $cleanApp, $bucket = parse_app $app
 
+    if (is_installed $cleanApp $global) { continue }
+
     # Install
     try {
         install_app $app $architecture $global $suggested $use_cache $check_hash
