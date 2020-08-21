@@ -80,6 +80,12 @@ function Test-LongPathEnabled {
     [OutputType([bool])]
     param()
 
+    # Verify supported windows version
+    if ([System.Environment]::OSVersion.Version.Major -lt 10 -or [System.Environment]::OSVersion.Version.Build -lt 1607) {
+        Write-UserMessage -Message 'LongPath configuration is not supported in older Windows versions' -Warning
+        return $false
+    }
+
     $key = Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -ErrorAction SilentlyContinue
     if (!$key -or ($key.LongPathsEnabled -eq 0)) {
         Write-UserMessage -Message 'LongPaths support is not enabled.' -Warning
