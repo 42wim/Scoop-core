@@ -5,7 +5,6 @@
             "DavidAnson.vscode-markdownlint",
             "EditorConfig.EditorConfig",
             "fabiospampinato.vscode-terminals",
-            "ms-vscode.Go",
             "ms-vscode.powershell-preview",
             "redhat.vscode-yaml",
             "usernamehw.errorlens",
@@ -101,8 +100,9 @@
             {
                 "url": "https://raw.githubusercontent.com/Ash258/Scoop-Core/NEW/schema.json",
                 "fileMatch": [
-                    "bucket/*.json",
-                    "TODO/*.json",
+                    "bucket/*.json*",
+                    "deprecated/*.json*",
+                    "TODO/*.json*",
                 ],
             },
         ],
@@ -164,6 +164,7 @@
         "markdown.extension.italic.indicator": "_",
         "markdown.extension.list.indentationSize": "inherit",
         "markdown.extension.orderedList.marker": "one",
+        "markdown.extension.orderedList.autoRenumber": true,
         "markdown.extension.tableFormatter.enabled": true,
         "markdown.extension.toc.levels": "2..6",
         "powershell.codeFormatting.addWhitespaceAroundPipe": true,
@@ -182,6 +183,8 @@
         "powershell.codeFormatting.whitespaceBeforeOpenParen": true,
         "powershell.codeFormatting.whitespaceBetweenParameters": true,
         "powershell.codeFormatting.whitespaceInsideBrace": true,
+        "powershell.codeFormatting.newLineAfterCloseBrace": true,
+        "powershell.codeFormatting.useConstantStrings": true,
         "powershell.integratedConsole.showOnStartup": false,
         "[makefile]": {
             "editor.insertSpaces": false
@@ -206,6 +209,11 @@
             "https://raw.githubusercontent.com/SchemaStore/schemastore/master/src/schemas/json/appveyor.json": [
                 "appveyor.y*(a)ml",
             ],
+            "https://raw.githubusercontent.com/Ash258/Scoop-Core/NEW/schema.json": [
+                "bucket/*.y*ml",
+                "deprecated/*.y*ml",
+                "TODO/*.y*ml",
+            ]
         },
         "yaml.schemaStore.enable": true,
         "yaml.validate": true,
