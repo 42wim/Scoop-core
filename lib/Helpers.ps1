@@ -317,7 +317,7 @@ function New-IssuePrompt {
     $Bucket = $Bucket.Trim()
     $app, $manifest, $Bucket, $url = Find-Manifest $Application $Bucket
     $url = known_bucket_repo $Bucket
-    $bucketPath = Join-Path $SCOOP_BUCKETS_DIRECTORY $bucket
+    $bucketPath = Join-Path $SCOOP_BUCKETS_DIRECTORY $Bucket
 
     if ((Test-Path $bucketPath) -and (Join-Path $bucketPath '.git' | Test-Path -PathType Container)) {
         $remote = Invoke-GitCmd -Repository $bucketPath -Command 'config' -Argument '--get','remote.origin.url'
