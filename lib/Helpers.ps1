@@ -320,7 +320,7 @@ function New-IssuePrompt {
     $bucketPath = Join-Path $SCOOP_BUCKETS_DIRECTORY $Bucket
 
     if ((Test-Path $bucketPath) -and (Join-Path $bucketPath '.git' | Test-Path -PathType Container)) {
-        $remote = Invoke-GitCmd -Repository $bucketPath -Command 'config' -Argument '--get','remote.origin.url'
+        $remote = Invoke-GitCmd -Repository $bucketPath -Command 'config' -Argument '--get', 'remote.origin.url'
         # Support ssh and http syntax
         # git@PROVIDER:USER/REPO.git
         # https://PROVIDER/USER/REPO.git
