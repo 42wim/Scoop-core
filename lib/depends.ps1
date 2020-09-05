@@ -47,7 +47,7 @@ function dep_resolve($app, $arch, $resolved, $unresolved) {
             Write-UserMessage -Message "Bucket '$bucket' not installed. Add it with 'scoop bucket add $bucket' or 'scoop bucket add $bucket <repo>'." -Warning
         }
 
-        Set-TerminatingError -Title "Ignore|-Could not find manifest for '$app'$(if(!$bucket) { '.' } else { " from '$bucket' bucket." })"
+        Set-TerminatingError -Title "Could not find manifest for '$app'$(if(!$bucket) { '.' } else { " from '$bucket' bucket." })"
     }
 
     $deps = @(install_deps $manifest $arch) + @(runtime_deps $manifest) | Select-Object -Unique
