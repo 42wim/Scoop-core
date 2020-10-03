@@ -115,7 +115,11 @@ function arch_specific($prop, $manifest, $architecture) {
         if ($val) { return $val } # else fallback to generic prop
     }
 
-    if ($manifest.$prop) { return $manifest.$prop }
+    if ($manifest.$prop) {
+        return $manifest.$prop
+    } else {
+        throw "Manifest does not support $architecture architecture"
+    }
 }
 
 function supports_architecture($manifest, $architecture) {
