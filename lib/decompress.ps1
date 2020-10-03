@@ -9,10 +9,13 @@ function Test-7zipRequirement {
     [OutputType([Boolean])]
     param (
         [Parameter(Mandatory, ParameterSetName = 'URL')]
+        [AllowNull()]
         [String[]] $URL,
         [Parameter(Mandatory, ParameterSetName = 'File')]
         [String] $File
     )
+
+    if (!$File -and ($null -eq $URL)) { return $false }
 
     if (get_config '7ZIPEXTRACT_USE_EXTERNAL' $false) { return $false }
 
@@ -28,8 +31,11 @@ function Test-LessmsiRequirement {
     [OutputType([Boolean])]
     param (
         [Parameter(Mandatory)]
+        [AllowNull()]
         [String[]] $URL
     )
+
+    if ($null -eq $URL) { return $false }
 
     if (get_config 'MSIEXTRACT_USE_LESSMSI' $false) {
         return ($URL | Where-Object { $_ -match '\.msi$' }).Count -gt 0

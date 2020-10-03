@@ -32,8 +32,7 @@ function install_app($app, $architecture, $global, $suggested, $use_cache = $tru
     }
 
     if (!(supports_architecture $manifest $architecture)) {
-        Write-UserMessage -Message "'$app' doesn't support $architecture architecture!" -Color DarkRed
-        return
+        throw "'$app' does not support $architecture architecture"
     }
 
     $buc = if ($bucket) { " [$bucket]" } else { '' }
