@@ -15,13 +15,13 @@ $exitCode = 0
 # ONLY if:
 # - No command passed
 # - -v or --version passed
-$version = ($cmd -eq '--version') -or (!$cmd -and ('-v' -in $args))
+$version = ($cmd -eq '--version') -or (!$cmd -and ($args.Contains('-v')))
 
 # Scoop itself help should be shown only if explicitly asked:
 # - No version asked
 # - No command passed
 # - /?, /help,, /h, --help, -h passed
-$scoopHelp = !$version -and (!$cmd -or (($cmd -in @($null, '--help', '/?', '/help', '/h')) -or (!$cmd -and ('-h' -in $args))))
+$scoopHelp = !$version -and (!$cmd -or (($cmd -in @($null, '--help', '/?', '/help', '/h')) -or (!$cmd -and ($args.Contains('-h')))))
 
 # Valid command execution
 $validCommand = $cmd -and ($cmd -in (commands))
@@ -30,7 +30,7 @@ $validCommand = $cmd -and ($cmd -in (commands))
 # - No help for scoop asked
 # - $cmd is passed
 # - --help, -h is in $args
-$commandHelp = !$scoopHelp -and $validCommand -and (('--help' -in $args) -or ('-h' -in $args))
+$commandHelp = !$scoopHelp -and $validCommand -and (($args.Contains('--help')) -or ($args.Contains('-h')))
 
 if ($version) {
     Write-UserMessage -Message 'Current Scoop (Shovel) version:' -Output
