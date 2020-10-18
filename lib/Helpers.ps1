@@ -35,7 +35,7 @@ function Write-UserMessage {
         [Switch] $Success,
         [Switch] $SkipSeverity,
         [Alias('ForegroundColor')]
-        [System.ConsoleColor] $Color = $(if ($Host.UI.RawUI.ForegroundColor) { $Host.UI.RawUI.ForegroundColor } else { 'White' })
+        [System.ConsoleColor] $Color = $(if ($Host.UI.RawUI.ForegroundColor -and !$IsLinux) { $Host.UI.RawUI.ForegroundColor } else { 'White' })
     )
 
     begin {
