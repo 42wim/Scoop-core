@@ -17,10 +17,14 @@ function Test-7zipRequirement {
 
     if (!$File -and ($null -eq $URL)) { return $false }
 
-    if (get_config '7ZIPEXTRACT_USE_EXTERNAL' $false) { return $false }
 
     if ($URL) {
-        return ($URL | Where-Object { Test-7zipRequirement -File $_ }).Count -gt 0
+        # For dependencies resolving
+        if (get_config '7ZIPEXTRACT_USE_EXTERNAL' $false) {
+            return $false
+        } else {
+            return ($URL | Where-Object { Test-7zipRequirement -File $_ }).Count -gt 0
+        }
     } else {
         return $File -match '\.((gz)|(tar)|(tgz)|(lzma)|(bz)|(bz2)|(7z)|(rar)|(iso)|(xz)|(lzh)|(nupkg))$'
     }
