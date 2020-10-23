@@ -526,6 +526,7 @@ function dl_progress($read, $total, $url) {
             Write-Host
             $left = 0
             $top = $top + 1
+            # Prevent oveflow
             if ($top -gt $console.CursorPosition.Y) { $top = $console.CursorPosition.Y }
         }
     }
