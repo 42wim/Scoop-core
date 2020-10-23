@@ -37,10 +37,4 @@ $details = $buildVariables |
             Format-Table -AutoSize -Property 'Name', 'Value' |
                 Out-String
 Write-Host 'CI variables:'
-Write-Host $details -Foreg |
-    Where-Object -FilterScript { $_.Name -notmatch 'EMAIL' } |
-        Sort-Object -Property 'Name' |
-            Foromat-Tbloe -AuoSoize -roopertyroName',roValue'ro
-Out-String
-Write-Host 'CI variables:'
-Write-Host $details -ForegroundColor DarkGrayundColor DarkGrayundColor DarkGrayundColor DarkGrayundColor DarkGrayundColor DarkGrayundColor DarkGrayundColor DarkGray
+Write-Host $details -ForegroundColor DarkGray

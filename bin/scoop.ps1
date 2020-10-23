@@ -16,6 +16,7 @@ if (($PSVersionTable.PSVersion.Major) -lt 5) {
     )
     exit 1
 }
+
 $exitCode = 0
 
 # Powershell automatically bind bash like short parameters as $args, and does not put it in $cmd parameter
