@@ -305,14 +305,16 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
         debug $aria2
         # Handle aria2 console output
         Write-Host 'Starting download with aria2 ...'
+
+        [System.Console]::CursorVisible = $false
         Invoke-Expression $aria2 | ForEach-Object {
             # Skip blank lines
             if ([String]::IsNullOrWhiteSpace($_)) { return }
 
-            $color = 'Gray'
             # Prevent potential overlaping of text when one line is shorter
             $len = $Host.UI.RawUI.WindowSize.Width - $_.Length - 20
             $blank = if ($len -gt 0) { ' ' * $len } else { '' }
+            $color = 'Gray'
 
             if ($_.StartsWith('(OK):')) {
                 $noNewLine = $true
@@ -328,6 +330,7 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
             Write-Host "`rDownload: $_$blank" -ForegroundColor $color -NoNewline:$noNewLine
         }
         Write-Host ''
+        [System.Console]::CursorVisible = $true
 
         if ($LASTEXITCODE -gt 0) {
             $mes = "Download failed! (Error $LASTEXITCODE) $(aria_exit_code $LASTEXITCODE)"
