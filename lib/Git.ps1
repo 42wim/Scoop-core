@@ -67,7 +67,7 @@ function Invoke-GitCmd {
         debug $commandToRun
 
         # TODO: Drop comspec
-        & "$env:ComSpec" /c $commandToRun
+        & "$env:ComSpec" /d /c $commandToRun
     }
 }
 
