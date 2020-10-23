@@ -1003,6 +1003,7 @@ function env_add_path($manifest, $dir, $global, $arch) {
         $env_add_path | Where-Object { $_ } | ForEach-Object {
             $path_dir = Join-Path $dir $_
             if (!(is_in_dir $dir $path_dir)) {
+                # TODO: Consider, just throw
                 Set-TerminatingError -Title "Invalid manifest|-env_add_path '$_' is outside the app directory."
             }
             add_first_in_path $path_dir $global
