@@ -324,6 +324,7 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
                 $noNewLine = $false
             }
 
+            # Update latest line
             Write-Host "`rDownload: $_$blank" -ForegroundColor $color -NoNewline:$noNewLine
         }
         Write-Host ''
