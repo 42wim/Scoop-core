@@ -383,6 +383,7 @@ function dl($url, $to, $cookies, $progress) {
     $wreq = [System.Net.WebRequest]::Create($reqUrl)
     if ($wreq -is [System.Net.HttpWebRequest]) {
         $wreq.UserAgent = Get-UserAgent
+        # Do not send referer to sourceforge, portbleapps
         if (($url -notlike '*sourceforge.net*') -and ($url -notlike '*portableapps.com*')) {
             $wreq.Referer = strip_filename $url
         }
