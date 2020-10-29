@@ -132,6 +132,7 @@ function Remove-Bucket {
             if (!(Test-Path $bucketDirectory)) { throw "'$b' bucket not found" }
 
             Remove-Item $bucketDirectory -Force -Recurse
+            Write-UserMessage -Message "'$b' bucket removed" -Success
         }
     }
 }
