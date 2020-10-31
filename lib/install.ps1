@@ -32,7 +32,7 @@ function install_app($app, $architecture, $global, $suggested, $use_cache = $tru
     }
 
     if (!(supports_architecture $manifest $architecture)) {
-        throw [ScoopException] "'$app' does not support $architecture architecture" # TerminatingError throwns
+        throw [ScoopException] "'$app' does not support $architecture architecture" # TerminatingError thrown
     }
 
     $buc = if ($bucket) { " [$bucket]" } else { '' }
@@ -579,7 +579,7 @@ function dl_urls($app, $version, $manifest, $bucket, $architecture, $dir, $use_c
                     if ($url.Contains('sourceforge.net')) {
                         Write-Host -f yellow 'SourceForge.net is known for causing hash validation fails. Please try again before opening a ticket.'
                     }
-                    throw [ScoopException] "Hash check failed|-$err" # TerminatingError throwns
+                    throw [ScoopException] "Hash check failed|-$err" # TerminatingError thrown
                 }
             }
         }
@@ -747,7 +747,7 @@ function install_msi($fname, $dir, $msi) {
 
     if (!(is_in_dir $dir $msifile)) { throw [ScoopException] "Invalid manifest|-MSI file '$msifile' is outside the app directory." } # TerminatingError thrown
     if (!($msi.code)) { throw [ScoopException] 'Invalid manifest|-Could not find MSI code.' } # TerminatingError thrown
-    if (msi_installed $msi.code) { throw [ScoopException] 'Ignore|-The MSI package is already installed on this system.' } # TerminatingError thrown
+    if (msi_installed $msi.code) { throw [ScoopException] 'The MSI package is already installed on this system.' } # TerminatingError thrown
 
     $logfile = Join-Path $dir 'install.log'
 
@@ -760,7 +760,7 @@ function install_msi($fname, $dir, $msi) {
 
     $installed = Invoke-ExternalCommand 'msiexec' $arg -Activity 'Running installer...' -ContinueExitCodes $continue_exit_codes
     if (!$installed) {
-        throw [ScoopException] "Installation aborted. You might need to run 'scoop uninstall $app' before trying again." # TerminatingError throwns
+        throw [ScoopException] "Installation aborted. You might need to run 'scoop uninstall $app' before trying again." # TerminatingError thrown
     }
     Remove-Item $logfile
     Remove-Item $msifile
