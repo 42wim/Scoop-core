@@ -1,9 +1,9 @@
-'install', 'decompress' | ForEach-Object {
+'Helpers', 'install', 'decompress' | ForEach-Object {
     . (Join-Path $PSScriptRoot "$_.ps1")
 }
 
 
-# resolve dependencies for the supplied apps, and sort into the correct order
+# Resolve dependencies for the supplied apps, and sort into the correct order
 function install_order($apps, $arch) {
     $res = @()
     foreach ($app in $apps) {
@@ -47,7 +47,7 @@ function dep_resolve($app, $arch, $resolved, $unresolved) {
             Write-UserMessage -Message "Bucket '$bucket' not installed. Add it with 'scoop bucket add $bucket' or 'scoop bucket add $bucket <repo>'." -Warning
         }
 
-        Set-TerminatingError -Title "Could not find manifest for '$app'$(if(!$bucket) { '.' } else { " from '$bucket' bucket." })"
+        throw [ScoopException] "Could not find manifest for '$app'$(if(!$bucket) { '.' } else { " from '$bucket' bucket." })" # TerminatingError thrown
     }
 
     $deps = @(install_deps $manifest $arch) + @(runtime_deps $manifest) | Select-Object -Unique
@@ -55,7 +55,7 @@ function dep_resolve($app, $arch, $resolved, $unresolved) {
     foreach ($dep in $deps) {
         if ($resolved -notcontains $dep) {
             if ($unresolved -contains $dep) {
-                Set-TerminatingError -Title "Invalid manifest|-Circular dependency detected: '$app' -> '$dep'."
+                throw [ScoopException] "Circular dependency detected: '$app' -> '$dep'." # TerminatingError thrown
             }
             dep_resolve $dep $arch $resolved $unresolved
         }

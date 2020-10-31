@@ -545,8 +545,7 @@ function movedir {
 
     if ($proc.ExitCode -ge 8) {
         debug $out
-        # TODO: Consider different title
-        Set-TerminatingError -Title "Decompress Error|-Could not find '$(fname $from) in $parent'! (error $($proc.ExitCode))"
+        throw [ScoopException] "Decompress Error|-Could not find '$(fname $from) in $parent'! (error $($proc.ExitCode))" # TerminatingError thrown
     }
 
     # Wait for robocopy to terminate its threads
@@ -583,7 +582,7 @@ function warn_on_overwrite($shim_ps1, $path) {
 }
 
 function shim($path, $global, $name, $arg) {
-    if (!(Test-Path $path)) { Set-TerminatingError -Title "Shim creation fail|-Cannot shim '$(fname $path)': could not find '$path'" }
+    if (!(Test-Path $path)) { throw [ScoopException] "Shim creation fail|-Cannot shim '$(fname $path)': could not find '$path'" } # TerminatingError thrown
 
     $abs_shimdir = shimdir $global | ensure
     if (!$name) { $name = strip_ext (fname $path) }
