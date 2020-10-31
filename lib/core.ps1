@@ -843,6 +843,18 @@ function substitute($entity, [Hashtable] $params, [Bool]$regexEscape = $false) {
 }
 
 function format_hash([String] $hash) {
+    # Convert base64 encoded hash values
+    if ($hash -match '^(?:[A-Za-z\d+\/]{4})*(?:[A-Za-z\d+\/]{2}==|[A-Za-z\d+\/]{3}=|[A-Za-z\d+\/]{4})$') {
+        $base64 = $Matches[0]
+        if (!($hash -match '^[a-fA-F\d]+$') -and $hash.Length -notin @(32, 40, 64, 128)) {
+            try {
+                $hash = ([System.Convert]::FromBase64String($base64) | ForEach-Object { $_.ToString('x2') }) -join ''
+            } catch {
+                $hash = $hash
+            }
+        }
+    }
+
     $hash = $hash.toLower()
 
     switch ($hash.Length) {
