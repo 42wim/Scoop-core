@@ -1169,8 +1169,7 @@ function persist_data($manifest, $original_dir, $persist_dir) {
 
             $source = $source.TrimEnd('/').TrimEnd('\\')
 
-            # TODO: $dir???!!!!
-            $source = Join-Path $dir $source
+            $source = Join-Path $original_dir $source
             $target = Join-Path $persist_dir $target
 
             # if we have had persist data in the store, just create link and go
@@ -1187,11 +1186,15 @@ function persist_data($manifest, $original_dir, $persist_dir) {
                 # we don't have neither source nor target data! we need to crate an empty target,
                 # but we can't make a judgement that the data should be a file or directory...
                 # so we create a directory by default. to avoid this, use pre_install
-                # to create the source file before persisting (DON'T use post_install)
+                # to create the source file before persisting (DO NOT use post_install)
             } else {
                 $target = New-Object System.IO.DirectoryInfo($target)
                 ensure $target | Out-Null
             }
+
+            # Mklink throw 'The system cannot find the path specified.' if the full path of the link does not exist.
+            $splitted = Split-Path $source -Parent
+            if ($splitted -ne $original_dir) { ensure $splitted | Out-Null }
 
             # create link
             if (is_directory $target) {
