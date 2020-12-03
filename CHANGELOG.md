@@ -6,8 +6,8 @@
 
 - **scoop-install**: Fix installlation of different/older versions
 - **scoop-info**: Respect NO_JUNCTION config
-- Add changelong to repository
-- **autoupdate**: Initial preparation for array support
+- Add changelog to repository
+- **autoupdate**: Initial preparations for array support
 - **manifests**: Add `changelog` property
     - It will be shown on manifest installation/updates also in `scoop info` output
 - **scoop-alias**: Add `path` and `edit` subcommands
@@ -32,7 +32,7 @@
 ### 0.55-pre2
 
 - `scoop search` reimplemented
-- Fix regression from `--help` addition
+- **scoop-config**: Fix regression from `--help` addition
 - **decompress**: Fix 7zip requirements detection
 - **autoupdate**: Added `$headVersion` and `$tailVersion` substitutes
 
@@ -96,6 +96,7 @@
 - Git operations no longer change user context
 - Nongit buckets are not updated == invalid repository error will not be shown
 - Update log will not show commits with `[scoop skip]` or `[shovel skip]` in title
+- Refactored handling of manifests versions
 - Exit codes are handled in a saner way
     - See `scoop --help` for used exit codes
 - Internal application files are not using generic name
