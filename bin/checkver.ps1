@@ -90,6 +90,7 @@ function Invoke-Check {
 
     $state = $EventToCheck.SourceEventArgs.UserState
 
+    $gci = $state.gci
     $appName = $state.app
     $json = $state.json
     $url = $state.url
@@ -203,7 +204,11 @@ function Invoke-Check {
         if ($Version -ne '') { $ver = $Version }
 
         try {
-            Invoke-Autoupdate $appName $Dir $json $ver $matchesHashtable
+            $newManifest = Invoke-Autoupdate $appName $Dir $json $ver $matchesHashtable
+            if ($null -eq $newManifest) { throw "Could not update $appname" }
+
+            Write-UserMessage -Message "Writing updated $appName manifest" -Color 'DarkGreen'
+            ConvertTo-Manifest -Path $gci.FullName -Manifest $newManifest
         } catch {
             Write-UserMessage -Message $_.Exception.Message -Err
         }
@@ -215,13 +220,24 @@ function Invoke-Check {
 Get-Event | ForEach-Object { Remove-Event $_.SourceIdentifier }
 
 #region Main
-Get-ChildItem $Dir "$Search.*" -File | ForEach-Object {
-    $m = parse_json $_.FullName
-    if ($m.checkver) { $Queue += , @($_.Name, $m) }
+foreach ($ff in Get-ChildItem $Dir "$Search.*" -File) {
+    if ($ff.Extension -notmatch ("\.($($ALLOWED_MANIFEST_EXTENSION -join '|'))")) {
+        Write-UserMessage "Skipping $($ff.Name)" -Info
+        continue
+    }
+
+    try {
+        $m = ConvertFrom-Manifest -Path $ff.FullName
+    } catch {
+        Write-UserMessage -Message "Invalid manifest: $($ff.Name)" -Err
+        continue
+    }
+    if ($m.checkver) { $Queue += , @($ff, $m) }
 }
 
 foreach ($q in $Queue) {
-    $name, $json = $q
+    $gci, $json = $q
+    $name = $gci.Name
 
     $substitutions = Get-VersionSubstitution -Version $json.version
 
@@ -281,6 +297,7 @@ foreach ($q in $Queue) {
         'xpath'    = $xpath
         'reverse'  = $reverse
         'replace'  = $replace
+        'gci'      = $gci
     }
 
     $wc.Headers.Add('Referer', (strip_filename $url))

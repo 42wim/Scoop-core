@@ -52,9 +52,20 @@ function err ([String] $name, [String[]] $message) {
 }
 
 $MANIFESTS = @()
-foreach ($single in Get-ChildItem $Dir "$App.*" -File) {
-    $name = (strip_ext $single.Name)
-    $manifest = parse_json $single.FullName
+# Gather all required manifests
+foreach ($gci in Get-ChildItem $Dir "$App.*" -File) {
+    if ($gci.Extension -notmatch ("\.($($ALLOWED_MANIFEST_EXTENSION -join '|'))")) {
+        Write-UserMessage "Skipping $($gci.Name)" -Info
+        continue
+    }
+
+    $name = $gci.BaseName
+    try {
+        $manifest = ConvertFrom-Manifest -Path $gci.FullName
+    } catch {
+        err $name 'Invalid manifest'
+        continue
+    }
 
     # Skip nighly manifests, since their hash validation is skipped
     if ($manifest.version -eq 'nightly') { continue }
@@ -87,6 +98,7 @@ foreach ($single in Get-ChildItem $Dir "$App.*" -File) {
         'manifest' = $manifest
         'urls'     = $urls
         'hashes'   = $hashes
+        'gci'      = $gci
     }
 }
 
@@ -169,8 +181,6 @@ foreach ($current in $MANIFESTS) {
 
         Write-UserMessage -Message "Writing updated $($current.app) manifest" -Color 'DarkGreen'
 
-        $p = Join-Path $Dir "$($current.app).json"
-
-        $current.manifest | ConvertToPrettyJson | Out-UTF8File -Path $p
+        ConvertTo-Manifest -Path $current.gci.FullName -Manifest $current.manifest
     }
 }

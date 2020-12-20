@@ -89,7 +89,7 @@ function execute($cmd) {
 }
 
 # json object, application name, upstream repository, relative path to manifest file
-function pull_requests($json, [String] $app, [String] $upstream, [String] $manifest) {
+function pull_requests($json, [String] $app, [String] $upstream, [String] $manifestFile) {
     $version = $json.version
     $homepage = $json.homepage
     $branch = "manifest/$app-$version"
@@ -105,7 +105,7 @@ function pull_requests($json, [String] $app, [String] $upstream, [String] $manif
 
     Write-UserMessage "Creating update $app ($version) ..." -ForegroundColor 'DarkCyan'
     execute "hub checkout -b $branch"
-    execute "hub add $manifest"
+    execute "hub add $manifestFile"
     execute "hub commit -m '${app}: Update to version $version'"
     Write-UserMessage "Pushing update $app ($version) ..." -ForegroundColor 'DarkCyan'
     execute "hub push origin $branch"
@@ -157,32 +157,43 @@ if (!$SkipCheckver) {
     }
 }
 
-hub diff --name-only | ForEach-Object {
-    $manifest = $_
-    if (!$manifest.EndsWith('.json')) { return }
-
-    $app = ([System.IO.Path]::GetFileNameWithoutExtension($manifest))
-    $json = parse_json $manifest
-    if (!$json.version) {
-        Write-UserMessage -Message "Invalid manifest: $manifest ..." -Err
-        return
+# TODO: Limit just /bucket??
+foreach ($changedFile in hub diff --name-only) {
+    $gci = Get-Item $changedFile
+    $applicationName = $gci.BaseName
+    if ($gci.Extension -notmatch ("\.($($ALLOWED_MANIFEST_EXTENSION -join '|'))")) {
+        Write-UserMessage "Skipping $changedFile" -Info
+        continue
     }
-    $version = $json.version
+
+    try {
+        $manifestObject = ConvertFrom-Manifest -Path $gci.FullName
+    } catch {
+        Write-UserMessage "Invalid manifest: $changedFile" -Err
+        continue
+    }
+    $version = $manifestObject.version
+
+    if (!$version) {
+        Write-UserMessage -Message "Invalid manifest: $changedFile ..." -Err
+        continue
+    }
 
     if ($Push) {
-        Write-UserMessage "Creating update $app ($version) ..." -ForegroundColor 'DarkCyan'
-        execute "hub add $manifest"
+        Write-UserMessage "Creating update $applicationName ($version) ..." -ForegroundColor 'DarkCyan'
 
+        execute "hub add $changedFile"
         # Detect if file was staged, because it's not when only LF or CRLF have changed
         $status = execute 'hub status --porcelain -uno'
-        $status = $status | Where-Object { $_ -match "M\s{2}.*$app.json" }
-        if ($status -and $status.StartsWith('M  ') -and $status.EndsWith("$app.json")) {
-            execute "hub commit -m '${app}: Update to version $version'"
+        $status = $status | Where-Object { $_ -match "M\s{2}.*$($gci.Name)" }
+
+        if ($status -and $status.StartsWith('M  ') -and $status.EndsWith($gci.Name)) {
+            execute "hub commit -m '${applicationName}: Update to version $version'"
         } else {
-            Write-UserMessage "Skipping $app because only LF/CRLF changes were detected ..." -Info
+            Write-UserMessage "Skipping $applicationName because only LF/CRLF changes were detected ..." -Info
         }
     } else {
-        pull_requests $json $app $Upstream $manifest
+        pull_requests $manifestObject $applicationName $Upstream $changedFile
     }
 }
 

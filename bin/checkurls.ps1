@@ -33,9 +33,19 @@ $Timeout | Out-Null # PowerShell/PSScriptAnalyzer#1472
 $Dir = Resolve-Path $Dir
 $Queue = @()
 
-Get-ChildItem $Dir "$App.*" -File | ForEach-Object {
-    $manifest = parse_json $_.FullName
-    $Queue += , @($_.Name, $manifest)
+foreach ($gci in Get-ChildItem $Dir "$App.*" -File) {
+    if ($gci.Extension -notmatch ("\.($($ALLOWED_MANIFEST_EXTENSION -join '|'))")) {
+        Write-UserMessage "Skipping $($gci.Name)" -Info
+        continue
+    }
+
+    try {
+        $manifest = ConvertFrom-Manifest -Path $gci.FullName
+    } catch {
+        Write-UserMessage -Message "Invalid manifest: $($gci.Name)" -Err
+        continue
+    }
+    $Queue += , @($gci.BaseName, $manifest)
 }
 
 Write-Host '[' -NoNewline
@@ -122,7 +132,7 @@ foreach ($man in $Queue) {
     Write-Host '[' -NoNewline
     Write-Host $failed -ForegroundColor $fColor -NoNewline
     Write-Host '] ' -NoNewline
-    Write-Host (strip_ext $name)
+    Write-Host $name
 
     $errors | ForEach-Object {
         Write-Host "       > $_" -ForegroundColor 'DarkRed'

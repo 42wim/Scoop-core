@@ -22,10 +22,15 @@ foreach ($sup in $Sups) {
     $checkver = Join-Path $PSScriptRoot 'checkver.ps1'
     & "$checkver" -App "$name" -Dir "$folder" -Update
 
-    $manifest = parse_json $sup.FullName
-    Confirm-DirectoryExistence -Path $dir | Out-Null
+    try {
+        $manifest = ConvertFrom-Manifest -Path $sup.FullName
+    } catch {
+        Write-UserMessage -Message "Invalid manifest: $($sup.Name)" -Err
+        continue
+    }
+    Confirm-DirectoryExistence $dir | Out-Null
 
-    $fname = dl_urls $name $manifest.version $manifest '' 'default_architecture' $dir $true $true
+    $fname = dl_urls $name $manifest.version $manifest '' default_architecture $dir $true $true
     $fname | Out-Null
     # Pre install is enough now
     pre_install $manifest $architecture

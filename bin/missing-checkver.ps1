@@ -21,7 +21,7 @@ param(
     [Switch] $SkipSupported
 )
 
-'core', 'manifest' | ForEach-Object {
+'core', 'Helpers', 'manifest' | ForEach-Object {
     . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
@@ -37,8 +37,18 @@ Write-Host 'A' -ForegroundColor 'Cyan' -NoNewline
 Write-Host ']utoupdate'
 Write-Host ' |  |'
 
-Get-ChildItem $Dir "$App.*" -File | ForEach-Object {
-    $json = parse_json $_.FullName
+foreach ($gci in Get-ChildItem $Dir "$App.*" -File) {
+    if ($gci.Extension -notmatch ("\.($($ALLOWED_MANIFEST_EXTENSION -join '|'))")) {
+        Write-UserMessage "Skipping $($gci.Name)" -Info
+        continue
+    }
+
+    try {
+        $json = ConvertFrom-Manifest -Path $gci.FullName
+    } catch {
+        Write-UserMessage -Message "Invalid manifest: $($gci.Name)" -Err
+        continue
+    }
 
     if ($SkipSupported -and $json.checkver -and $json.autoupdate) { return }
 
@@ -49,5 +59,5 @@ Get-ChildItem $Dir "$App.*" -File | ForEach-Object {
     Write-Host '[' -NoNewline
     Write-Host $(if ($json.autoupdate) { 'A' } else { ' ' }) -ForegroundColor 'Cyan' -NoNewline
     Write-Host '] ' -NoNewline
-    Write-Host $_.BaseName
+    Write-Host $gci.BaseName
 }
