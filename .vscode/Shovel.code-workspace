@@ -103,6 +103,7 @@
                     "bucket/*.json*",
                     "deprecated/*.json*",
                     "TODO/*.json*",
+                    "supporting/*.json*",
                 ],
             },
         ],
@@ -213,7 +214,8 @@
                 "bucket/*.y*ml",
                 "deprecated/*.y*ml",
                 "TODO/*.y*ml",
-            ]
+                "supporting/*.y*ml",
+            ],
         },
         "yaml.schemaStore.enable": true,
         "yaml.validate": true,
