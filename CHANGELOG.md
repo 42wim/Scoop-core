@@ -20,11 +20,14 @@
 - **binaries**: Indicate binary execution errors with exit codes
 - Git operations with custom wrapper are now executable under Unix-like systems
 - **auto-pr**
+    - Use `main` branch instead of `master` if `remotes/origin/main` exists
     - Require `-Upstream` only when `-Request` is provided
     - Scoop proxy configuration will be used for git calls
     - Call native `git` command instead of `hub` for push operation
     - Refactor all git/hub calls to use -C option
-- **scoop-checkup**: Test full shovel adoption
+- **scoop-checkup**:
+    - Check for main branches adoption (if supported)
+    - Check for full shovel adoption
 - **scoop-alias**: First alias addition is correctly registered and created
 - **autoupdate**: Do not autoupdate unless URL is accessible after successful hash extraction
 

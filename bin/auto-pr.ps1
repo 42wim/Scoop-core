@@ -2,7 +2,7 @@
 .SYNOPSIS
     Updates manifests and pushes them or creates pull-requests.
 .DESCRIPTION
-    Updates manifests and pushes them directly to the master branch or creates pull-requests for upstream.
+    Updates manifests and pushes them directly to the master (main) branch or creates pull-requests for upstream.
 .PARAMETER Upstream
     Specifies the upstream repository with the target branch.
     Must be in format '<user>/<repo>:<branch>'
@@ -91,13 +91,21 @@ function _gitWrapper {
     }
 }
 
+function _selectMasterBranch {
+    $branches = _gitWrapper @splat -Command 'branch' -Argument '--all'
+    $master = if ($branches -like '* remotes/origin/main') { 'main' } else { 'master' }
+
+    return $master
+}
+
 # json object, application name, upstream repository, relative path to manifest file
 function pull_requests($json, [String] $app, [String] $upstream, [String] $manifestFile) {
     $version = $json.version
     $homepage = $json.homepage
     $branch = "manifest/$app-$version"
 
-    execute "hub $repoContext checkout master"
+    $master = _selectMasterBranch
+    execute "hub $repoContext checkout $master"
     Write-UserMessage "hub rev-parse --verify $branch" -ForegroundColor 'Green'
     hub -C "$RepositoryRoot" rev-parse --verify $branch
 
@@ -160,12 +168,13 @@ $repoContext = "-C ""$RepositoryRoot"""
 $splat = @{ 'Repository' = $RepositoryRoot }
 
 Write-UserMessage 'Updating ...' -ForegroundColor 'DarkCyan'
+$master = _selectMasterBranch
 if ($Push) {
-    _gitWrapper @splat -Command 'pull' -Argument 'origin', 'master' -Proxy
-    _gitWrapper @splat -Command 'checkout' -Argument 'master'
+    _gitWrapper @splat -Command 'pull' -Argument 'origin', $master -Proxy
+    _gitWrapper @splat -Command 'checkout' -Argument $master
 } else {
-    _gitWrapper @splat -Command 'pull' -Argument 'upstream', 'master' -Proxy
-    _gitWrapper @splat -Command 'push' -Argument 'origin', 'master' -Proxy
+    _gitWrapper @splat -Command 'pull' -Argument 'upstream', $master -Proxy
+    _gitWrapper @splat -Command 'push' -Argument 'origin', $master -Proxy
 }
 
 if (!$SkipCheckver) {
@@ -223,10 +232,10 @@ foreach ($changedFile in _gitWrapper @splat -Command 'diff' -Argument '--name-on
 
 if ($Push) {
     Write-UserMessage 'Pushing updates ...' -ForegroundColor 'DarkCyan'
-    _gitWrapper @splat -Command 'push' -Argument 'origin', 'master' -Proxy
+    _gitWrapper @splat -Command 'push' -Argument 'origin', $master -Proxy
 } else {
-    Write-UserMessage 'Returning to master branch and removing unstaged files ...' -ForegroundColor 'DarkCyan'
-    _gitWrapper @splat -Command 'checkout' -Argument '--force', 'master' -Proxy
+    Write-UserMessage "Returning to $master branch and removing unstaged files ..." -ForegroundColor 'DarkCyan'
+    _gitWrapper @splat -Command 'checkout' -Argument '--force', $master -Proxy
 }
 
 _gitWrapper @splat -Command 'reset' -Argument '--hard'
