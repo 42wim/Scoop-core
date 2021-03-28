@@ -4,6 +4,8 @@
 
 ### 0.6-pre3
 
+- Remove automatic config migration
+- **config**: Do not support `rootPath`, `globalPath`, `cachePath` config options
 - **checkver**: Properly reflect execution issues with exit code
 
 ### 0.6-pre2
