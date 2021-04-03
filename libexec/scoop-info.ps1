@@ -154,6 +154,12 @@ if ($env_add_path) {
     }
 }
 
+# Available versions:
+$vers = Find-BucketDirectory -Name $bucket | Join-Path -ChildPath "old\$app" | Get-ChildItem -ErrorAction 'SilentlyContinue' -File |
+    Where-Object -Property 'Name' -Match -Value "\.($ALLOWED_MANIFEST_EXTENSION_REGEX)$"
+
+if ($vers.Count -gt 0) { $message += "Available Versions: $($vers.BaseName -join ', ')" }
+
 Write-UserMessage -Message $message -Output
 
 # Show notes

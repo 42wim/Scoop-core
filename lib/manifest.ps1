@@ -276,9 +276,30 @@ function Invoke-ManifestScript {
 }
 
 function generate_user_manifest($app, $bucket, $version) {
-    $null, $manifest, $bucket, $null = Find-Manifest $app $bucket
+    $cleanApp, $manifest, $bucket, $null = Find-Manifest $app $bucket
 
     if ($manifest.version -eq $version) { return manifest_path $app $bucket }
+
+    Write-UserMessage -Warning -Message "Looking for archived manifest for '$app' ($version)"
+
+    # Seach local path
+    # TODO: Export to function
+    $archivedManifest = Find-BucketDirectory -Name $bucket | Join-Path -ChildPath "old\$cleanApp" | Get-ChildItem -File
+    $archivedManifest = $archivedManifest | Where-Object -Property 'Name' -Match -Value "\.($ALLOWED_MANIFEST_EXTENSION_REGEX)$"
+    if ($archivedManifest.Count -gt 0) {
+        $archivedManifest = @($archivedManifest | Where-Object -Property 'BaseName' -EQ -Value $version)
+        $archivedManifest = $archivedManifest[0]
+    }
+
+    if (Test-Path $archivedManifest) {
+        $archivedManifest = Get-Item -LiteralPath $archivedManifest
+        Write-UserMessage -Message 'Found archived version' -Success
+
+        $workspace = usermanifestsdir | Join-Path -ChildPath "$cleanApp$($archivedManifest.Extension)"
+        Copy-Item $archivedManifest.FullName $workspace -Force
+
+        return $workspace
+    }
 
     Write-UserMessage -Warning -Message @(
         "Given version ($version) does not match manifest ($($manifest.version))"
@@ -286,13 +307,16 @@ function generate_user_manifest($app, $bucket, $version) {
     )
 
     if (!($manifest.autoupdate)) {
-        Write-UserMessage -Message "'$app' does not have autoupdate capability`r`ncould not find manifest for '$app@$version'" -Warning
+        Write-UserMessage -Warning -Message @(
+            "'$app' does not have autoupdate capability"
+            "could not find manifest for '$app@$version'"
+        )
         return $null
     }
 
     $path = usermanifestsdir | ensure
     try {
-        $newManifest = Invoke-Autoupdate $app "$path" $manifest $version $(@{ })
+        $newManifest = Invoke-Autoupdate $app "$path" $manifest $version $(@{ }) -IgnoreArchive
         if ($null -eq $newManifest) { throw "Could not install $app@$version" }
 
         Write-UserMessage -Message "Writing updated $app manifest" -Color 'DarkGreen'

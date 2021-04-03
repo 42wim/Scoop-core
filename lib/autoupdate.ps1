@@ -358,8 +358,10 @@ function Get-VersionSubstitution ([String] $Version, [Hashtable] $CustomMatches 
     return $versionVariables
 }
 
-function Invoke-Autoupdate ([String] $app, $dir, $json, [String] $version, [Hashtable] $MatchesHashtable) {
+function Invoke-Autoupdate ([String] $app, $dir, $json, [String] $version, [Hashtable] $MatchesHashtable, [String] $Extension = '.json', [Switch] $IgnoreArchive) {
     Write-UserMessage -Message "Autoupdating $app" -Color 'DarkCyan'
+
+    $oldVersion = $json.version
     $has_changes = $false
     $has_errors = $false
     [bool] $valid = $true
@@ -425,6 +427,21 @@ function Invoke-Autoupdate ([String] $app, $dir, $json, [String] $version, [Hash
 
     $newManifest = $null
     if ($has_changes -and !$has_errors) {
+        # Archive older version
+        if (!$IgnoreArchive -and ($json.autoupdate.archive -and ($json.autoupdate.archive -eq $true))) {
+            $oldJson = $json.PSObject.Copy()
+            $appOldPath = Join-Path $dir "old\$app"
+            $manifestOldPath = Join-Path $appOldPath "${oldVersion}${Extension}"
+
+            Write-UserMessage -Message "Archiving manifest with version $oldVersion to $manifestOldPath" -Info
+
+            $oldJson.PSObject.Properties.Remove('checkver')
+            $oldJson.PSObject.Properties.Remove('autoupdate')
+
+            Confirm-DirectoryExistence -LiteralPath $appOldPath | Out-Null
+            ConvertTo-Manifest -Manifest $oldJson -File $manifestOldPath
+        }
+
         # Notes
         if ($json.autoupdate.note) { Write-UserMessage -Message '', $json.autoupdate.note -Color 'DarkYellow' }
 

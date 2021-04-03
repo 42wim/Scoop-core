@@ -188,7 +188,12 @@ if (!$SkipCheckver) {
     }
 }
 
-foreach ($changedFile in _gitWrapper @splat -Command 'diff' -Argument '--name-only' | Where-Object { $_ -like 'bucket/*' }) {
+# Iterate only in bucket/* and ignore bucket/old/*
+$manifestsToUpdate = _gitWrapper @splat -Command 'diff' -Argument '--name-only'
+$manifestsToUpdate = $manifestsToUpdate | Where-Object { $_ -like 'bucket/*' }
+$manifestsToUpdate = $manifestsToUpdate | Where-Object { $_ -notlike 'bucket/old/*' }
+
+foreach ($changedFile in $manifestsToUpdate) {
     $gci = Get-Item "$RepositoryRoot\$changedFile"
     $applicationName = $gci.BaseName
     if ($gci.Extension -notmatch "\.($ALLOWED_MANIFEST_EXTENSION_REGEX)") {
@@ -216,13 +221,29 @@ foreach ($changedFile in _gitWrapper @splat -Command 'diff' -Argument '--name-on
 
         _gitWrapper @splat -Command 'add' -Argument """$changedFile"""
 
+        # Archiving
+        $archived = $false
+        if ($manifestObject.autoupdate.archive -and ($manifestObject.autoupdate.archive -eq $true)) {
+            $oldAppPath = Join-Path $Dir "old\$applicationName"
+            $oldVersionManifest = @(_gitWrapper @splat -Command 'ls-files' -Argument '--other', '--exclude-standard') | Where-Object { $_ -like "bucket/old/$applicationName/*" }
+
+            if ($oldVersionManifest) {
+                _gitWrapper @splat -Command 'add' -Argument """$oldVersionManifest"""
+                $oldVersion = (Join-Path $RepositoryRoot $oldVersionManifest | Get-Item).BaseName
+                $archived = $true
+            }
+        }
+
         # Detect if file was staged, because it's not when only LF or CRLF have changed
         $status = _gitWrapper @splat -Command 'status' -Argument '--porcelain', '--untracked-files=no'
         $status = $status | Where-Object { $_ -match "M\s{2}.*$($gci.Name)" }
-
         if ($status -and $status.StartsWith('M  ') -and $status.EndsWith($gci.Name)) {
             $delim = if (Test-IsUnix) { '""' } else { '"' }
-            _gitWrapper @splat -Command 'commit' -Argument '--message', "$delim${applicationName}: Update to version $version$delim"
+            $commitA = '--message', "$delim${applicationName}: Update to version $version$delim"
+            if ($archived) {
+                $commitA += '--message', "${delim}Archive version $oldVersion$delim"
+            }
+            _gitWrapper @splat -Command 'commit' -Argument $commitA
         } else {
             Write-UserMessage "Skipping $applicationName because only LF/CRLF changes were detected ..." -Info
         }
