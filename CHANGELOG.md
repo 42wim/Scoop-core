@@ -4,6 +4,8 @@
 
 ### 0.6-pre3
 
+- **scoop-(un)hold**: Detect and show error when global option is missing for globally installed application
+- **Core**: Use `Legacy` command argument passing
 - **autoupdate**: Archive old versions of manifest when executing checkver/autoupdate
 - **Git**: Always use `--no-pager` option
 - **checkup**: Test Windows Defender exlusions only when executed with administrator privileges
