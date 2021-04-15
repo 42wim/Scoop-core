@@ -1160,5 +1160,8 @@ $cachedir = $SCOOP_CACHE_DIRECTORY
 $scoopConfig = $SCOOP_CONFIGURATION
 $configFile = $SCOOP_CONFIGURATION_FILE
 
+# Do not use the new native command parsing PowerShell/PowerShell#15239, Ash258/Scoop-Core#142
+$PSNativeCommandArgumentPassing = 'Legacy'
+
 # Setup proxy globally
 setup_proxy
