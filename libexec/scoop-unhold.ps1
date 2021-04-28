@@ -1,9 +1,9 @@
-# Usage: scoop unhold <apps> [options]
-# Summary: Unhold an app to enable updates
+# Usage: scoop unhold [<OPTIONS>] <APP>...
+# Summary: Unhold an installed application(s) to enable updates.
 #
 # Options:
 #   -h, --help           Show help for this command.
-#   -g, --global         Unhold globally installed app.
+#   -g, --global         Unhold globally installed application(s).
 
 'core', 'getopt', 'help', 'Helpers', 'Applications' | ForEach-Object {
     . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
@@ -13,11 +13,11 @@ Reset-Alias
 
 $opt, $apps, $err = getopt $args 'g' 'global'
 if ($err) { Stop-ScoopExecution -Message "scoop unhold: $err" -ExitCode 2 }
-if (!$apps) { Stop-ScoopExecution -Message 'Parameter <apps> missing' -Usage (my_usage) }
+if (!$apps) { Stop-ScoopExecution -Message 'Parameter <APP> missing' -Usage (my_usage) }
 
 $global = $opt.g -or $opt.global
 
-if ($global -and !(is_admin)) { Stop-ScoopExecution -Message 'Admin privileges are required to interact with globally installed apps' -ExitCode 4 }
+if ($global -and !(is_admin)) { Stop-ScoopExecution -Message 'Admin privileges are required to interact with globally installed applications' -ExitCode 4 }
 
 $problems = 0
 $exitCode = 0
