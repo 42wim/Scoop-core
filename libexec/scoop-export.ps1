@@ -1,5 +1,5 @@
-# Usage: scoop export [options] > filename
-# Summary: Exports (an importable) list of installed apps
+# Usage: scoop export [<OPTIONS>]
+# Summary: Exports (an importable) list of installed applications.
 #
 # Options:
 #   -h, --help      Show help for this command.
@@ -8,7 +8,14 @@
     . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
+# TODO: Export:
+#     - [ ] all installed versions
+#     - [ ] buckets
+#     - [ ] config
+#     - [ ] json
+
 Reset-Alias
+
 $def_arch = default_architecture
 
 $local = installed_apps $false | ForEach-Object { @{ 'name' = $_; 'global' = $false } }

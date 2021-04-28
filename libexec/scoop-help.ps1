@@ -1,10 +1,12 @@
-# Usage: scoop help <command> [options]
-# Summary: Show help for a command
+# Usage: scoop help [<OPTIONS>] [<COMMAND>]
+# Summary: Show help for specific scoop command or scoop itself.
 #
 # Options:
 #   -h, --help      Show help for this command.
 
 param($cmd)
+
+# TODO: getopt adoption
 
 'help', 'Helpers' | ForEach-Object {
     . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
@@ -17,7 +19,7 @@ $commands = commands
 
 if (!($cmd)) {
     Write-UserMessage -Output -Message @(
-        'Usage: scoop <command> [<args>]'
+        'Usage: scoop [<OPTIONS>] [<COMMAND>]'
         ''
         'Windows command line installer'
         ''
@@ -29,7 +31,7 @@ if (!($cmd)) {
         '   4 - Permission/Privileges related issue'
         '   10 + - Number of failed actions (installations, updates, ...)'
         ''
-        "Type 'scoop help <command>' to get help for a specific command."
+        'Type ''scoop help <COMMAND>'' to get help for a specific command.'
         ''
         'Available commands are:'
     )

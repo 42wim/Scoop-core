@@ -1,8 +1,10 @@
-# Usage: scoop hold <apps> [options]
-# Summary: Hold an app to disable updates
+# Usage: scoop hold [<OPTIONS>] <APP>...
+# Summary: Hold an application(s) to disable updates.
+# Help: Application which is configured as held, cannot be updated, unless it is un-holded manually.
+#
 # Options:
 #   -h, --help                Show help for this command.
-#   -g, --global              Hold globally installed app.
+#   -g, --global              Hold globally installed application(s).
 
 'core', 'getopt', 'help', 'Helpers', 'Applications' | ForEach-Object {
     . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
@@ -12,14 +14,15 @@ Reset-Alias
 
 $opt, $apps, $err = getopt $args 'g' 'global'
 if ($err) { Stop-ScoopExecution -Message "scoop hold: $err" -ExitCode 2 }
-if (!$apps) { Stop-ScoopExecution -Message 'Parameter <apps> missing' -Usage (my_usage) }
+if (!$apps) { Stop-ScoopExecution -Message 'Parameter <APP> missing' -Usage (my_usage) }
 
 $global = $opt.g -or $opt.global
 
-if ($global -and !(is_admin)) { Stop-ScoopExecution -Message 'Admin privileges are required to interact with globally installed apps' -ExitCode 4 }
+if ($global -and !(is_admin)) { Stop-ScoopExecution -Message 'Admin privileges are required to interact with globally installed applications' -ExitCode 4 }
 
 $problems = 0
 $exitCode = 0
+
 foreach ($app in $apps) {
     # Not at all installed
     if (!(installed $app)) {
