@@ -2,7 +2,8 @@
 # Summary: Display information about an application.
 #
 # Options:
-#   -h, --help      Show help for this command.
+#   -h, --help                  Show help for this command.
+#   -a, --arch <32bit|64bit>    Use the specified architecture, if the application's manifest supports it.
 
 'buckets', 'core', 'depends', 'help', 'getopt', 'install', 'manifest', 'Versions' | ForEach-Object {
     . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
@@ -11,12 +12,25 @@
 Reset-Alias
 
 $ExitCode = 0
-$Options, $Application, $_err = getopt $args
+$Options, $Application, $_err = getopt $args 'a:' 'arch='
 
 if ($_err) { Stop-ScoopExecution -Message "scoop info: $_err" -ExitCode 2 }
 if (!$Application) { Stop-ScoopExecution -Message 'Parameter <APP> missing' -Usage (my_usage) }
 
 $Application = $Application[0]
+$Architecture = default_architecture
+
+if ($Options.a -or $Options.arch) {
+    foreach ($a in @($Options.a, $Options.arch)) {
+        if ($null -eq $a) { continue }
+
+        try {
+            $Architecture = ensure_architecture $a
+        } catch {
+            Write-UserMessage -Warning -Message "'$a' is not a valid architecture. Detecting default system architecture"
+        }
+    }
+}
 
 # TODO: Adopt Resolve-ManifestInformation
 if ($Application -match '^(ht|f)tps?://|\\\\') {
@@ -49,7 +63,6 @@ $dir = versiondir $Application $currentVersion $global
 $original_dir = versiondir $Application $manifest.version $global
 $persist_dir = persistdir $Application $global
 
-$architecture = default_architecture
 if ($status.installed) {
     $manifest_file = manifest_path $Application $install.bucket
     if ($install.url) {
@@ -60,7 +73,7 @@ if ($status.installed) {
     } else {
         $version_output = "$($status.version) (Update to $($manifest.version) available)"
     }
-    $architecture = $install.architecture
+    $Architecture = $install.architecture
 }
 
 $message = @("Name: $Application")
@@ -112,7 +125,7 @@ if ($status.installed) {
     $message += 'Installed: No'
 }
 
-$binaries = @(arch_specific 'bin' $manifest $architecture)
+$binaries = @(arch_specific 'bin' $manifest $Architecture)
 if ($binaries) {
     $message += 'Binaries:'
     $add = ''
@@ -129,8 +142,8 @@ if ($binaries) {
     $message += $add
 }
 
-$env_set = arch_specific 'env_set' $manifest $architecture
-$env_add_path = @(arch_specific 'env_add_path' $manifest $architecture)
+$env_set = arch_specific 'env_set' $manifest $Architecture
+$env_add_path = @(arch_specific 'env_add_path' $manifest $Architecture)
 
 if ($env_set -or $env_add_path) {
     $m = 'Environment:'
