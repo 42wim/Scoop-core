@@ -147,6 +147,14 @@ function New-VersionedManifest {
 $_br = '[/\\]'
 $_archivedManifestRegex = "${_br}bucket${_br}old${_br}(?<manifestName>.+?)${_br}(?<manifestVersion>.+?)\.(?<manifestExtension>$ALLOWED_MANIFEST_EXTENSION_REGEX)$"
 
+$_bucketLookup = '(?<bucket>[a-zA-Z\d.-]+)'
+$_applicationLookup = '(?<app>[a-zA-Z\d_.-]+)'
+$_versionLookup = '@(?<version>.+)'
+$_lookupRegex = "^($_bucketLookup/)?$_applicationLookup($_versionLookup)?$"
+
+$_localAdditionalSeed = '258258--' # Everything before this seed and dash is considered as manifest name
+$_localDownloadedRegex = "^$_applicationLookup-$_localAdditionalSeed.*\.($ALLOWED_MANIFEST_EXTENSION_REGEX)$"
+
 function Get-LocalManifest {
     <#
     .SYNOPSIS
@@ -172,11 +180,79 @@ function Get-LocalManifest {
         if ($localPath.FullName -match $_archivedManifestRegex) {
             $applicationName = $Matches['manifestName']
         }
+        # Check if downloaded manfiest was provided
+        if ($localPath.Name -match $_localDownloadedRegex) {
+            $applicationName = $Matches['app']
+        }
 
         return @{
             'Name'     = $applicationName
             'Manifest' = $manifest
             'Path'     = $localPath
+        }
+    }
+}
+
+function Get-RemoteManifest {
+    <#
+    .SYNOPSIS
+        Download manifest from provided URL.
+    .PARAMETER URL
+        Specifies the URL pointing to manifest.
+    #>
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param([Parameter(Mandatory, ValueFromPipeline)] [String] $URL)
+
+    process {
+        $str = $null
+        try {
+            # TODO: Implement proxy
+            $wc = New-Object System.Net.Webclient
+            $wc.Headers.Add('User-Agent', (Get-UserAgent))
+            $str = $wc.DownloadString($URL)
+        } catch [System.Management.Automation.MethodInvocationException] {
+            Write-UserMessage -Message "${URL}: $($_.Exception.InnerException.Message)" -Warning
+        } catch {
+            throw $_.Exception.Message
+        }
+
+        if (!$str) {
+            throw [ScoopException] "'$URL' does not contain valid manifest" # TerminatingError thrown
+        }
+
+        Confirm-DirectoryExistence -Directory $SHOVEL_GENERAL_MANIFESTS_DIRECTORY | Out-Null
+
+        # Parse name and extension from URL
+        $name = Split-Path $URL -Leaf
+        $extension = ($name -split '\.')[-1]
+        $name = $name -replace "\.($ALLOWED_MANIFEST_EXTENSION_REGEX)$"
+
+        if ($URL -match $_archivedManifestRegex) {
+            $name = $Matches['manifestName']
+            $extension = $Matches['manifestExtension']
+        }
+
+        $rand = "$_localAdditionalSeed$(Get-Random)-$(Get-Random)"
+        $outName = "$name-$rand.$extension"
+        $manifestFile = Join-Path $SHOVEL_GENERAL_MANIFESTS_DIRECTORY $outName
+
+        # This use case should never happen. The probability should be really low.
+        if (Test-Path $manifestFile) {
+            # TODO: Consider while loop when it could be considered as real issue
+            $new = "$name-$rand-$(Get-Random)"
+            $manifestFile = Join-Path $SHOVEL_GENERAL_MANIFESTS_DIRECTORY "$new.$extension"
+
+            Write-UserMessage -Message "Downloaded manifest file with name '$outName' already exists. Using '$new.$extension'." -Warning
+        }
+
+        Out-UTF8File -Path $manifestFile -Content $str
+        $manifest = ConvertFrom-Manifest -Path $manifestFile
+
+        return @{
+            'Name'     = $name
+            'Manifest' = $manifest
+            'Path'     = Get-Item -LiteralPath $manifestFile
         }
     }
 }
@@ -214,6 +290,13 @@ function Resolve-ManifestInformation {
             $applicationVersion = $res.Manifest.version
             $manifest = $res.Manifest
             $localPath = $res.Path
+        } elseif ($ApplicationQuery -match '^https?://') {
+            $res = Get-RemoteManifest -URL $ApplicationQuery
+            $applicationName = $res.Name
+            $applicationVersion = $res.Manifest.version
+            $manifest = $res.Manifest
+            $localPath = $res.Path
+            $url = $ApplicationQuery
         } else {
             throw 'Not supported way how to provide manifest'
         }
