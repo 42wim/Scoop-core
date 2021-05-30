@@ -309,7 +309,7 @@ function Get-AppFilePath {
         [String] $File
     )
 
-    # TODO: Support NO_JUNCTION
+    # TODO: Support NO_JUNCTIONS
     # Normal path to file
     $path = versiondir $App 'current' $false | Join-Path -ChildPath $File
     if (Test-Path $path) { return $path }
@@ -929,9 +929,7 @@ function show_app($app, $bucket, $version) {
 
 function last_scoop_update() {
     # TODO: Config refactor
-    # TODO: getopt adoption
-    # $lastUpdate = Invoke-ScoopCommand 'config' @('lastupdate')
-    $lastUpdate = Invoke-ScoopCommand 'config' @{ 'name' = 'lastupdate' }
+    $lastUpdate = Invoke-ScoopCommand 'config' @('lastupdate')
 
     if ($null -ne $lastUpdate) {
         try {
@@ -952,10 +950,7 @@ function is_scoop_outdated() {
 
     if ($null -eq $lastUp) {
         # TODO: Config refactor
-        # TODO: getopt adotion
-        # Invoke-ScoopCommand 'config' @('lastupdate', ($now.ToString($UPDATE_DATE_FORMAT))) | Out-Null
-
-        Invoke-ScoopCommand 'config' @{ 'name' = 'lastupdate'; 'value' = ($now.ToString($UPDATE_DATE_FORMAT)) } | Out-Null
+        Invoke-ScoopCommand 'config' @('lastupdate', ($now.ToString($UPDATE_DATE_FORMAT))) | Out-Null
     } else {
         $res = $lastUp.AddHours(3) -lt $now.ToLocalTime()
     }
