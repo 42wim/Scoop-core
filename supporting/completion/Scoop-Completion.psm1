@@ -90,7 +90,7 @@ foreach ($cmd in $SCOOP_COMMANDS) {
 }
 
 $script:downloadUtilities = 'native aria2'
-$script:supportedArchitectures = '64bit 32bit'
+$script:supportedArchitectures = '64bit 32bit arm64'
 $script:supportedManifestFormats = 'json yaml yml'
 $script:SCOOP_PARAMETER_VALUES = @{
     'cat'        = @{
@@ -121,6 +121,7 @@ $script:SCOOP_PARAMETER_VALUES = @{
     }
 }
 
+# Build up regexes of all parameters
 $script:REGEX_SHORT_PARAMETERS = $SCOOP_SHORT_PARAMETERS.Keys -join '|'
 $script:REGEX_LONG_PARAMETERS = $SCOOP_LONG_PARAMETERS.Keys -join '|'
 $script:REGEX_PARAMETERS_VALUES = $SCOOP_PARAMETER_VALUES.Keys -join '|'

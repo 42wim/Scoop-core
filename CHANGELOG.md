@@ -2,6 +2,9 @@
 
 ## [0.6.5](https://github.com/Ash258/Scoop-Core/milestone/5)
 
+- **Schema**:
+    - Initial support for `arm64` architecture
+    - Allow `$schema` property
 - **CI**:
     - Support basic validation of yml typed manifests
     - Support validation of all archived manifests

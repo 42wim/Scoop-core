@@ -105,8 +105,10 @@ Describe -Tag 'Manifests' 'manifest-validation' {
                 $manifest = ConvertFrom-Manifest -LiteralPath $file.FullName
                 $url = arch_specific 'url' $manifest '32bit'
                 $url64 = arch_specific 'url' $manifest '64bit'
+                $urlarm64 = arch_specific 'url' $manifest 'arm64'
 
                 if (!$url) { $url = $url64 }
+                if (!$url) { $url = $urlarm64 }
 
                 $url | Should -Not -BeNullOrEmpty
             }
