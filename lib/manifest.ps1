@@ -135,6 +135,52 @@ function manifest_path($app, $bucket, $version = $null) {
     return $path
 }
 
+function New-VersionedManifest {
+    <#
+    .SYNOPSIS
+        Generate new manifest with specified version.
+    .DESCRIPTION
+        Path to the new manifest will be returned.
+        Generated manifests will be saved into $env:SCOOP\manifests and named as '<OriginalName>-<Random>-<Random>.<OriginalExtension>'
+    .PARAMETER Path
+        Specifies the path to the original manifest.
+    .PARAMETER Version
+        Specifies the version to which manifest should be updated.
+    #>
+    [CmdletBinding()]
+    [OutputType([String])]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [Alias('LiteralPath')]
+        [System.IO.FileInfo] $Path,
+        [Parameter(Mandatory)]
+        [String] $Version
+    )
+
+    process {
+        $manifest = $newManifest = $null
+        try {
+            $manifest = ConvertFrom-Manifest -LiteralPath $Path
+        } catch {
+            throw [ScoopException] "Invalid manifest '$Path'"
+        }
+
+        $name = "$($Path.BaseName)-$(Get-Random)-$(Get-Random)$($Path.Extension)"
+        $outPath = Confirm-DirectoryExistence -LiteralPath $SHOVEL_GENERAL_MANIFESTS_DIRECTORY | Join-Path -ChildPath $name
+
+        try {
+            $newManifest = Invoke-Autoupdate $Path.Basename $null $manifest $Version $(${ }) $Path.Extension -IgnoreArchive
+            if ($null -eq $newManifest) { throw 'trigger' }
+        } catch {
+            throw [ScoopException] "Cannot generate manifest with version '$Version'"
+        }
+
+        ConvertTo-Manifest -Path $outpath -Manifest $newManifest
+
+        return $outPath
+    }
+}
+
 function parse_json {
     param([Parameter(Mandatory, ValueFromPipeline)] [System.IO.FileInfo] $Path)
 
