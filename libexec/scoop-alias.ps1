@@ -1,20 +1,30 @@
-# Usage: scoop alias [add|list|rm|edit|path] [<args>] [options]
-# Summary: Manage scoop aliases
-# Help: Add, remove, list or edit Scoop aliases
+# Usage: scoop alias [<SUBCOMMAND>] [<OPTIONS>] [<NAME> <COMMAND> <DESCRIPTION>]
+# Summary: Manage scoop aliases.
+# Help: Add, remove, list or edit scoop aliases.
 #
-# Aliases are custom Scoop subcommands that can be created to make common tasks easier.
+# Aliases are custom scoop subcommands that can be created to make common tasks easier.
+# It could be any valid PowerShell script/command.
 #
-# To add an Alias:
-#     scoop alias add <name> <command> <description>
+# To add an alias:
+#     scoop alias add <NAME> <COMMAND> <DESCRIPTION>
+# Then it could be easily executed as it would be normal scoop command:
+#     scoop <NAME>
 #
-# To edit an Alias inside default system editor:
-#     scoop alias edit <name>
+# To edit an alias inside default system editor:
+#     scoop alias edit <NAME>
 #
 # To get path of the alias file:
-#     scoop alias path <name>
+#     scoop alias path <NAME>
 #
 # e.g.:
 #     scoop alias add test-home 'curl.exe --verbose $args[0] *>&1 | Select-String ''< HTTP/'', ''< Location:''' 'Test URL status code and location'
+#
+# Subcommands:
+#   add             Add a new alias.
+#   list            List all already added aliases. Default subcommand when none is provided.
+#   rm              Remove an already added alias.
+#   edit            Open specified alias executable in default system editor.
+#   path            Show path to the executable of specified alias.
 #
 # Options:
 #   -h, --help      Show help for this command.
@@ -24,17 +34,19 @@
     . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
 
-#region Parameter validation
-$opt, $rem, $err = getopt $args 'v' 'verbose'
-if ($err) { Stop-ScoopExecution -Message "scoop install: $err" -ExitCode 2 }
+# TODO: Add --global - Ash258/Scoop-Core#5
 
+$opt, $rem, $err = getopt $args 'v' 'verbose'
+if ($err) { Stop-ScoopExecution -Message "scoop alias: $err" -ExitCode 2 }
+
+$exitCode = 0
 $Option = $rem[0]
 $Name = $rem[1]
 $Command = $rem[2]
 $Description = $rem[3]
 $Verbose = $opt.v -or $opt.verbose
-#endregion Parameter validation
-$exitCode = 0
+
+if (!$Option) { $Option = 'list' }
 
 switch ($Option) {
     'add' {
@@ -81,9 +93,6 @@ switch ($Option) {
             Write-UserMessage -Message "Shim for alias '$Name' does not exist." -Err
             $exitCode = 3
         }
-    }
-    default {
-        Stop-ScoopExecution -Message 'No parameters provided' -Usage (my_usage)
     }
 }
 

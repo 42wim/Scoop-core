@@ -89,9 +89,13 @@
 
 param($name, $value)
 
+# TODO: getopt adoption
+
 'core', 'help' | ForEach-Object {
     . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
 }
+
+# TODO: Add --global - Ash258/Scoop-Core#5
 
 Reset-Alias
 

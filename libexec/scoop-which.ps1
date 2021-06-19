@@ -1,11 +1,11 @@
-# Usage: scoop which <command> [options]
-# Summary: Locate a shim/executable (similar to 'which' on Linux)
-# Help: Locate the path to a shim/executable that was installed with Scoop (similar to 'which' on Linux)
+# Usage: scoop which [<OPTIONS>] <COMMAND>
+# Summary: Locate the path to a shim/executable of application that was installed with scoop (similar to 'which' on Linux).
 #
 # Options:
 #   -h, --help      Show help for this command.
 
 param([String] $Command)
+# TODO: getopt adoption
 
 'core', 'help', 'commands' | ForEach-Object {
     . (Join-Path $PSScriptRoot "..\lib\$_.ps1")
@@ -13,7 +13,7 @@ param([String] $Command)
 
 Reset-Alias
 
-if (!$command) { Stop-ScoopExecution -Message 'Parameter <command> missing' -Usage (my_usage) }
+if (!$command) { Stop-ScoopExecution -Message 'Parameter <COMMAND> missing' -Usage (my_usage) }
 
 try {
     $gcm = Get-Command $Command -ErrorAction 'Stop'

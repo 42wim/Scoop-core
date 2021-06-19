@@ -59,6 +59,8 @@ if ($version) {
     Invoke-ScoopCommand 'help'
     $exitCode = $LASTEXITCODE
 } elseif ($commandHelp) {
+    # TODO: getopt adoption
+    # Invoke-ScoopCommand 'help' @($cmd)
     Invoke-ScoopCommand 'help' @{ 'cmd' = $cmd }
     $exitCode = $LASTEXITCODE
 } elseif ($validCommand) {
