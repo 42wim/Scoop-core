@@ -127,7 +127,7 @@ function New-VersionedManifest {
             throw [ScoopException] "Invalid manifest '$Path'"
         }
 
-        $name = "$($Path.BaseName)-$(Get-Random)-$(Get-Random)$($Path.Extension)"
+        $name = "$($Path.BaseName)-$_localAdditionalSeed$(Get-Random)-$(Get-Random)$($Path.Extension)"
         $outPath = Confirm-DirectoryExistence -LiteralPath $SHOVEL_GENERAL_MANIFESTS_DIRECTORY | Join-Path -ChildPath $name
 
         try {
@@ -256,6 +256,88 @@ function Get-RemoteManifest {
         }
     }
 }
+
+function Get-ManifestFromLookup {
+    <#
+    .SYNOPSIS
+        Lookup for manifest in all local buckets and return required information.
+    .PARAMETER Query
+        Specifies the lookup query.
+    #>
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param([Parameter(Mandatory, ValueFromPipeline)] [String] $Query)
+
+    process {
+        # Get all requested information
+        $requestedBucket, $requestedName = $Query -split '/'
+        if ($null -eq $requestedName) {
+            $requestedName = $requestedBucket
+            $requestedBucket = $null
+        }
+        $requestedName, $requestedVersion = $requestedName -split '@'
+
+        # Local manifest with specific name in all buckets
+        $found = @()
+        $buckets = Get-LocalBucket
+
+        if ($requestedBucket -and ($requestedBucket -notin $buckets)) { throw [ScoopException] "'$requestedBucket' cannot be found" }
+
+        foreach ($b in $buckets) {
+            $really = manifest_path $requestedName $b
+            if ($really) {
+                $found += @{
+                    'Bucket' = $b
+                    'Path'   = $really
+                }
+            }
+        }
+
+        # Pick the first one (as vanilla implementation)
+        # TODO: Let user pick which bucket if there are more
+        $valid = $found[0]
+        if ($requestedBucket) { $valid = $found | Where-Object -Property 'Bucket' -EQ -Value $requestedBucket }
+
+        if (!$valid) { throw [ScoopException] "No manifest found for '$Query'" }
+
+        $manifestBucket = $valid.Bucket
+        $manifestPath = $valid.Path
+
+        # Select versioned manifest or generate it
+        if ($requestedVersion) {
+            try {
+                $path = manifest_path -app $requestedName -bucket $requestedBucket -version $requestedVersion
+                if ($null -eq $path) { throw 'trigger' }
+                $manifestPath = $path
+            } catch {
+                $mess = if ($requestedBucket) { " in '$requestedBucket'" } else { '' }
+                Write-UserMessage -Message "There is no archived version of manifest '$requestedName'$mes. Trying to generate the manifest" -Warning
+
+                $generated = $null
+                try {
+                    $generated = New-VersionedManifest -Path $manifestPath -Version $requestedVersion
+                } catch {
+                    throw [ScoopException] $_.Exception.Message
+                }
+
+                # This should not happen.
+                if (!(Test-Path -LiteralPath $generated)) { throw [ScoopException] 'Generated manifest cannot be found' }
+
+                $manifestPath = $generated
+            }
+        }
+
+        $name = $requestedName
+        $manifest = ConvertFrom-Manifest -LiteralPath $manifestPath
+
+        return @{
+            'Name'     = $name
+            'Bucket'   = $manifestBucket
+            'Manifest' = $manifest
+            'Path'     = (Get-Item -LiteralPath $manifestPath)
+        }
+    }
+}
 #endregion Resolve Helpers
 
 function Resolve-ManifestInformation {
@@ -297,6 +379,13 @@ function Resolve-ManifestInformation {
             $manifest = $res.Manifest
             $localPath = $res.Path
             $url = $ApplicationQuery
+        } elseif ($ApplicationQuery -match $_lookupRegex) {
+            $res = Get-ManifestFromLookup -Query $ApplicationQuery
+            $applicationName = $res.Name
+            $applicationVersion = $res.Manifest.version
+            $manifest = $res.Manifest
+            $localPath = $res.Path
+            $bucket = $res.Bucket
         } else {
             throw 'Not supported way how to provide manifest'
         }
