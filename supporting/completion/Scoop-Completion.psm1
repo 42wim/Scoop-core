@@ -46,6 +46,7 @@ $script:SCOOP_SHORT_PARAMETERS = @{
     'depends'    = 'a'
     'download'   = 's u a b'
     'hold'       = 'g'
+    'info'       = 'a'
     'install'    = 'g i k s a'
     'list'       = 'i u r'
     'search'     = 'r'
@@ -60,6 +61,7 @@ $script:SCOOP_LONG_PARAMETERS = @{
     'depends'    = 'arch'
     'download'   = 'skip utility arch all-architectures'
     'hold'       = 'global'
+    'info'       = 'arch'
     'install'    = 'global independent no-cache skip arch'
     'list'       = 'installed updated reverse'
     'search'     = 'remote'
@@ -91,6 +93,10 @@ $script:SCOOP_PARAMETER_VALUES = @{
         'arch' = '32bit 64bit'
     }
     'depends'    = @{
+        'a'    = '32bit 64bit'
+        'arch' = '32bit 64bit'
+    }
+    'info'       = @{
         'a'    = '32bit 64bit'
         'arch' = '32bit 64bit'
     }
