@@ -1,5 +1,5 @@
-# Usage: scoop depends <app> [options]
-# Summary: List dependencies for an app
+# Usage: scoop depends [<OPTIONS>] <APP>
+# Summary: List dependencies for an application.
 #
 # Options:
 #   -h, --help      Show help for this command.
@@ -11,13 +11,13 @@
 Reset-Alias
 
 $opt, $apps, $err = getopt $args 'a:' 'arch='
+# TODO: Multiple apps?
 $app = $apps[0]
-$architecture = default_architecture
 
 if ($err) { Stop-ScoopExecution -Message "scoop depends: $err" -ExitCode 2 }
-if (!$app) { Stop-ScoopExecution -Message 'Parameter <app> missing' -Usage (my_usage) }
+if (!$app) { Stop-ScoopExecution -Message 'Parameter <APP> missing' -Usage (my_usage) }
 
-$deps = @(deps $app $architecture)
+$deps = @(deps $app (default_architecture))
 if ($deps) { $deps[($deps.length - 1)..0] }
 
 exit 0
