@@ -97,43 +97,6 @@ function ConvertTo-Manifest {
     }
 }
 
-function appname_from_url($url) { return (Split-Path $url -Leaf) -replace "\.($ALLOWED_MANIFEST_EXTENSION_REGEX)$" }
-
-function manifest_path($app, $bucket, $version = $null) {
-    $name = sanitary_path $app
-    $buc = Find-BucketDirectory -Bucket $bucket
-    $path = $file = $null
-
-    try {
-        $file = Get-ChildItem -LiteralPath $buc -Filter "$name.*" -ErrorAction 'Stop'
-    } catch {
-        return $path
-    }
-
-    if ($file) {
-        if ($file.Count -gt 1) { $file = $file[0] }
-        $path = $file.FullName
-
-        # Look for archived version only if manifest exists
-        if ($version) {
-            $path = $null
-            $versions = @()
-
-            try {
-                $versions = Get-ChildItem -LiteralPath "$buc\old\$name" -Filter "$version.*" -ErrorAction 'Stop'
-            } catch {
-                throw [ScoopException] "Bucket '$bucket' does not contain archived version '$version' for '$app'"
-            }
-
-            if ($versions.Count -gt 1) { $versions = $versions[0] }
-
-            $path = $versions.FullName
-        }
-    }
-
-    return $path
-}
-
 function New-VersionedManifest {
     <#
     .SYNOPSIS
@@ -183,7 +146,6 @@ function New-VersionedManifest {
 #region Resolve Helpers
 $_br = '[/\\]'
 $_archivedManifestRegex = "${_br}bucket${_br}old${_br}(?<manifestName>.+?)${_br}(?<manifestVersion>.+?)\.(?<manifestExtension>$ALLOWED_MANIFEST_EXTENSION_REGEX)$"
-#endregion Resolve Helpers
 
 function Get-LocalManifest {
     <#
@@ -218,6 +180,7 @@ function Get-LocalManifest {
         }
     }
 }
+#endregion Resolve Helpers
 
 function Resolve-ManifestInformation {
     <#
@@ -228,10 +191,13 @@ function Resolve-ManifestInformation {
     .EXAMPLE
         Resolve-ManifestInformation -ApplicationQuery 'pwsh'
         Resolve-ManifestInformation -ApplicationQuery 'pwsh@7.2.0'
+
         Resolve-ManifestInformation -ApplicationQuery 'Ash258/pwsh'
         Resolve-ManifestInformation -ApplicationQuery 'Ash258/pwsh@6.1.3'
+
         Resolve-ManifestInformation -ApplicationQuery '.\bucket\old\cosi\7.1.0.yaml'
         Resolve-ManifestInformation -ApplicationQuery '.\cosi.yaml'
+
         Resolve-ManifestInformation -ApplicationQuery 'https://raw.githubusercontent.com/Ash258/GithubActionsBucketForTesting/main/bucket/alfa.yaml'
         Resolve-ManifestInformation -ApplicationQuery 'https://raw.githubusercontent.com/Ash258/GithubActionsBucketForTesting/main/bucket/old/alfa/0.0.15-12060.yaml'
     #>
@@ -271,6 +237,43 @@ function Resolve-ManifestInformation {
             'CalculatedBucket' = $calcBucket
         }
     }
+}
+
+function appname_from_url($url) { return (Split-Path $url -Leaf) -replace "\.($ALLOWED_MANIFEST_EXTENSION_REGEX)$" }
+
+function manifest_path($app, $bucket, $version = $null) {
+    $name = sanitary_path $app
+    $buc = Find-BucketDirectory -Bucket $bucket
+    $path = $file = $null
+
+    try {
+        $file = Get-ChildItem -LiteralPath $buc -Filter "$name.*" -ErrorAction 'Stop'
+    } catch {
+        return $path
+    }
+
+    if ($file) {
+        if ($file.Count -gt 1) { $file = $file[0] }
+        $path = $file.FullName
+
+        # Look for archived version only if manifest exists
+        if ($version) {
+            $path = $null
+            $versions = @()
+
+            try {
+                $versions = Get-ChildItem -LiteralPath "$buc\old\$name" -Filter "$version.*" -ErrorAction 'Stop'
+            } catch {
+                throw [ScoopException] "Bucket '$bucket' does not contain archived version '$version' for '$app'"
+            }
+
+            if ($versions.Count -gt 1) { $versions = $versions[0] }
+
+            $path = $versions.FullName
+        }
+    }
+
+    return $path
 }
 
 function parse_json {
