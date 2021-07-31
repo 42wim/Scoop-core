@@ -21,7 +21,7 @@ function Test-DiagDrive {
 
     if ((New-Object System.IO.DriveInfo($SCOOP_GLOBAL_ROOT_DIRECTORY)).DriveFormat -ne 'NTFS') {
         Write-UserMessage -Message 'Scoop requires an NTFS volume to work!' -Warning
-        Write-UserMessage -Message '  Please configure SCOOP_GLOBAL environment variable to NTFS volume'
+        Write-UserMessage -Message '  Please configure ''SCOOP_GLOBAL'' environment variable to NTFS volume'
         $result = $false
     }
 
@@ -196,7 +196,7 @@ function Test-DiagHelpersInstalled {
 
     $result = $true
 
-    if (!(Test-HelperInstalled -Helper '7zip')) {
+    if (!(Test-HelperInstalled -Helper '7zip') -and ($false -eq (get_config '7ZIPEXTRACT_USE_EXTERNAL' $false))) {
         Write-UserMessage -Message '''7-Zip'' not installed!. It is essential component for most of the manifests.' -Warning
         Write-UserMessage -Message @(
             '  Fixable with running following command:'
@@ -277,6 +277,7 @@ function Test-DiagCompletionRegistered {
     [OutputType([bool])]
     param()
 
+    # TODO: Test only when in user interactive mode
     $module = Get-Module 'Scoop-Completion'
 
     if (($null -eq $module) -or ($module.Author -notlike 'Jakub*')) {
@@ -362,7 +363,7 @@ function Test-MainBranchAdoption {
     }
 
     if (($verdict -eq $false) -and ($toFix.Count -gt 0)) {
-        Write-UserMessage -Message "Locally added buckets should be reconfigured to main branch." -Warning
+        Write-UserMessage -Message 'Locally added buckets should be reconfigured to main branch.' -Warning
         Write-UserMessage -Message @(
             '  Fixable with running following commands:'
             ($toFix | ForEach-Object { "    git -C '$($_.path)' checkout main" })
@@ -383,7 +384,7 @@ function Test-ScoopConfigFile {
         Write-UserMessage -Message 'Configuration file does not exists.' -Warn
         Write-UserMessage -Message @(
             '  Fixable with running following commands:'
-            "    scoop update"
+            '    scoop update'
         )
 
         $verdict = $false
