@@ -39,8 +39,28 @@ function Optimize-SecurityProtocol {
     }
 }
 
+# Shovel/1.0 (+https://shovel.ash258.com) PowerShell/7.2 (Windows NT 10.0; Win64; x64; Core)
+# Shovel/1.0 (+https://shovel.ash258.com) PowerShell/7.2 (Linux; Linux 5.8.0-1032-raspi #35-Ubuntu SMP PREEMPT Wed Jul 14 10:51:21 UTC 2021;)
 function Get-UserAgent {
-    return "Scoop/1.0 (+http://scoop.sh/) PowerShell/$($PSVersionTable.PSVersion.Major).$($PSVersionTable.PSVersion.Minor) (Windows NT $([System.Environment]::OSVersion.Version.Major).$([System.Environment]::OSVersion.Version.Minor); $(if($env:PROCESSOR_ARCHITECTURE -eq 'AMD64'){'Win64; x64; '})$(if($env:PROCESSOR_ARCHITEW6432 -eq 'AMD64'){'WOW64; '})$PSEdition)"
+    $shovel = 'Shovel/1.0 (+https://shovel.ash258.com)'
+    $powershellVersion = "PowerShell/$($PSVersionTable.PSVersion.Major).$($PSVersionTable.PSVersion.Minor)"
+    $system = "Windows NT $([System.Environment]::OSVersion.Version)"
+    $arch = ''
+
+    switch ($env:PROCESSOR_ARCHITECTURE) {
+        'AMD64' { $arch = 'Win64; x64;' }
+    }
+
+    if (Test-IsUnix) {
+        $system = Invoke-SystemComSpecCommand -Unix 'uname -s'
+        $arch = Invoke-SystemComSpecCommand -Unix 'uname -srv'
+        $arch = "$arch;"
+    }
+
+    $useragent = "$shovel $powershellVersion ($system; $arch)"
+    # debug $useragent
+
+    return $useragent
 }
 
 function Show-DeprecatedWarning {
@@ -83,9 +103,7 @@ function Invoke-SystemComSpecCommand {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
         [String] $Windows,
-        [Parameter(Mandatory)]
         [String] $Unix
     )
 
@@ -97,6 +115,8 @@ function Invoke-SystemComSpecCommand {
             $shell = $env:ComSpec
             $parameters = @('/d', '/c', $Windows)
         }
+
+        if (!$Windows -and !$Unix) { throw 'No command provided' }
 
         $debugShell = "& ""$shell"" $($parameters -join ' ')"
         debug $debugShell
@@ -609,7 +629,7 @@ function Invoke-ExternalCommand {
 function dl($url, $to) {
     $wc = New-Object System.Net.Webclient
     $wc.headers.add('Referer', (strip_filename $url))
-    $wc.Headers.Add('User-Agent', (Get-UserAgent))
+    $wc.Headers.Add('User-Agent', $SHOVEL_USERAGENT)
     $wc.downloadFile($url, $to)
 }
 
@@ -1053,6 +1073,8 @@ function fullpath($path) {
 # Note: Github disabled TLS 1.0 support on 2018-02-23. Need to enable TLS 1.2
 #       for all communication with api.github.com
 Optimize-SecurityProtocol
+
+$SHOVEL_USERAGENT = Get-UserAgent
 
 # TODO: Drop
 $c = get_config 'rootPath'

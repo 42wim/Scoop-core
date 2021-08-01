@@ -41,6 +41,7 @@ $commandHelp = !$scoopHelp -and $validCommand -and (($args.Contains('--help')) -
 if ($version) {
     Write-UserMessage -Output -Message @(
         "PowerShell version: $($PSVersionTable.PSVersion)"
+        "Useragent: $SHOVEL_USERAGENT"
         'Current Scoop (Shovel) version:'
     )
     Invoke-GitCmd -Command 'VersionLog' -Repository (versiondir 'scoop' 'current')
