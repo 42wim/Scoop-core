@@ -201,6 +201,12 @@ function Update-Scoop {
         Add-Bucket -Name 'main'
     }
 
+    # Add Base bucket if not already added
+    if ((Get-LocalBucket) -notcontains 'Base') {
+        Write-UserMessage -Message 'New Base bucket was introduces, which will replace main', 'Adding Base bucket...' -Output
+        Add-Bucket -Name 'Base'
+    }
+
     ensure_scoop_in_path
     shim (Join-Path $currentDir 'bin\scoop.ps1') $false
 

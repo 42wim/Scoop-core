@@ -76,17 +76,22 @@ function Test-DiagMainBucketAdded {
     [OutputType([bool])]
     param()
 
-    if ((Get-LocalBucket) -notcontains 'main') {
-        Write-UserMessage -Message '''main'' bucket is not added.' -Warning
-        Write-UserMessage -Message @(
-            '  Fixable with running following command in elevated prompt:'
-            '    scoop bucket add main'
-        )
+    $verdict = $true
+    $all = Get-LocalBucket
 
-        return $false
+    'main', 'Base' | ForEach-Object {
+        if ($all -notcontains $_) {
+            Write-UserMessage -Message "'$_' bucket is not added" -Warning
+            Write-UserMessage -Message @(
+                '  Fixable with running following command:'
+                "    scoop bucket add '$_'"
+            )
+
+            $verdict = $false
+        }
     }
 
-    return $true
+    return $verdict
 }
 
 function Test-DiagLongPathEnabled {
