@@ -259,6 +259,13 @@ function get_hash_for_app([String] $app, $config, [String] $version, [String] $u
         Write-Host ' to verify URL accessibility' -ForegroundColor 'Yellow'
         $request = [System.Net.WebRequest]::Create($url) # TODO: Consider spliting #/ from URL to prevent potential faulty response
         $request.AllowAutoRedirect = $true
+        if ($PSVersionTable.PSVersion.Major -lt 6) {
+            $request.UserAgent = $SHOVEL_USERAGENT
+            $request.Referer = strip_filename $url
+        } else {
+            $request.Headers.Add('Referer', (strip_filename $url))
+            $request.Headers.Add('User-Agent', $SHOVEL_USERAGENT)
+        }
         try {
             $response = $request.GetResponse()
             $response.Close()
