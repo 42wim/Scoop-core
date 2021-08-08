@@ -81,6 +81,7 @@ function ConvertTo-Manifest {
             }
             { $_ -in 'yaml', 'yml' } {
                 $content = ConvertTo-CloudBaseYaml -Data $Manifest
+                $content = $content.TrimEnd("`r`n") # For some reason it produces two line endings at the end
             }
             default {
                 Write-UserMessage -Message "Not specific manifest extension ($_). Falling back to json" -Info
