@@ -2,6 +2,7 @@
 
 ## [0.6.5](https://github.com/Ash258/Scoop-Core/milestone/5)
 
+- **schema**: Fix validation for curly bracket variables in autoupdate
 - Internal modules/libs are loaded only when not loaded already
 - **scoop-install**: Fix independent installations
 - Initial support for manipulation with `arm64` based manifests
