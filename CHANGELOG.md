@@ -2,7 +2,9 @@
 
 ## [0.6.5](https://github.com/Ash258/Scoop-Core/milestone/5)
 
-- **schema**: Fix validation for curly bracket variables in autoupdate
+- **scoop-config**: Add config option `dbgBypassArmCheck`
+    - Installation will not fail when installing arm64 version on x86.
+    - For debugging purpose, to simulate the installation of arm64 version
 - Internal modules/libs are loaded only when not loaded already
 - **scoop-install**: Fix independent installations
 - Initial support for manipulation with `arm64` based manifests
@@ -16,6 +18,7 @@
     - Support `githubToken` config and `GITHUB_TOKEN` environment variable for Github API calls
 - **scoop-install**, **scoop-update**: Report failed installations/updates at the end of execution
 - **Schema**:
+    - Fix validation for curly bracket variables in autoupdate
     - Initial support for `arm64` architecture
     - Allow `$schema` property
 - **CI**:

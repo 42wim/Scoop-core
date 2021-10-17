@@ -75,6 +75,9 @@
 #   GitHub API token used for checkver/autoupdate runs to prevent rate limiting.
 #   See: 'https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token'
 #
+# dbgBypassArmCheck: $true|$false
+#   Do not fail to install arm64 version on x86 platform.
+#
 # ARIA2 configuration
 # -------------------
 #
