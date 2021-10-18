@@ -269,7 +269,7 @@ function Test-DiagConfig {
     param()
 
     $result = $true
-    if (!(get_config 'MSIEXTRACT_USE_LESSMSI' $false)) {
+    if ($false -eq (get_config 'MSIEXTRACT_USE_LESSMSI' $true)) {
         Write-UserMessage -Message '''lessmsi'' should be used for extraction of msi installers!' -Warning
         Write-UserMessage -Message @(
             '  Fixable with running following command:'

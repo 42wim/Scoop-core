@@ -43,7 +43,7 @@
 #
 # MSIEXTRACT_USE_LESSMSI: $true|$false
 #   Prefer lessmsi utility over native msiexec for installation of msi based installers.
-#   This is preferred option and will be default in future.
+#   Lessmsi is preferred option. Default to $true as of 2021-10-16.
 #
 # INNOSETUP_USE_INNOEXTRACT: $true|$false
 #   Prefer innoextract utility over innounp for installation of innosetup based installers.
