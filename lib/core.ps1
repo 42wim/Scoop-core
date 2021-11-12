@@ -28,23 +28,6 @@ function Get-AbsolutePath {
     process { return $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path) }
 }
 
-function Optimize-SecurityProtocol {
-    # .NET Framework 4.7+ has a default security protocol called 'SystemDefault',
-    # which allows the operating system to choose the best protocol to use.
-    # If SecurityProtocolType contains 'SystemDefault' (means .NET4.7+ detected)
-    # and the value of SecurityProtocol is 'SystemDefault', just do nothing on SecurityProtocol,
-    # 'SystemDefault' will use TLS 1.2 if the webrequest requires.
-    $isNewerNetFramework = ([System.Enum]::GetNames([System.Net.SecurityProtocolType]) -contains 'SystemDefault')
-    $isSystemDefault = ([System.Net.ServicePointManager]::SecurityProtocol.Equals([System.Net.SecurityProtocolType]::SystemDefault))
-
-    # If not, change it to support TLS 1.2
-    if (!($isNewerNetFramework -and $isSystemDefault)) {
-        # Set to TLS 1.2 (3072), then TLS 1.1 (768), and TLS 1.0 (192). Ssl3 has been superseded,
-        # https://docs.microsoft.com/en-us/dotnet/api/system.net.securityprotocoltype?view=netframework-4.5
-        [System.Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor 192
-    }
-}
-
 # Shovel/1.0 (+https://shovel.ash258.com) PowerShell/7.2 (Windows NT 10.0; Win64; x64; Core)
 # Shovel/1.0 (+https://shovel.ash258.com) PowerShell/7.2 (Linux; Linux 5.8.0-1032-raspi #35-Ubuntu SMP PREEMPT Wed Jul 14 10:51:21 UTC 2021;)
 function Get-UserAgent {
@@ -994,7 +977,6 @@ function success($msg) { Write-UserMessage -Message $msg -Success }
 
 # Note: Github disabled TLS 1.0 support on 2018-02-23. Need to enable TLS 1.2
 #       for all communication with api.github.com
-Optimize-SecurityProtocol
 
 # General variables
 $SHOVEL_DEBUG_ENABLED = Test-ScoopDebugEnabled
