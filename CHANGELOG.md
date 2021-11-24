@@ -2,10 +2,12 @@
 
 ## [0.6.5](https://github.com/Ash258/Scoop-Core/milestone/5)
 
+- Consider debug mode enabled only when the `debug` config option or `SCOOP_DEBUG` is valid boolean value (`$true`, `$false`, `1`, `0`, `true`, `false`)
+    - Prevent multiple evaluations of debug mode check
 - Respect `NO_JUNCTIONS` config when resolving helper utilities
     - Fallback to executable from PATH when the utility is not installed via scoop.
 
-### [0.6.5-pre1]
+### 0.6.5-pre1
 
 - **scoop-config**:
     - Consider lessmsi as default for msi extraction

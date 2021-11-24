@@ -247,9 +247,10 @@ function Test-ScoopDebugEnabled {
     [OutputType([bool])]
     param()
 
-    $configDebug = (get_config 'debug' $false) -eq [bool]::TrueString
+    $configDebug = get_config 'debug' $false
+    $configDebug = ($configDebug -eq $true) -or ($configDebug -eq [bool]::TrueString) -or ($configDebug -eq '1')
     $envDebug = $env:SCOOP_DEBUG
-    $envDebug = ([bool] $envDebug) -or (($envDebug -eq [bool]::TrueString) -or ($envDebug -eq 1))
+    $envDebug = ($envDebug -eq [bool]::TrueString) -or ($envDebug -eq '1')
 
     return $configDebug -or $envDebug
 }
@@ -261,7 +262,7 @@ function debug($obj) {
     .PARAMETER obj
         Specifies object/variable to be shown.
     #>
-    if (!(Test-ScoopDebugEnabled)) { return }
+    if (!$SHOVEL_DEBUG_ENABLED) { return }
 
     $prefix = "DEBUG[$(Get-Date -UFormat %s)]"
     $param = $MyInvocation.Line.Replace($MyInvocation.InvocationName, '').Trim()
@@ -364,7 +365,7 @@ function Get-AppFilePath {
     # Try path
     $path = Get-Command -Name $File -ErrorAction 'SilentlyContinue'
     if ($path -and (Test-Path -LiteralPath $path.Source -PathType 'Leaf')) {
-        Write-UserMessage "Application '$App' is not installed via Scoop. Trying to use '$($path.Source)'" -Warning
+        Write-UserMessage -Message "Application '$App' is not installed via Scoop. Trying to use '$($path.Source)'" -Warning
         return $path
     }
 
@@ -1066,6 +1067,9 @@ $SHOVEL_GENERAL_MANIFESTS_DIRECTORY = Join-Path $SCOOP_ROOT_DIRECTORY 'manifests
 $configHome = $env:XDG_CONFIG_HOME, "$env:USERPROFILE\.config" | Where-Object { -not [String]::IsNullOrEmpty($_) } | Select-Object -First 1
 $SCOOP_CONFIGURATION_FILE = Join-Path $configHome 'scoop\config.json'
 $SCOOP_CONFIGURATION = load_cfg $SCOOP_CONFIGURATION_FILE
+
+# General variables
+$SHOVEL_DEBUG_ENABLED = Test-ScoopDebugEnabled
 
 # TODO: Remove deprecated variables
 $scoopdir = $SCOOP_ROOT_DIRECTORY
