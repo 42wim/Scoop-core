@@ -134,6 +134,114 @@ function install_app($app, $architecture, $global, $suggested, $use_cache = $tru
     }
 }
 
+function Get-HelperPath {
+    <#
+    .SYNOPSIS
+        Get full path to the often used application's executables.
+    .PARAMETER Helper
+        Specifies the name of helper application.
+    #>
+    [CmdletBinding()]
+    [OutputType([String])]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [ValidateSet('7zip', 'Lessmsi', 'Innounp', 'Dark', 'Aria2', 'Zstd', 'Innoextract')]
+        [String] $Helper
+    )
+
+    process {
+        $helperPath = $null
+        switch ($Helper) {
+            'Aria2' { $helperPath = Get-AppFilePath 'aria2' 'aria2c.exe' }
+            'Innounp' { $helperPath = Get-AppFilePath 'innounp' 'innounp.exe' }
+            'Lessmsi' { $helperPath = Get-AppFilePath 'lessmsi' 'lessmsi.exe' }
+            'Zstd' { $HelperPath = Get-AppFilePath 'zstd' 'zstd.exe' }
+            'Innoextract' { $HelperPath = Get-AppFilePath 'innoextract' 'innoextract.exe' }
+            '7zip' {
+                $helperPath = Get-AppFilePath '7zip' '7z.exe'
+                if ([String]::IsNullOrEmpty($helperPath)) {
+                    $helperPath = Get-AppFilePath '7zip-zstd' '7z.exe'
+                }
+            }
+            'Dark' {
+                $helperPath = Get-AppFilePath 'dark' 'dark.exe'
+                if ([String]::IsNullOrEmpty($helperPath)) {
+                    $helperPath = Get-AppFilePath 'wixtoolset' 'dark.exe'
+                }
+            }
+        }
+
+        return $helperPath
+    }
+}
+
+function Test-HelperInstalled {
+    <#
+    .SYNOPSIS
+        Test if specified widely used application is installed.
+    .PARAMETER Helper
+        Specifies the name of application.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [ValidateSet('7zip', 'Lessmsi', 'Innounp', 'Dark', 'Aria2', 'Zstd', 'Innoextract')]
+        [String] $Helper
+    )
+
+    process { return ![String]::IsNullOrWhiteSpace((Get-HelperPath -Helper $Helper)) }
+}
+
+function Get-AppFilePath {
+    <#
+    .SYNOPSIS
+        Get full path to the specific executable under specific application installed via scoop.
+    .PARAMETER App
+        Specifies the scoop's application name.
+    .PARAMETER File
+        Specifies the executable name.
+    #>
+    [CmdletBinding()]
+    [OutputType([String])]
+    param(
+        [Parameter(Mandatory)]
+        [String] $App,
+        [Parameter(Mandatory)]
+        [String] $File
+    )
+
+    # Normal path to file
+    $path = versiondir $App (Select-CurrentVersion -AppName $App) $false | Join-Path -ChildPath $File
+    if (Test-Path -LiteralPath $path -PathType 'Leaf') { return $path }
+
+    # Global path to file
+    $path = versiondir $App (Select-CurrentVersion -AppName $App -Global) $true | Join-Path -ChildPath $File
+    if (Test-Path -LiteralPath $path -PathType 'Leaf') { return $path }
+
+    # Try path
+    $path = Get-Command -Name $File -ErrorAction 'SilentlyContinue'
+    if ($path -and (Test-Path -LiteralPath $path.Source -PathType 'Leaf')) {
+        Write-UserMessage -Message "Application '$App' is not installed via Scoop. Trying to use '$($path.Source)'" -Warning
+        return $path
+    }
+
+    # Not found
+    return $null
+}
+
+function Test-Aria2Enabled {
+    <#
+    .SYNOPSIS
+        Test if aria2 application is installed and enabled.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
+
+    process { return (Test-HelperInstalled -Helper 'Aria2') -and (get_config 'aria2-enabled' $true) }
+}
+
 function Find-Manifest($app, $bucket) {
     $manifest, $url = $null, $null
 
@@ -166,7 +274,7 @@ function dl_with_cache($app, $version, $url, $to, $cookies = $null, $use_cache =
     $cached = cache_path $app $version $url
 
     if (!(Test-Path $cached) -or !$use_cache) {
-        Confirm-DirectoryExistence $SCOOP_CACHE_DIRECTORY | Out-Null
+        Confirm-DirectoryExistence -LiteralPath $SCOOP_CACHE_DIRECTORY | Out-Null
         do_dl $url "$cached.download" $cookies
         Move-Item "$cached.download" $cached -Force
     } else { Write-UserMessage -Message "Loading $(url_remote_filename $url) from cache" }
@@ -1198,7 +1306,7 @@ function persist_def($persist) {
 function persist_data($manifest, $original_dir, $persist_dir) {
     $persist = $manifest.persist
     if ($persist) {
-        $persist_dir = ensure $persist_dir
+        $persist_dir = Confirm-DirectoryExistence -LiteralPath $persist_dir
 
         if ($persist -is [String]) {
             $persist = @($persist);
@@ -1223,7 +1331,7 @@ function persist_data($manifest, $original_dir, $persist_dir) {
                 # we don't have persist data in the store, move the source to target, then create link
             } elseif (Test-Path $source) {
                 # ensure target parent folder exist
-                Split-Path $target | ensure | Out-Null
+                Split-Path $target | Confirm-DirectoryExistence | Out-Null
                 Move-Item $source $target
                 # we don't have neither source nor target data! we need to crate an empty target,
                 # but we can't make a judgement that the data should be a file or directory...
@@ -1231,12 +1339,12 @@ function persist_data($manifest, $original_dir, $persist_dir) {
                 # to create the source file before persisting (DO NOT use post_install)
             } else {
                 $target = New-Object System.IO.DirectoryInfo($target)
-                ensure $target | Out-Null
+                Confirm-DirectoryExistence -LiteralPath $target | Out-Null
             }
 
             # Mklink throw 'The system cannot find the path specified.' if the full path of the link does not exist.
             $splitted = Split-Path $source -Parent
-            if ($splitted -ne $original_dir) { ensure $splitted | Out-Null }
+            if ($splitted -ne $original_dir) { Confirm-DirectoryExistence -LiteralPath $splitted | Out-Null }
 
             # create link
             if (is_directory $target) {

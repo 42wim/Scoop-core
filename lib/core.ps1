@@ -57,7 +57,7 @@ function Get-UserAgent {
         'AMD64' { $arch = 'Win64; x64;' }
     }
 
-    if (Test-IsUnix) {
+    if ($SHOVEL_IS_UNIX) {
         $system = Invoke-SystemComSpecCommand -Unix 'uname -s'
         $arch = Invoke-SystemComSpecCommand -Unix 'uname -srv'
         $arch = "$arch;"
@@ -114,7 +114,7 @@ function Invoke-SystemComSpecCommand {
     )
 
     process {
-        if (Test-IsUnix) {
+        if ($SHOVEL_IS_UNIX) {
             $shell = $env:SHELL
             $parameters = @('-c', $Unix)
         } else {
@@ -141,7 +141,7 @@ function Test-IsArmArchitecture {
     param()
 
     process {
-        if (Test-IsUnix) {
+        if ($SHOVEL_IS_UNIX) {
             return (Invoke-SystemComSpecCommand -Unix 'uname -m') -like 'aarch*'
         } else {
             return $env:PROCESSOR_IDENTIFIER -like 'ARMv*'
@@ -167,7 +167,7 @@ function get_config($name, $default) {
 
 function set_config($name, $value) {
     if ($null -eq $SCOOP_CONFIGURATION -or $SCOOP_CONFIGURATION.Count -eq 0) {
-        Split-Path -Path $SCOOP_CONFIGURATION_FILE | ensure | Out-Null
+        Split-Path -Path $SCOOP_CONFIGURATION_FILE | Confirm-DirectoryExistence | Out-Null
         $SCOOP_CONFIGURATION = New-Object PSObject
         $SCOOP_CONFIGURATION | Add-Member -MemberType 'NoteProperty' -Name $name -Value $value
     } else {
@@ -336,43 +336,6 @@ function installed_apps($global) {
     if (Test-Path $dir) { Get-ChildItem $dir -Exclude 'scoop' -Directory | Select-Object -ExpandProperty 'Name' }
 }
 
-function Get-AppFilePath {
-    <#
-    .SYNOPSIS
-        Get full path to the specific executable under specific application installed via scoop.
-    .PARAMETER App
-        Specifies the scoop's application name.
-    .PARAMETER File
-        Specifies the executable name.
-    #>
-    [CmdletBinding()]
-    [OutputType([String])]
-    param(
-        [Parameter(Mandatory)]
-        [String] $App,
-        [Parameter(Mandatory)]
-        [String] $File
-    )
-
-    # Normal path to file
-    $path = versiondir $App (Select-CurrentVersion -AppName $App) $false | Join-Path -ChildPath $File
-    if (Test-Path -LiteralPath $path -PathType 'Leaf') { return $path }
-
-    # Global path to file
-    $path = versiondir $App (Select-CurrentVersion -AppName $App -Global) $true | Join-Path -ChildPath $File
-    if (Test-Path -LiteralPath $path -PathType 'Leaf') { return $path }
-
-    # Try path
-    $path = Get-Command -Name $File -ErrorAction 'SilentlyContinue'
-    if ($path -and (Test-Path -LiteralPath $path.Source -PathType 'Leaf')) {
-        Write-UserMessage -Message "Application '$App' is not installed via Scoop. Trying to use '$($path.Source)'" -Warning
-        return $path
-    }
-
-    # Not found
-    return $null
-}
-
 function Test-CommandAvailable {
     <#
     .SYNOPSIS
@@ -385,77 +348,6 @@ function Test-CommandAvailable {
     param ([Parameter(Mandatory, ValueFromPipeline)] [Alias('Command')] [String] $Name)
 
     process { return [bool] (Get-Command $Name -ErrorAction 'Ignore') }
-}
-
-function Get-HelperPath {
-    <#
-    .SYNOPSIS
-        Get full path to the often used application's executables.
-    .PARAMETER Helper
-        Specifies the name of helper application.
-    #>
-    [CmdletBinding()]
-    [OutputType([String])]
-    param(
-        [Parameter(Mandatory, ValueFromPipeline)]
-        [ValidateSet('7zip', 'Lessmsi', 'Innounp', 'Dark', 'Aria2', 'Zstd', 'Innoextract')]
-        [String] $Helper
-    )
-
-    process {
-        $helperPath = $null
-        switch ($Helper) {
-            'Aria2' { $helperPath = Get-AppFilePath 'aria2' 'aria2c.exe' }
-            'Innounp' { $helperPath = Get-AppFilePath 'innounp' 'innounp.exe' }
-            'Lessmsi' { $helperPath = Get-AppFilePath 'lessmsi' 'lessmsi.exe' }
-            'Zstd' { $HelperPath = Get-AppFilePath 'zstd' 'zstd.exe' }
-            'Innoextract' { $HelperPath = Get-AppFilePath 'innoextract' 'innoextract.exe' }
-            '7zip' {
-                $helperPath = Get-AppFilePath '7zip' '7z.exe'
-                if ([String]::IsNullOrEmpty($helperPath)) {
-                    $helperPath = Get-AppFilePath '7zip-zstd' '7z.exe'
-                }
-            }
-            'Dark' {
-                $helperPath = Get-AppFilePath 'dark' 'dark.exe'
-                if ([String]::IsNullOrEmpty($helperPath)) {
-                    $helperPath = Get-AppFilePath 'wixtoolset' 'dark.exe'
-                }
-            }
-        }
-
-        return $helperPath
-    }
-}
-
-function Test-HelperInstalled {
-    <#
-    .SYNOPSIS
-        Test if specified widely used application is installed.
-    .PARAMETER Helper
-        Specifies the name of application.
-    #>
-    [CmdletBinding()]
-    [OutputType([bool])]
-    param(
-        [Parameter(Mandatory, ValueFromPipeline)]
-        [ValidateSet('7zip', 'Lessmsi', 'Innounp', 'Dark', 'Aria2', 'Zstd', 'Innoextract')]
-        [String] $Helper
-    )
-
-    process { return ![String]::IsNullOrWhiteSpace((Get-HelperPath -Helper $Helper)) }
-}
-
-function Test-Aria2Enabled {
-    <#
-    .SYNOPSIS
-        Test if aria2 application is installed and enabled.
-    #>
-    [CmdletBinding()]
-    [OutputType([bool])]
-    param()
-
-    process { return (Test-HelperInstalled -Helper 'Aria2') -and (get_config 'aria2-enabled' $true) }
 }
 
 # paths
@@ -717,7 +609,7 @@ function warn_on_overwrite($shim_ps1, $path) {
 function shim($path, $global, $name, $arg) {
     if (!(Test-Path $path)) { throw [ScoopException] "Shim creation fail|-Cannot shim '$(fname $path)': could not find '$path'" } # TerminatingError thrown
 
-    $abs_shimdir = shimdir $global | ensure
+    $abs_shimdir = shimdir $global | Confirm-DirectoryExistence
     if (!$name) { $name = strip_ext (fname $path) }
 
     $shim = Join-Path $abs_shimdir $name.ToLower()
@@ -849,7 +741,7 @@ function remove_from_path($dir, $global) {
 }
 
 function ensure_scoop_in_path($global) {
-    $abs_shimdir = shimdir $global | ensure
+    $abs_shimdir = shimdir $global | Confirm-DirectoryExistence
     # be aggressive (b-e-aggressive) and install scoop first in the path
     ensure_in_path $abs_shimdir $global
 }
@@ -1070,6 +962,7 @@ $SCOOP_CONFIGURATION = load_cfg $SCOOP_CONFIGURATION_FILE
 
 # General variables
 $SHOVEL_DEBUG_ENABLED = Test-ScoopDebugEnabled
+$SHOVEL_IS_UNIX = Test-IsUnix
 
 # TODO: Remove deprecated variables
 $scoopdir = $SCOOP_ROOT_DIRECTORY

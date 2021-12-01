@@ -9,6 +9,7 @@ Use 'Write-UserMessage -Warning' to highlight the issue, and follow up with the 
     @('Helpers', 'New-IssuePrompt'),
     @('buckets', 'Get-KnownBucket'),
     @('decompress', 'Expand-7zipArchive'),
+    @('install', 'install_app'),
     @('Git', 'Invoke-GitCmd')
 ) | ForEach-Object {
     if (!([bool] (Get-Command $_[1] -ErrorAction 'Ignore'))) {
@@ -52,7 +53,7 @@ function Test-DiagWindowsDefender {
     [OutputType([bool])]
     param([Switch] $Global)
 
-    if (Test-IsUnix) { return $true }
+    if ($SHOVEL_IS_UNIX) { return $true }
 
     $defender = Get-Service -Name 'WinDefend' -ErrorAction 'SilentlyContinue'
     if ((is_admin) -and ($defender -and $defender.Status) -and ($defender.Status -eq [System.ServiceProcess.ServiceControllerStatus]::Running)) {
@@ -128,7 +129,7 @@ function Test-DiagLongPathEnabled {
     [OutputType([bool])]
     param()
 
-    if (Test-IsUnix) { return $true }
+    if ($SHOVEL_IS_UNIX) { return $true }
 
     # Verify supported windows version
     if ([System.Environment]::OSVersion.Version.Major -lt 10 -or [System.Environment]::OSVersion.Version.Build -lt 1607) {
@@ -161,7 +162,7 @@ function Test-DiagEnvironmentVariable {
 
     $result = $true
 
-    if (Test-IsUnix) {
+    if ($SHOVEL_IS_UNIX) {
         # Unix "comspec"
         if (!(Test-Path $env:SHELL -PathType 'Leaf')) {
             Write-UserMessage -Message '''SHELL'' environment variable is not configured' -Warning
