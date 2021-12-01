@@ -2,6 +2,24 @@
 
 ## [0.6.5](https://github.com/Ash258/Scoop-Core/milestone/5)
 
+- Refactor dependencies handling
+    - `scoop-depends`: Add `s`, `--skip-installed` parameter
+        - By default all dependencies are shown (including installed)
+        - Use this parameter to not include already installed dependencies in list
+    - Support YML manifests
+    - `depends` property now can consist of following:
+
+        ```yml
+        depends:
+        - yarn # Simple lookup from local buckets (supported before)
+        - Base/yarn # Simple lookup from specific local bucket (supported before)
+        - yarn@1 # Lookup from local buckets using specific version
+        - Base/yarn@1 # Lookup from specific local bucket using specific version
+        - https://raw.githubusercontent.com/User/Repo/main/bucket/alfa.yml  # Any URL, which is valid manifest
+        - https://raw.githubusercontent.com/User/Repo/main/bucket/alfabeta.json  # Any URL, which is valid manifest
+        - E:/Install/Shovel/customManifest.yml # Even local manifest support. Use with caution in controlled environment!
+        ```
+
 - **scoop-virustotal**: Rename parameter `no-depends` (`-n`) to `independent` (`-i`) for consistency with other commands
 - Consider debug mode enabled only when the `debug` config option or `SCOOP_DEBUG` is valid boolean value (`$true`, `$false`, `1`, `0`, `true`, `false`)
     - Prevent multiple evaluations of debug mode check

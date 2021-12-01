@@ -13,7 +13,6 @@
     "extensions": [
         "DavidAnson.vscode-markdownlint",
         "EditorConfig.EditorConfig",
-        "fabiospampinato.vscode-terminals",
         "k--kato.intellij-idea-keybindings",
         "ms-vscode.powershell-preview",
         "redhat.vscode-yaml",
