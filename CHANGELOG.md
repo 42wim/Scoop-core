@@ -24,6 +24,7 @@
     - Rename parameter `no-depends` (`-n`) to `independent` (`-i`) for consistency with other commands
     - Adopt `Resolve-ManifestObject` to support remote manifests/local manifests/archived manifests lookups
     - Yaml typed manifests, archived manifests, locally generated manfiests are also supported
+    - `nightly` versions are skipped and user is warned
 - Consider debug mode enabled only when the `debug` config option or `SCOOP_DEBUG` is valid boolean value (`$true`, `$false`, `1`, `0`, `true`, `false`)
     - Prevent multiple evaluations of debug mode check
 - Respect `NO_JUNCTIONS` config when resolving helper utilities

@@ -96,6 +96,12 @@ foreach ($app in $toInstall.Resolved) {
         continue
     }
 
+    if ($manifest.version -eq 'nightly') {
+        # TODO: Suggest --download in future
+        Write-UserMessage -Message "${appName}: Manifests with version 'nightly' cannot be checked as they do not contain hashes" -Warning
+        continue
+    }
+
     foreach ($url in (url $manifest $Architecture)) {
         $hash = hash_for_url $manifest $url $Architecture
 
