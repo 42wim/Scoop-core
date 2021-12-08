@@ -5,6 +5,8 @@
     @('commands', 'Invoke-ScoopCommand'),
     @('Git', 'Invoke-GitCmd'),
     @('install', 'install_app'),
+    @('Dependencies', 'Resolve-DependsProperty'),
+    @('Installation', 'Install-ScoopApp'),
     @('manifest', 'Resolve-ManifestInformation')
 ) | ForEach-Object {
     if (!([bool] (Get-Command $_[1] -ErrorAction 'Ignore'))) {
@@ -275,10 +277,14 @@ function Update-App {
     $install = install_info $App $oldVersion $Global
 
     # Old variables
-    $check_hash = !$SkipHashCheck
-    $use_cache = !$SkipCache
-    $old_version = $oldVersion
-    $old_manifest = $oldManifest
+    $checkHash = !$SkipHashCheck
+    $useCache = !$SkipCache
+    $oldVersion = $oldVersion
+    $oldManifest = $oldManifest
+    $toInstall = @{
+        'Failed'   = @()
+        'Resolved' = @()
+    }
 
     # Re-use architecture, bucket and url from first install
     $architecture = ensure_architecture $install.architecture
@@ -286,18 +292,40 @@ function Update-App {
     $bucket = $install.bucket
     if ($null -eq $bucket) { $bucket = 'main' }
 
+    $a = if ($url) { $url } else { "$bucket/$App" }
+
     # Check dependencies
-    if (!$Independent) {
-        $man = if ($url) { $url } else { $app }
-        # TODO: Adopt the new dependencies refactor
-        $deps = @(deps $man $architecture) | Where-Object { !(installed $_) }
-        $deps | ForEach-Object { install_app $_ $architecture $Global $Suggested $SkipCache (!$SkipHashCheck) }
+    if ($Independent) {
+        $ar = $null
+        try {
+            $ar = Resolve-ManifestInformation -ApplicationQuery $a
+        } catch {
+            throw [ScoopException] $_.Exception.Message # TerminatingError thrown
+        }
+        $toInstall.Resolved += $ar
+    } else {
+        $toInstall = Resolve-MultipleApplicationDependency -Applications @($a) -Architecture $architecture -IncludeInstalledApps
     }
 
-    $version = Get-LatestVersion -AppName $App -Bucket $bucket -Uri $url
+    if ($toInstall.Failed.Count -gt 0) {
+        throw [ScoopException] 'Cannot resolve all dependencies' # TerminatingError thrown
+    }
+
+    $_deps = @($toInstall.Resolved | Where-Object -Property 'Dependency' -NE -Value $false)
+    $applicationToUpdate = @($toInstall.Resolved | Where-Object -Property 'Dependency' -EQ -Value $false) | Select-Object -First 1
+
+    # Install dependencies
+    foreach ($d in $_deps) {
+        Install-ScoopApplication -ResolvedObject $d -Architecture $architecture -Global:$Global -Suggested:$Suggested `
+            -UseCache:$useCache -CheckHash:$checkHash
+    }
+
+    $manifest = $applicationToUpdate.ManifestObject
+    $version = $manifest.version
+
     if ($version -eq 'nightly') {
         $version = nightly_version (Get-Date) $Quiet
-        $SkipHashCheck = $true
+        $checkHash = $false
     }
 
     # TODO: Could this ever happen?
@@ -311,8 +339,6 @@ function Update-App {
         throw [ScoopException] "No manifest available for '$App'" # TerminatingError thrown
     }
 
-    $manifest = manifest $App $bucket $url
-
     # Do not update if the new manifest does not support the installed architecture
     if (!(supports_architecture $manifest $architecture)) {
         throw [ScoopException] "Manifest no longer supports specific architecture '$architecture'" # TerminatingError thrown
@@ -320,7 +346,7 @@ function Update-App {
 
     Deny-ArmInstallation -Manifest $manifest -Architecture $architecture
 
-    Write-UserMessage -Message "Updating '$App' ($oldVersion -> $version) [$architecture]"
+    Write-UserMessage -Message "Updating '$App' ($oldVersion -> $version) [$architecture]" -Success
 
     #region Workaround of #2220
     # Remove and replace whole region after proper implementation
@@ -329,14 +355,14 @@ function Update-App {
     Invoke-ManifestScript -Manifest $manifest -ScriptName 'pre_download' -Architecture $architecture
 
     if (Test-Aria2Enabled) {
-        dl_with_cache_aria2 $App $version $manifest $architecture $SCOOP_CACHE_DIRECTORY $manifest.cookie $true (!$SkipHashCHeck)
+        dl_with_cache_aria2 $App $version $manifest $architecture $SCOOP_CACHE_DIRECTORY $manifest.cookie $true $checkHash
     } else {
         $urls = url $manifest $architecture
 
         foreach ($url in $urls) {
             dl_with_cache $App $version $url $null $manifest.cookie $true
 
-            if (!$SkipHashCheck) {
+            if ($checkHash) {
                 $manifest_hash = hash_for_url $manifest $url $architecture
                 $source = cache_path $App $version $url
                 $ok, $err = check_hash $source $manifest_hash (show_app $App $bucket)
@@ -354,7 +380,7 @@ function Update-App {
     }
 
     # There is no need to check hash again while installing
-    $SkipHashCheck = $true
+    $checkHash = $false
     #endregion Workaround of #2220
 
     $result = Uninstall-ScoopApplication -App $App -Global:$Global
@@ -365,18 +391,15 @@ function Update-App {
         $dir = versiondir $App $oldVersion $Global
 
         $old = Join-Path $dir "..\_$version.old"
-        if (Test-Path $old -PathType 'Container') {
+        if (Test-Path -LiteralPath $old -PathType 'Container') {
             $i = 1
-            while (Test-Path "$old($i)") { ++$i }
+            while (Test-Path -LiteralPath "$old($i)" -PathType 'Container') { ++$i }
             Move-Item $dir "$old($i)"
         } else {
             Move-Item $dir $old
         }
     }
 
-    # TODO: Adopt Resolve-ManifestInformation???
-    $toUpdate = if ($install.url) { $install.url } else { "$bucket/$App" }
-
-    # Error catching should be handled on upper scope
-    install_app $toUpdate $architecture $Global $Suggested (!$SkipCache) (!$SkipHashCheck)
+    Install-ScoopApplication -ResolvedObject $applicationToUpdate -Architecture $architecture -Global:$Global -Suggested:$Suggested `
+        -UseCache:$useCache -CheckHash:$checkHash
 }

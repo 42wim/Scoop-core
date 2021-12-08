@@ -259,7 +259,7 @@ function Resolve-MultipleApplicationDependency {
             foreach ($dep in $deps.Deps) {
                 # TODOOOO: Better handle the different versions
                 if ($toInstall.ApplicationName -notcontains $dep.ApplicationName) {
-                    $dep | Add-Member -MemberType 'NoteProperty' -Name 'Dependency' -Value $s.ApplicationName
+                    $dep.Dependency = $s.ApplicationName
                     if ($IncludeInstalledDeps -or !(installed $dep.ApplicationName)) {
                         $toInstall += $dep
                     }
@@ -270,7 +270,7 @@ function Resolve-MultipleApplicationDependency {
 
             # TODOOOO: Better handle the different versions
             if ($toInstall.ApplicationName -notcontains $s.ApplicationName) {
-                $s | Add-Member -MemberType 'NoteProperty' -Name 'Dependency' -Value $false
+                $s.Dependency = $false
 
                 if ($IncludeInstalledApps -or !(installed $s.ApplicationName)) {
                     $toInstall += $s

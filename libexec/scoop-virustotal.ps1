@@ -2,6 +2,8 @@
 # Summary: Search virustotal database for potential viruses in files provided in manifest(s).
 # Help: You can use '*' in place of <APP> to check all installed applications.
 #
+# Supports the same format of <APP> parameter as in "scoop install" (See: 'scoop install --help')
+#
 # The hash of file is also a key to access VirusTotal's scan results.
 # This allows to check the safety of the files without even downloading
 # them in many cases. If the hash is unknown to VirusTotal, the
@@ -50,8 +52,8 @@ if ($_err) { Stop-ScoopExecution -Message "scoop virustotal: $_err" -ExitCode 2 
 if (!$Applications) { Stop-ScoopExecution -Message 'Parameter <APP> missing' -Usage (my_usage) }
 if (!$VT_API_KEY) { Stop-ScoopExecution -Message 'Virustotal API Key is required' }
 
-$DoScan = $Options.scan -or $Options.s
-$Independent = $Options.independent -or $Options.i
+$DoScan = $Options.s -or $Options.scan
+$Independent = $Options.i -or $Options.independent
 $Architecture = Resolve-ArchitectureParameter -Architecture $Options.a, $Options.arch
 $toInstall = @{
     'Failed'   = @()

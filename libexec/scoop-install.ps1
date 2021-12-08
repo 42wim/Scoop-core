@@ -11,6 +11,18 @@
 #   scoop install D:\path\to\app.json
 #   scoop install ./install/pwsh.json
 #
+# All available options how to pass applications to this command (example pwsh). All ways will result into installing pwsh application:
+#   'pwsh' -> Install latest version from local bucket lookup. Will find pwsh manifest in locally added bucket. First fit option is applied if multiple buckets contains pwsh manifest
+#   'Base/pwsh' -> Install latest version from specific local bucket ('Base')
+#   'Base/pwsh@version' -> Install specific version locally added bucket 'Base' (Version will be generated if there is no 'bucket/old/pwsh/version' manifest)
+#
+#   'https://raw.githubusercontent.com/shovel-org/Base/main/bucket/pwsh.json' -> Install manifest found in remote URL
+#   'https://raw.githubusercontent.com/shovel-org/Base/main/bucket/old/pwsh/7.0.8.yml' -> Install manifest 'pwsh' with provided specific version as the url contains valid/supported archived URL
+#
+#   './pwsh.json' -> Install manifest from local file
+#   'E:/Shovel/bucket/old/pwsh/6.1.4.yml' -> Install manifest from local file with specific version as path contains valid/support archived path
+#   'D:\whatever\pwsh-258258--randomstring.yml' -> Special internal format. There should be no need to use this format in general usage.
+#
 # Options:
 #   -h, --help                      Show help for this command.
 #   -a, --arch <32bit|64bit|arm64>  Use the specified architecture, if the application's manifest supports it.
@@ -24,11 +36,11 @@
     @('getopt', 'Resolve-GetOpt'),
     @('help', 'scoop_help'),
     @('Helpers', 'New-IssuePrompt'),
+    @('Applications', 'Get-InstalledApplicationInformation'),
     @('buckets', 'Get-KnownBucket'),
     @('decompress', 'Expand-7zipArchive'),
     @('Dependencies', 'Resolve-DependsProperty'),
-    @('depends', 'script_deps'),
-    @('install', 'install_app'),
+    @('Installation', 'Install-Application'),
     @('manifest', 'Resolve-ManifestInformation'),
     @('psmodules', 'install_psmodule'),
     @('shortcuts', 'rm_startmenu_shortcuts'),
@@ -41,161 +53,117 @@
     }
 }
 
-# TODO: Export
-# TODO: Cleanup
-function is_installed($app, $global, $version) {
-    if ($app.EndsWith('.json')) {
-        $app = [System.IO.Path]::GetFileNameWithoutExtension($app)
-    }
+$ExitCode = 0
+$Problems = 0
+$Options, $Applications, $_err = Resolve-GetOpt $args 'giksa:' 'global', 'independent', 'no-cache', 'skip', 'arch='
+if ($_err) { Stop-ScoopExecution -Message "scoop install: $_err" -ExitCode 2 }
 
-    if (installed $app $global) {
-        function gf($g) { if ($g) { ' --global' } }
+$Global = $Options.g -or $Options.global
+$Independent = $Options.i -or $Options.independent
+$UseCache = !($Options.k -or $Options.'no-cache')
+$CheckHash = !($Options.s -or $Options.skip)
+$Architecture = Resolve-ArchitectureParameter -Architecture $Options.a, $Options.arch
 
-        # Explicitly provided version indicate local workspace manifest with older version of already installed application
-        if ($version) {
-            $all = @(Get-InstalledVersion -AppName $app -Global:$global)
-            return $all -contains $version
-        }
-
-        $version = Select-CurrentVersion -AppName $app -Global:$global
-        if (!(install_info $app $version $global)) {
-            Write-UserMessage -Err -Message @(
-                "It looks like a previous installation of '$app' failed."
-                "Run 'scoop uninstall $app$(gf $global)' before retrying the install."
-            )
-            return $true
-        }
-        Write-UserMessage -Warning -Message @(
-            "'$app' ($version) is already installed.",
-            "Use 'scoop update $app$(gf $global)' to install a new version."
-        )
-
-        return $true
-    }
-
-    return $false
-}
-
-$opt, $apps, $err = Resolve-GetOpt $args 'giksa:' 'global', 'independent', 'no-cache', 'skip', 'arch='
-if ($err) { Stop-ScoopExecution -Message "scoop install: $err" -ExitCode 2 }
-
-$exitCode = 0
-$problems = 0
-$global = $opt.g -or $opt.global
-$check_hash = !($opt.s -or $opt.skip)
-$independent = $opt.i -or $opt.independent
-$use_cache = !($opt.k -or $opt.'no-cache')
-$architecture = Resolve-ArchitectureParameter -Architecture $opt.a, $opt.arch
-
-if (!$apps) { Stop-ScoopExecution -Message 'Parameter <APP> missing' -Usage (my_usage) }
-if ($global -and !(is_admin)) { Stop-ScoopExecution -Message 'Admin privileges are required to manipulate with globally installed applications' -ExitCode 4 }
+if (!$Applications) { Stop-ScoopExecution -Message 'Parameter <APP> missing' -Usage (my_usage) }
+if ($Global -and !(is_admin)) { Stop-ScoopExecution -Message 'Admin privileges are required to manipulate with globally installed applications' -ExitCode 4 }
 
 Update-Scoop -CheckLastUpdate
-
-# Get any specific versions that need to be handled first
-$specific_versions = $apps | Where-Object {
-    $null, $null, $version = parse_app $_
-    return $null -ne $version
-}
-
-# Compare object does not like nulls
-if ($specific_versions.Length -gt 0) {
-    $difference = Compare-Object -ReferenceObject $apps -DifferenceObject $specific_versions -PassThru
-} else {
-    $difference = $apps
-}
-
-$specific_versions_paths = @()
-foreach ($sp in $specific_versions) {
-    $app, $bucket, $version = parse_app $sp
-    if (installed_manifest $app $version) {
-        Write-UserMessage -Warn -Message @(
-            "'$app' ($version) is already installed.",
-            "Use 'scoop update $app$global_flag' to install a new version."
-        )
-        continue
-    } else {
-        try {
-            $specific_versions_paths += generate_user_manifest $app $bucket $version
-        } catch {
-            Write-UserMessage -Message $_.Exception.Message -Color DarkRed
-            ++$problems
-        }
-    }
-}
-$apps = @(($specific_versions_paths + $difference) | Where-Object { $_ } | Sort-Object -Unique)
-
-# Remember which were explictly requested so that we can
-# differentiate after dependencies are added
-$explicit_apps = $apps
-
-if ($false -eq $independent) {
-    try {
-        $apps = install_order $apps $architecture # Add dependencies
-    } catch {
-        New-IssuePromptFromException -ExceptionMessage $_.Exception.Message
-    }
-}
-
-# This should not be breaking error in case there are other apps specified
-if ($apps.Count -eq 0) { Stop-ScoopExecution -Message 'Nothing to install' }
-
-$apps = ensure_none_failed $apps $global
-
-if ($apps.Count -eq 0) { Stop-ScoopExecution -Message 'Nothing to install' }
-
-$apps, $skip = prune_installed $apps $global
-
-$skip | Where-Object { $explicit_apps -contains $_ } | ForEach-Object {
-    $app, $null, $null = parse_app $_
-    $version = Select-CurrentVersion -AppName $app -Global:$global
-    Write-UserMessage -Message "'$app' ($version) is already installed. Skipping." -Warning
-}
 
 $suggested = @{ }
 $failedDependencies = @()
 $failedApplications = @()
+$toInstall = @{
+    'Failed'   = @()
+    'Resolved' = @()
+}
 
-foreach ($app in $apps) {
-    $bucket = $cleanApp = $null
+# Properly resolve all dependencies and applications
+# TODO: Extract to function
+if ($Independent) {
+    foreach ($a in $Applications) {
+        $ar = $null
+        try {
+            $ar = Resolve-ManifestInformation -ApplicationQuery $a
+        } catch {
+            ++$Problems
+            Write-UserMessage -Message "$($_.Exception.Message)" -Err
+            continue
+        }
 
-    if ($false -eq $independent) {
-        $applicationSpecificDependencies = @(deps $app $architecture)
+        $toInstall.Resolved += $ar
+    }
+} else {
+    $toInstall = Resolve-MultipleApplicationDependency -Applications $Applications -Architecture $Architecture -IncludeInstalledApps
+}
+
+if ($toInstall.Failed.Count -gt 0) {
+    $Problems += $toInstall.Failed.Count
+    $failedApplications += $toInstall.Failed
+}
+
+# TODO: Try to rather remove from the array instead of creating new one
+# Filter not installed
+$new = @()
+foreach ($inst in $toInstall.Resolved) {
+    if (Test-ResolvedObjectIsInstalled -ResolvedObject $inst -Global:$Global) {
+        continue
+    }
+    $new += $inst
+}
+$toInstall.Resolved = $new
+
+if ($toInstall.Resolved.Count -eq 0) {
+    $ex = 0
+    if ($Problems -gt 0) {
+        $ex = 10 + $Problems
+
+        if ($failedApplications) {
+            $pl = pluralize $failedApplications.Count 'This application' 'These applications'
+            Write-UserMessage -Message "$pl failed to install: $($failedApplications -join ', ')" -Err
+        }
+    }
+
+    Stop-ScoopExecution -Message 'Nothing to install' -ExitCode $ex -SkipSeverity
+}
+
+if ($Independent) {
+    Write-UserMessage -Message 'Installing applications without dependencies could result into failed installations or malfunctioning applications. Should be used only when all the dependencies are already installed' -Warning
+}
+
+foreach ($app in $toInstall.Resolved) {
+    # Skip installation of application if any of the dependency failed
+    if (($false -eq $Independent)) {
+        $applicationSpecificDependencies = ($toInstall.Resolved | Where-Object -Property 'Dependency' -EQ $app.ApplicationName).Print
+        if ($null -eq $applicationSpecificDependencies) {
+            $applicationSpecificDependencies = @()
+        }
+
         $cmp = Compare-Object $applicationSpecificDependencies $failedDependencies -ExcludeDifferent
+
         # Skip Installation because required depency failed
         if ($cmp -and ($cmp.InputObject.Count -gt 0)) {
             $f = $cmp.InputObject -join ', '
-            Write-UserMessage -Message "'$app' cannot be installed due to failed dependency installation ($f)" -Err
-            ++$problems
+            Write-UserMessage -Message "'$($app.Print)' cannot be installed due to failed dependency installation ($f)" -Err
+            ++$Problems
             continue
         }
     }
 
-    # TODO: Resolve-ManifestInformation
-    $cleanApp, $bucket = parse_app $app
-
-    # Prevent checking of already installed applications if specific version was provided.
-    # In this case app will be fullpath to the manifest in \workspace folder and specific version will contains <app>@<version>
-    # Allow to install zstd@1.4.4 after 1.4.5 was installed before
-    if ((Test-Path $app) -and ((Get-Item $app).Directory.FullName -eq (usermanifestsdir))) {
-        $_v = (ConvertFrom-Manifest -Path $app).version
-    } else {
-        $_v = $null
-    }
-
-    if (is_installed $cleanApp $global $_v) { continue }
-
-    # Install
     try {
-        install_app $app $architecture $global $suggested $use_cache $check_hash
+        Install-ScoopApplication -ResolvedObject $app -Architecture $Architecture -Global:$Global -Suggested:$suggested `
+            -UseCache:$UseCache -CheckHash:$CheckHash
     } catch {
-        ++$problems
+        ++$Problems
 
         # Register failed dependencies
-        if ($explicit_apps -notcontains $app) { $failedDependencies += $app } else { $failedApplications += $app }
+        if ($app.Dependency -eq $false) {
+            $failedApplications += $app.Print
+        } else {
+            $failedDependencies += $app.Print
+        }
 
         debug $_.InvocationInfo
-        New-IssuePromptFromException -ExceptionMessage $_.Exception.Message -Application $cleanApp -Bucket $bucket
+        New-IssuePromptFromException -ExceptionMessage $_.Exception.Message -Application $app.ApplicationName -Bucket $app.Bucket
 
         continue
     }
@@ -213,6 +181,8 @@ if ($failedDependencies) {
     Write-UserMessage -Message "$pl failed to install: $($failedDependencies -join ', ')" -Err
 }
 
-if ($problems -gt 0) { $exitCode = 10 + $problems }
+if ($Problems -gt 0) {
+    $ExitCode = 10 + $Problems
+}
 
-exit $exitCode
+exit $ExitCode

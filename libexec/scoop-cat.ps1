@@ -1,5 +1,6 @@
 # Usage: scoop cat [<OPTIONS>] <APP>...
 # Summary: Show content of specified manifest(s).
+# Help: Supports the same format of <APP> parameter as in "scoop install" (See: 'scoop install --help')
 #
 # Options:
 #   -h, --help                  Show help for this command.

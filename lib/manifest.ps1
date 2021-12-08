@@ -40,7 +40,7 @@ function ConvertFrom-Manifest {
                 $result = ConvertFrom-Json -InputObject $content -ErrorAction 'Stop'
             }
             { $_ -in '.yaml', '.yml' } {
-                if (!(Get-Module -Name 'powershell-yaml')) {
+                if (!(Get-Module -Name 'powershell-yaml' -ErrorAction 'SilentlyContinue')) {
                     Join-Path $PSScriptRoot '..\supporting\yaml\bin\powershell-yaml.psd1' | Import-Module -Prefix 'CloudBase' -Verbose:$false
                 }
 
@@ -191,10 +191,12 @@ function Get-LocalManifest {
 
         $localPath = Get-Item -LiteralPath $Query
         $applicationName = $localPath.BaseName
+        $reqVersion = $null
 
         # Check if archived version was provided
         if ($localPath.FullName -match $_archivedManifestRegex) {
             $applicationName = $Matches['manifestName']
+            $reqVersion = $manifest.version
         }
         # Check if downloaded manfiest was provided
         if ($localPath.Name -match $_localDownloadedRegex) {
@@ -202,10 +204,11 @@ function Get-LocalManifest {
         }
 
         return @{
-            'Name'     = $applicationName
-            'Manifest' = $manifest
-            'Path'     = $localPath
-            'Print'    = $Query
+            'Name'             = $applicationName
+            'RequestedVersion' = $reqVersion
+            'Manifest'         = $manifest
+            'Path'             = $localPath
+            'Print'            = $Query
         }
     }
 }
@@ -398,6 +401,7 @@ function Resolve-ManifestInformation {
             $res = Get-LocalManifest -Query $ApplicationQuery
             $applicationName = $res.Name
             $applicationVersion = $res.Manifest.version
+            $requestedVersion = $res.RequestedVersion
             $manifest = $res.Manifest
             $localPath = $res.Path
             $print = $res.Print
@@ -442,6 +446,7 @@ function Resolve-ManifestInformation {
             'LocalPath'        = $localPath
             'CalculatedUrl'    = $calcURL
             'CalculatedBucket' = $calcBucket
+            'Dependency'       = $false
         }
     }
 }
@@ -674,7 +679,7 @@ function generate_user_manifest($app, $bucket, $version) {
         $archivedManifest = Get-Item -LiteralPath $archivedManifest
         Write-UserMessage -Message 'Found archived version' -Success
 
-        $workspace = usermanifestsdir | Join-Path -ChildPath "$cleanApp$($archivedManifest.Extension)"
+        $workspace = usermanifestsdir | Confirm-DirectoryExistence | Join-Path -ChildPath "$cleanApp$($archivedManifest.Extension)"
         Copy-Item $archivedManifest.FullName $workspace -Force
 
         return $workspace

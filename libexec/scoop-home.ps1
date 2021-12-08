@@ -1,6 +1,8 @@
 # Usage: scoop home [<OPTIONS>] <APP>
 # Summary: Open the application's homepage in default browser.
 #
+# Supports the same format of <APP> parameter as in "scoop install" (See: 'scoop install --help')
+#
 # Options:
 #   -h, --help      Show help for this command.
 
