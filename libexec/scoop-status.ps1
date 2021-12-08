@@ -1,11 +1,13 @@
 # Usage: scoop status [<OPTIONS>]
 # Summary: Show status and check for available updates for all installed applications.
-# Help: Status command will check these factors and report if any of them is not satisfied:
+# Help: Status command will check various factors and report if any of them is not satisfied.
+# Following factors are checked:
 #    Scoop installation is up-to-date.
-#    Installed applications use the latest version.
-#    Remote manifests of installed applications are available.
+#    Every installed application use the latest version.
+#    Remote manifests of installed applications are accessible.
 #    All applications are successfully installed.
 #    All runtime dependencies are installed.
+#    All installed dependencies are still needed.
 #
 # Options:
 #   -h, --help      Show help for this command.
@@ -35,6 +37,7 @@ $Outdated = @()
 $Removed = @()
 $MissingDependencies = @()
 $Onhold = @()
+$CouldBeRemoved = @()
 $null, $null, $_err = Resolve-GetOpt $args
 
 if ($_err) { Stop-ScoopExecution -Message "scoop status: $_err" -ExitCode 2 }
@@ -60,6 +63,8 @@ if ($UpdateRequired) {
     Write-UserMessage -Message 'Scoop is up to date' -Success
 }
 
+$installedApps = @((installed_apps $true) + (installed_apps $false))
+
 # Local and global applications
 foreach ($global in ($true, $false)) {
     $dir = appsdir $global
@@ -76,12 +81,16 @@ foreach ($global in ($true, $false)) {
             $Outdated += @{ $app = @($status.version, $status.latest_version) }
             if ($status.hold) { $Onhold += @{ $app = @($status.version, $status.latest_version) } }
         }
+        if (($status.install_info.dependency_for) -and ($installedApps -notcontains $status.install_info.dependency_for)) {
+            $CouldBeRemoved += $app
+        }
     }
 }
 
 if ($Outdated) {
     $ExitCode = 3
-    Write-UserMessage -Message 'Updates are available for:' -Color 'DarkCyan'
+    $pl = pluralize $Outdated.Count 'Update is' 'Updates are'
+    Write-UserMessage -Message "$pl available for:" -Color 'DarkCyan'
     $Outdated.Keys | ForEach-Object {
         Write-UserMessage -Message "    ${_}: $($Outdated.$_[0]) -> $($Outdated.$_[1])"
     }
@@ -89,7 +98,8 @@ if ($Outdated) {
 
 if ($Onhold) {
     $ExitCode = 3
-    Write-UserMessage -Message 'These applications are outdated and held:' -Color 'DarkCyan'
+    $pl = pluralize $Onhold.Count 'This application' 'These applications'
+    Write-UserMessage -Message "$pl are outdated and held:" -Color 'DarkCyan'
     $Onhold.Keys | ForEach-Object {
         Write-UserMessage -Message "    ${_}: $($Onhold.$_[0]) -> $($Onhold.$_[1])"
     }
@@ -97,7 +107,8 @@ if ($Onhold) {
 
 if ($Removed) {
     $ExitCode = 3
-    Write-UserMessage -Message 'These application manifests have been removed:' -Color 'DarkCyan'
+    $pl = pluralize $Removed.Count 'This application' 'These applications'
+    Write-UserMessage -Message "$pl manifests have been removed:" -Color 'DarkCyan'
     $Removed.Keys | ForEach-Object {
         Write-UserMessage -Message "    $_"
     }
@@ -105,7 +116,8 @@ if ($Removed) {
 
 if ($Failed) {
     $ExitCode = 3
-    Write-UserMessage -Message 'These applications failed to install:' -Color 'DarkCyan'
+    $pl = pluralize $Failed.Count 'This application' 'These applications'
+    Write-UserMessage -Message "$pl failed to install:" -Color 'DarkCyan'
     $Failed.Keys | ForEach-Object {
         Write-UserMessage -Message "    $_"
     }
@@ -113,10 +125,19 @@ if ($Failed) {
 
 if ($MissingDependencies) {
     $ExitCode = 3
-    Write-UserMessage -Message 'Missing runtime dependencies:' -Color 'DarkCyan'
+    $pl = pluralize $MissingDependencies.Count 'dependency' 'dependencies'
+    Write-UserMessage -Message "Missing runtime $pl`:" -Color 'DarkCyan'
     $MissingDependencies | ForEach-Object {
         $app, $deps = $_
         Write-UserMessage -Message "    '$app' requires '$($deps -join ', ')'"
+    }
+}
+
+if ($CouldBeRemoved) {
+    $pl = pluralize $CouldBeRemoved.Count 'This dependency' 'These dependencies'
+    Write-UserMessage -Message "$pl could be removed:" -Color 'DarkCyan'
+    $CouldBeRemoved | ForEach-Object {
+        Write-UserMessage -Message "    $_"
     }
 }
 
