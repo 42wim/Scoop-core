@@ -558,7 +558,7 @@ function installed_manifest($app, $version, $global) {
 
     # Different extension types
     if (!(Test-Path -LiteralPath $manifestPath -PathType 'Leaf')) {
-        $installedManifests = Get-ChildItem -LiteralPath $d -Include 'scoop-manifest.*' -ErrorAction 'SilentlyContinue'
+        $installedManifests = Get-ChildItem "$d\scoop-manifest.*" -ErrorAction 'SilentlyContinue'
         if ($installedManifests.Count -gt 0) {
             $manifestPath = $installedManifests[0].FullName
         }
@@ -597,7 +597,7 @@ function default_architecture {
     $arch = get_config 'default-architecture'
     $system = if ([System.IntPtr]::Size -eq 8) { '64bit' } else { '32bit' }
 
-    if (Test-IsArmArchitecture) { $arch = 'arm' + ($system -replace 'bit') }
+    if ($SHOVEL_IS_ARM_ARCH) { $arch = 'arm' + ($system -replace 'bit') }
 
     if ($null -eq $arch) {
         $arch = $system

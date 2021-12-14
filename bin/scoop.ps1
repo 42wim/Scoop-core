@@ -22,7 +22,8 @@ $ExitCode = 0
 # ONLY if:
 # - No command passed
 # - -v or --version passed
-$version = ($Command -eq '--version') -or (!$Command -and ($args.Contains('-v')))
+# On *nix --version is passed in $args instead of command
+$version = (($Command -eq '--version') -or ($args -eq '--version')) -or (!$Command -and ($args.Contains('-v')))
 
 # Scoop itself help should be shown only if explicitly asked:
 # - No version asked
@@ -51,7 +52,7 @@ if ($version) {
     Get-LocalBucket | ForEach-Object {
         $b = Find-BucketDirectory $_ -Root
 
-        if (Join-Path $b '.git' | Test-Path -PathType Container) {
+        if (Join-Path $b '.git' | Test-Path -PathType 'Container') {
             Write-UserMessage -Message "'$_' bucket:" -Output
             Invoke-GitCmd -Command 'VersionLog' -Repository $b
             Write-UserMessage -Message '' -Output

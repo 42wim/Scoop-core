@@ -67,7 +67,7 @@ function Install-ScoopApplication {
         $persist_dir = persistdir $appName $Global
 
         # Suggest installing arm64
-        if ((Test-IsArmArchitecture) -and ($Architecture -ne 'arm64') -and ($manifest.'architecture'.'arm64')) {
+        if ($SHOVEL_IS_ARM_ARCH -and ($Architecture -ne 'arm64') -and ($manifest.'architecture'.'arm64')) {
             Write-UserMessage -Message 'Manifest explicitly supports arm64. Consider to install using arm64 version to achieve best compatibility/performance.' -Success
         }
 

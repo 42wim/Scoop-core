@@ -46,7 +46,7 @@ function Update-ScoopCoreClone {
     Invoke-GitCmd -Command 'clone' -Argument '--quiet', '--single-branch', '--branch', """$Branch""", $Repo, """$newDir""" -Proxy
 
     # Check if scoop was successful downloaded
-    if (!(Test-Path $newDir -PathType Container)) { Stop-ScoopExecution -Message 'Scoop update failed.' }
+    if (!(Test-Path -LiteralPath $newDir -PathType 'Container')) { Stop-ScoopExecution -Message 'Scoop update failed.' }
 
     # Replace non-git scoop with the git version
     Remove-Item $TargetDirectory -ErrorAction 'Stop' -Force -Recurse

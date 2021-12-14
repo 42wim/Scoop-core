@@ -72,6 +72,15 @@ function setup_working($name) {
         exit 1
     }
 
+    if (!$env:TEMP) {
+        $env:TEMP = 'C:\temp'
+        if ($IsWindows -eq $false) { $env:TEMP = '/tmp' }
+    }
+
+    if (!(Test-Path -LiteralPath $env:TEMP -PathType 'Container')) {
+        New-Item $env:TEMP -ItemType 'Directory' -Force
+    }
+
     # reset working dir
     $working_dir = "$env:TEMP/ScoopTestFixtures/$name"
 

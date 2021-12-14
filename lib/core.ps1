@@ -89,13 +89,13 @@ function Test-IsUnix {
     .SYNOPSIS
         Custom check to identify non-windows hosts.
     .DESCRIPTION
-        $isWindows is not defind in PW5, thus null and boolean checks are needed.
+        $IsWindows is not defind in PW5, thus null and boolean checks are needed.
     #>
     [CmdletBinding()]
     [OutputType([bool])]
     param()
 
-    process { return !(($null -eq $isWindows) -or ($isWindows -eq $true)) }
+    process { return !(($null -eq $IsWindows) -or ($IsWindows -eq $true)) }
 }
 
 function Invoke-SystemComSpecCommand {
@@ -644,7 +644,7 @@ function shim($path, $global, $name, $arg) {
 
     if ($path -match '\.(exe|com)$') {
         # for programs with no awareness of any shell
-        $executableName = if (Test-IsArmArchitecture) { 'shim.arm64.exe' } else { 'shim.exe' }
+        $executableName = if ($SHOVEL_IS_ARM_ARCH) { 'shim.arm64.exe' } else { 'shim.exe' }
         # TODO: Use relative path from this file
         $shimExePath = versiondir 'scoop' 'current' | Join-Path -ChildPath "supporting\shimexe\bin\$executableName"
 
@@ -963,6 +963,7 @@ $SCOOP_CONFIGURATION = load_cfg $SCOOP_CONFIGURATION_FILE
 # General variables
 $SHOVEL_DEBUG_ENABLED = Test-ScoopDebugEnabled
 $SHOVEL_IS_UNIX = Test-IsUnix
+$SHOVEL_IS_ARM_ARCH = Test-IsArmArchitecture
 
 # TODO: Remove deprecated variables
 $scoopdir = $SCOOP_ROOT_DIRECTORY
