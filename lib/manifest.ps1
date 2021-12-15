@@ -95,6 +95,7 @@ function ConvertTo-Manifest {
                     Join-Path $PSScriptRoot '..\supporting\yaml\bin\powershell-yaml.psd1' | Import-Module -Prefix 'CloudBase' -Verbose:$false
                 }
 
+                # TODO: Try to adopt similar stuff like ConvertToPrettyJson
                 $content = ConvertTo-CloudBaseYaml -Data $Manifest
                 $content = $content.TrimEnd("`r`n") # For some reason it produces two line endings at the end
             }

@@ -186,19 +186,25 @@ foreach ($current in $MANIFESTS) {
                 $64bit_count = $current.manifest.architecture.'64bit'.hash.Count
                 $start = $max
                 $max = $max + $64bit_count
-                $current.manifest.architecture.'64bit'.hash = $actuals[$start..($max - 1)]
+                $up = $actuals[$start..($max - 1)]
+                if ($up.Count -eq 1) { $up = $up[0] }
+                $current.manifest.architecture.'64bit'.hash = $up
             }
             if ($platforms.Contains('32bit')) {
                 $32bit_count = $current.manifest.architecture.'32bit'.hash.Count
                 $start = $max
                 $max = $max + $32bit_count
-                $current.manifest.architecture.'32bit'.hash = $actuals[$start..($max - 1)]
+                $up = $actuals[$start..($max - 1)]
+                if ($up.Count -eq 1) { $up = $up[0] }
+                $current.manifest.architecture.'32bit'.hash = $up
             }
             if ($platforms.Contains('arm64')) {
                 $arm64_count = $current.manifest.architecture.'arm64'.hash.Count
                 $start = $max
                 $max = $max + $arm64_count
-                $current.manifest.architecture.'arm64'.hash = $actuals[$start..($max - 1)]
+                $up = $actuals[$start..($max - 1)]
+                if ($up.Count -eq 1) { $up = $up[0] }
+                $current.manifest.architecture.'arm64'.hash = $up
             }
         }
 
