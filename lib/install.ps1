@@ -272,6 +272,7 @@ function Find-Manifest($app, $bucket) {
 
 function dl_with_cache($app, $version, $url, $to, $cookies = $null, $use_cache = $true) {
     $cached = cache_path $app $version $url
+    debug $cached
 
     if (!(Test-Path $cached) -or !$use_cache) {
         Confirm-DirectoryExistence -LiteralPath $SCOOP_CACHE_DIRECTORY | Out-Null

@@ -170,6 +170,7 @@ foreach ($current in $MANIFESTS) {
 
     if ($Update) {
         if ($current.manifest.url -and $current.manifest.hash) {
+            if ($actuals.Count -eq 1) { $actuals = $actuals[0] }
             $current.manifest.hash = $actuals
         } else {
             $platforms = ($current.manifest.architecture | Get-Member -MemberType 'NoteProperty').Name

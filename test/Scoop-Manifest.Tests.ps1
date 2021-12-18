@@ -10,6 +10,7 @@ Describe -Tag 'Manifests' 'manifest-validation' {
         $schema = "$PSScriptRoot/../schema.json"
         Add-Type -Path "$PSScriptRoot\..\supporting\validator\bin\Newtonsoft.Json.dll"
         Add-Type -Path "$PSScriptRoot\..\supporting\validator\bin\Newtonsoft.Json.Schema.dll"
+        & "$PSScriptRoot\..\supporting\yaml\bin\Load-Assemblies.ps1"
         Add-Type -Path "$PSScriptRoot\..\supporting\validator\bin\Scoop.Validator.dll"
     }
 
@@ -59,6 +60,17 @@ Describe -Tag 'Manifests' 'manifest-validation' {
             $validator.Validate("$working_dir/autoupdate.json") | Should -BeTrue
             $validator.Errors.Count | Should -Be 0
         }
+        It 'pass for yml manifest' {
+            $validator = New-Object Scoop.Validator($schema, $true)
+            $validator.Validate("$working_dir/bucket/cosi.yaml") | Should -BeTrue
+            $validator.Errors.Count | Should -Be 0
+        }
+        It 'broken yml manifest' {
+            $validator = New-Object Scoop.Validator($schema, $true)
+            $validator.Validate("$working_dir/broken.yaml") | Should -BeFalse
+            $validator.Errors.Count | Should -Be 1
+            $validator.Errors | Select-Object -Last 1 | Should -Match 'Property ''checkver'''
+        }
     }
 
     Context 'manifest validates against the schema' {
@@ -97,8 +109,7 @@ Describe -Tag 'Manifests' 'manifest-validation' {
             if (($env:CI -ne $true) -or ($changed_manifests -imatch 'schema.json')) { $skip_manifest = $false }
 
             It $file.BaseName -Skip:$skip_manifest {
-                # TODO: Skip yml for now for schema validation
-                if (!$quota_exceeded -and ($file.Extension -notmatch '\.ya?ml$')) {
+                if (!$quota_exceeded) {
                     try {
                         $validator.Validate($file.FullName)
 

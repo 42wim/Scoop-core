@@ -35,9 +35,6 @@ foreach ($sup in $Sups) {
         continue
     }
 
-    Remove-Module 'powershell-yaml' -ErrorAction 'SilentlyContinue' -Force
-    Start-Sleep -Seconds 2
-
     Rename-Item $dir 'old' -ErrorAction 'SilentlyContinue'
     Confirm-DirectoryExistence -LiteralPath $dir | Out-Null
     Start-Sleep -Seconds 2

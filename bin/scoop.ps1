@@ -23,7 +23,7 @@ $ExitCode = 0
 # - No command passed
 # - -v or --version passed
 # On *nix --version is passed in $args instead of command
-$version = (($Command -eq '--version') -or ($args -eq '--version')) -or (!$Command -and ($args.Contains('-v')))
+$version = (($Command -eq '--version') -or ($args.Contains('--version'))) -or (!$Command -and ($args.Contains('-v')))
 
 # Scoop itself help should be shown only if explicitly asked:
 # - No version asked
@@ -53,9 +53,8 @@ if ($version) {
         $b = Find-BucketDirectory $_ -Root
 
         if (Join-Path $b '.git' | Test-Path -PathType 'Container') {
-            Write-UserMessage -Message "'$_' bucket:" -Output
+            Write-UserMessage -Message "`r`n'$_' bucket:" -Output
             Invoke-GitCmd -Command 'VersionLog' -Repository $b
-            Write-UserMessage -Message '' -Output
         }
     }
 } elseif ($scoopHelp) {

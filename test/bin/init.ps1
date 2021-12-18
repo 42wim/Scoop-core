@@ -3,8 +3,8 @@ Write-Host "PowerShell: $($PSVersionTable.PSVersion)"
 
 Write-Host 'Install dependencies ...'
 # Force pester v4
-Install-Module -Repository 'PSGallery' -Scope 'CurrentUser' -Name 'Pester' -RequiredVersion 4.10.1 -SkipPublisherCheck -Force
-Install-Module -Repository 'PSGallery' -Scope 'CurrentUser' -Name 'PSScriptAnalyzer', 'BuildHelpers' -Force
+Install-Module -Repository 'PSGallery' -Scope 'CurrentUser' -Name 'Pester' -RequiredVersion 4.10.1 -SkipPublisherCheck
+Install-Module -Repository 'PSGallery' -Scope 'CurrentUser' -Name 'PSScriptAnalyzer', 'BuildHelpers'
 
 if ($env:CI_WINDOWS -eq $true) {
     # TODO: Adopt native scoop installation
