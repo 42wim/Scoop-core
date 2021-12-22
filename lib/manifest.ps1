@@ -559,7 +559,7 @@ function installed_manifest($app, $version, $global) {
 
     # Different extension types
     if (!(Test-Path -LiteralPath $manifestPath -PathType 'Leaf')) {
-        $installedManifests = Get-ChildItem "$d\scoop-manifest.*" -ErrorAction 'SilentlyContinue'
+        $installedManifests = @(Get-ChildItem "$d\scoop-manifest.*" -ErrorAction 'SilentlyContinue')
         if ($installedManifests.Count -gt 0) {
             $manifestPath = $installedManifests[0].FullName
         }

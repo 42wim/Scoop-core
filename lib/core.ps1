@@ -131,6 +131,94 @@ function Invoke-SystemComSpecCommand {
     }
 }
 
+function New-DirectoryJunctionLink {
+    <#
+    .SYNOPSIS
+        Creates a new directory junction.
+    .DESCRIPTION
+        On Unix ln --symbolic will be used instead.
+        On Windows +R attribute will be set on the link.
+    .PARAMETER Target
+        Specifies the real directory path.
+    .PARAMETER LinkName
+        Specifies the symbolic link name.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)] [String] $Target, [Parameter(Mandatory)] [String] $LinkName)
+
+    process {
+        Invoke-SystemComSpecCommand `
+            -Windows "MKLINK /J ""$LinkName"" ""$Target""&&ATTRIB +R ""$LinkName"" /L" `
+            -Unix "ln --symbolic '$Target' '$LinkName'"
+    }
+}
+
+function Remove-DirectoryJunctionLink {
+    <#
+    .SYNOPSIS
+        Removes directory junction.
+    .PARAMETER Target
+        Specifies the directory junction path.
+    .PARAMETER Recurse
+        Specifies to use /S /Q on Windows.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [Alias('Link', 'Target', 'LiteralPath', 'Path', 'Directory')]
+        [String] $LinkName,
+        [Switch] $Recurse
+    )
+
+    process {
+        $prm = if ($Recurse) { '/S /Q ' } else { '' }
+
+        Invoke-SystemComSpecCommand `
+            -Windows "ATTRIB -R /L ""$LinkName""&&RMDIR $prm""$LinkName""" `
+            -Unix "rm '$LinkName'"
+    }
+}
+
+function New-FileHardLink {
+    <#
+    .SYNOPSIS
+        Create a new file hard link.
+    .PARAMETER Target
+        Specifies the real directory path.
+    .PARAMETER LinkName
+        Specifies the symbolic link name.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)] [String] $Target, [Parameter(Mandatory)] [String] $LinkName)
+
+    process {
+        Invoke-SystemComSpecCommand `
+            -Windows "MKLINK /H ""$LinkName"" ""$Target""" `
+            -Unix "ln '$Target' '$LinkName'"
+    }
+}
+
+function Remove-FileHardLink {
+    <#
+    .SYNOPSIS
+        Removes file hard link.
+    .PARAMETER Target
+        Specifies the full path to the link.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [Alias('Link', 'Target', 'LiteralPath', 'Path')]
+        [String] $LinkName
+    )
+
+    process {
+        Invoke-SystemComSpecCommand `
+            -Windows "DEL ""$LinkName""" `
+            -Unix "rm '$LinkName'"
+    }
+}
+
 function Test-IsArmArchitecture {
     <#
     .SYNOPSIS
@@ -687,8 +775,10 @@ function search_in_path($target) {
     }
 }
 
-# TODO: Unix
 function ensure_in_path($dir, $global) {
+    # TODO: Properly handle unix
+    if ($SHOVEL_IS_UNIX) { return }
+
     $path = env 'PATH' $global
     if ($path -notmatch [System.Text.RegularExpressions.Regex]::Escape($dir)) {
         Write-UserMessage -Message "Adding $(friendly_path $dir) to $(if($global){'global'}else{'your'}) path." -Output
@@ -919,6 +1009,10 @@ function fullpath($path) {
 #       for all communication with api.github.com
 Optimize-SecurityProtocol
 
+# General variables
+$SHOVEL_DEBUG_ENABLED = Test-ScoopDebugEnabled
+$SHOVEL_IS_UNIX = Test-IsUnix
+$SHOVEL_IS_ARM_ARCH = Test-IsArmArchitecture
 $SHOVEL_USERAGENT = Get-UserAgent
 
 # TODO: Drop
@@ -959,11 +1053,6 @@ $SHOVEL_GENERAL_MANIFESTS_DIRECTORY = Join-Path $SCOOP_ROOT_DIRECTORY 'manifests
 $configHome = $env:XDG_CONFIG_HOME, "$env:USERPROFILE\.config" | Where-Object { -not [String]::IsNullOrEmpty($_) } | Select-Object -First 1
 $SCOOP_CONFIGURATION_FILE = Join-Path $configHome 'scoop\config.json'
 $SCOOP_CONFIGURATION = load_cfg $SCOOP_CONFIGURATION_FILE
-
-# General variables
-$SHOVEL_DEBUG_ENABLED = Test-ScoopDebugEnabled
-$SHOVEL_IS_UNIX = Test-IsUnix
-$SHOVEL_IS_ARM_ARCH = Test-IsArmArchitecture
 
 # TODO: Remove deprecated variables
 $scoopdir = $SCOOP_ROOT_DIRECTORY

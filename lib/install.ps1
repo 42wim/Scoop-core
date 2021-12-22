@@ -89,7 +89,7 @@ function install_app($app, $architecture, $global, $suggested, $use_cache = $tru
     $persist_dir = persistdir $app $global
 
     # Suggest installing arm64
-    if ((Test-IsArmArchitecture) -and ($architecture -ne 'arm64') -and ($manifest.'architecture'.'arm64')) {
+    if (($SHOVEL_IS_ARM_ARCH) -and ($architecture -ne 'arm64') -and ($manifest.'architecture'.'arm64')) {
         Write-UserMessage -Message 'Manifest explicitly supports arm64. Consider to install using arm64 version to achieve best compatibility/performance.' -Success
     }
 
@@ -1099,14 +1099,11 @@ function link_current($versiondir) {
         throw [ScoopException] "Version 'current' is not allowed!" # TerminatingError thrown
     }
 
-    if (Test-Path $currentdir) {
-        # remove the junction
-        attrib -R /L $currentdir
-        & "$env:COMSPEC" /c rmdir $currentdir
+    if (Test-Path -LiteralPath $currentdir -PathType 'Container') {
+        Remove-DirectoryJunctionLink -LinkName $currentdir
     }
 
-    & "$env:COMSPEC" /c mklink /j $currentdir $versiondir | Out-Null
-    attrib $currentdir +R /L
+    New-DirectoryJunctionLink -Target $versiondir -LinkName $currentdir | Out-Null
 
     return $currentdir
 }
@@ -1123,11 +1120,7 @@ function unlink_current($versiondir) {
     if (Test-Path -LiteralPath $currentdir -PathType 'Container') {
         Write-UserMessage -Message "Unlinking $(friendly_path $currentdir)" -Output:$false
 
-        # remove read-only attribute on link
-        attrib $currentdir -R /L
-
-        # remove the junction
-        & "$env:COMSPEC" /c "rmdir `"$currentdir`""
+        Remove-DirectoryJunctionLink -LinkName $currentdir
 
         return $currentdir
     }
@@ -1137,6 +1130,9 @@ function unlink_current($versiondir) {
 
 # to undo after installers add to path so that scoop manifest can keep track of this instead
 function ensure_install_dir_not_in_path($dir, $global) {
+    # TODO: Properly handle unix
+    if ($SHOVEL_IS_UNIX) { return }
+
     $path = (env 'path' $global)
 
     $fixed, $removed = find_dir_or_subdir $path "$dir"
@@ -1167,6 +1163,12 @@ function find_dir_or_subdir($path, $dir) {
 }
 
 function env_add_path($manifest, $dir, $global, $arch) {
+    # TODO: Properly handle unix
+    if ($SHOVEL_IS_UNIX) {
+        Write-UserMessage -Message 'Environment variable manipulations are not supported on *nix' -Info
+        return
+    }
+
     $env_add_path = arch_specific 'env_add_path' $manifest $arch
 
     if ($env_add_path) {
@@ -1183,6 +1185,12 @@ function env_add_path($manifest, $dir, $global, $arch) {
 }
 
 function env_rm_path($manifest, $dir, $global, $arch) {
+    # TODO: Properly handle unix
+    if ($SHOVEL_IS_UNIX) {
+        Write-UserMessage -Message 'Environment variable manipulations are not supported on *nix' -Info
+        return
+    }
+
     $env_add_path = arch_specific 'env_add_path' $manifest $arch
     $env_add_path | Where-Object { $_ } | ForEach-Object {
         $path_dir = Join-Path $dir $_
@@ -1192,6 +1200,12 @@ function env_rm_path($manifest, $dir, $global, $arch) {
 }
 
 function env_set($manifest, $dir, $global, $arch) {
+    # TODO: Properly handle unix
+    if ($SHOVEL_IS_UNIX) {
+        Write-UserMessage -Message 'Environment variable manipulations are not supported on *nix' -Info
+        return
+    }
+
     $env_set = arch_specific 'env_set' $manifest $arch
     if ($env_set) {
         $env_set | Get-Member -Member NoteProperty | ForEach-Object {
@@ -1203,6 +1217,12 @@ function env_set($manifest, $dir, $global, $arch) {
     }
 }
 function env_rm($manifest, $global, $arch) {
+    # TODO: Properly handle unix
+    if ($SHOVEL_IS_UNIX) {
+        Write-UserMessage -Message 'Environment variable manipulations are not supported on *nix' -Info
+        return
+    }
+
     $env_set = arch_specific 'env_set' $manifest $arch
     if ($env_set) {
         $env_set | Get-Member -Member NoteProperty | ForEach-Object {
@@ -1350,11 +1370,10 @@ function persist_data($manifest, $original_dir, $persist_dir) {
         # create link
         if (is_directory $target) {
             # target is a directory, create junction
-            & "$env:COMSPEC" /c "mklink /j `"$source`" `"$target`"" | Out-Null
-            attrib $source +R /L
+            New-DirectoryJunctionLink -LinkName $source -Target $target | Out-Null
         } else {
             # target is a file, create hard link
-            & "$env:COMSPEC" /c "mklink /h `"$source`" `"$target`"" | Out-Null
+            New-FileHardLink -LinkName $source -Target $target | Out-Null
         }
     }
 }
@@ -1366,13 +1385,10 @@ function unlink_persist_data($dir) {
             $filepath = $file.FullName
             # directory (junction)
             if ($file -is [System.IO.DirectoryInfo]) {
-                # remove read-only attribute on the link
-                attrib -R /L $filepath
-                # remove the junction
-                & "$env:COMSPEC" /c "rmdir /s /q `"$filepath`""
+                Remove-DirectoryJunctionLink -LinkName $filepath -Recurse
             } else {
                 # remove the hard link
-                & "$env:COMSPEC" /c "del `"$filepath`""
+                Remove-FileHardLink -LinkName $filepath
             }
         }
     }

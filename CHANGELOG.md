@@ -4,9 +4,12 @@
 
 🎉🎉 YAML typed manifest and archived manifest installation support 🎉🎉
 
+- **Unix**:
+    - Fix `--version` command under *nix
+    - Supress errors about environment variables, until fully implemented.
+        - 🎉 Manifest installation on Unix is now partially implemented
 - **CI**: Support validation of YML typed manifests
 - Cache the arm check to prevent multiple calls of `uname` on *nix
-- **Unix**: Fix `--version` command under *nix
 - **scoop-uninstall**: Warn user when he tries to uninstall dependency, which is still needed
 - **scoop-status**: Detect if applications, which were installed as dependency are still needed
 - **scoop-list**:
