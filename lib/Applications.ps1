@@ -180,6 +180,7 @@ function app_status($app, $global) {
     $status.failed = (!$install_info -or !$status.version)
     $status.hold = ($install_info.hold -eq $true)
 
+    # TODO: Adopt Resolve-ManifestInformation
     $manifest = manifest $app $install_info.bucket $install_info.url
     $status.bucket = $install_info.bucket
     $status.removed = (!$manifest)

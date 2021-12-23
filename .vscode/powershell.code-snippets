@@ -27,7 +27,7 @@
             "    @('description', 'first_para'),",
             "    @('Diagnostic', 'Test-DiagMainBucketAdded'),",
             "    @('Git', 'Invoke-GitCmd'),",
-            "    @('install', 'install_app'),",
+            "    @('install', 'msi_installed'),",
             "    @('json', 'ConvertToPrettyJson'),",
             "    @('manifest', 'Resolve-ManifestInformation'),",
             "    @('ManifestHelpers', 'Test-Persistence'),",

@@ -1,6 +1,7 @@
 @(
     @('core', 'Test-ScoopDebugEnabled'),
     @('Versions', 'Clear-InstalledVersion'),
+    @('install', 'msi_installed'), # TODO: Refactor and eliminate
     @('manifest', 'Resolve-ManifestInformation')
 ) | ForEach-Object {
     if (!(Get-Command $_[1] -ErrorAction 'Ignore')) {

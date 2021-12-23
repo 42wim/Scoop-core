@@ -12,7 +12,7 @@
     @('getopt', 'Resolve-GetOpt'),
     @('help', 'scoop_help'),
     @('Helpers', 'New-IssuePrompt'),
-    @('install', 'install_app'),
+    @('install', 'msi_installed'),
     @('Applications', 'Get-InstalledApplicationInformation'),
     @('manifest', 'Resolve-ManifestInformation'),
     @('psmodules', 'install_psmodule'),

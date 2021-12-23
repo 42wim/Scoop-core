@@ -4,7 +4,7 @@
     @('buckets', 'Get-KnownBucket'),
     @('commands', 'Invoke-ScoopCommand'),
     @('Git', 'Invoke-GitCmd'),
-    @('install', 'install_app'),
+    @('install', 'msi_installed'),
     @('Dependencies', 'Resolve-DependsProperty'),
     @('Installation', 'Install-ScoopApp'),
     @('manifest', 'Resolve-ManifestInformation')

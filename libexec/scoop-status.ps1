@@ -20,7 +20,6 @@
     @('Applications', 'Get-InstalledApplicationInformation'),
     @('buckets', 'Get-KnownBucket'),
     @('Dependencies', 'Resolve-DependsProperty'),
-    @('depends', 'script_deps'),
     @('Git', 'Invoke-GitCmd'),
     @('manifest', 'Resolve-ManifestInformation'),
     @('Versions', 'Clear-InstalledVersion')

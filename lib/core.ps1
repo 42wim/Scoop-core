@@ -131,6 +131,7 @@ function Invoke-SystemComSpecCommand {
     }
 }
 
+#region TODO: Extract lib/Installation.ps1
 function New-DirectoryJunctionLink {
     <#
     .SYNOPSIS
@@ -218,6 +219,7 @@ function Remove-FileHardLink {
             -Unix "rm '$LinkName'"
     }
 }
+#endregion TODO: Extract lib/Installation.ps1
 
 function Test-IsArmArchitecture {
     <#
@@ -237,6 +239,7 @@ function Test-IsArmArchitecture {
     }
 }
 
+#region TODO: Extract lib/Config.ps1
 function load_cfg($file) {
     if (!(Test-Path $file)) { return $null }
 
@@ -275,6 +278,7 @@ function set_config($name, $value) {
 
     return $SCOOP_CONFIGURATION
 }
+#endregion TODO: Extract lib/Config.ps1
 
 function setup_proxy() {
     # '@' and ':' in password must be escaped, e.g. 'p@ssword' -> p\@ssword'
@@ -318,13 +322,6 @@ function is_admin {
 
     return ([System.Security.Principal.WindowsPrincipal]($id)).IsInRole($admin)
 }
-
-# messages
-function abort($msg, [int] $exit_code = 3) { Write-UserMessage -Message $msg -Err; exit $exit_code }
-function error($msg) { Write-Host "ERROR $msg" -ForegroundColor 'DarkRed' }
-function warn($msg) { Write-Host "WARN  $msg" -ForegroundColor 'DarkYellow' }
-function info($msg) { Write-Host "INFO  $msg" -ForegroundColor 'DarkGray' }
-function message($msg) { Write-Host "$msg" }
 
 function Test-ScoopDebugEnabled {
     <#
@@ -464,39 +461,6 @@ function url_remote_filename($url) {
     return $basename
 }
 
-function ensure {
-    <#
-    .SYNOPSIS
-        Make sure that directory exists.
-    .PARAMETER Directory
-        Specifies directory to be tested and created.
-    .OUTPUTS
-        System.Management.Automation.PathInfo
-            Resolved path
-    #>
-    [CmdletBinding()]
-    [OutputType([System.Management.Automation.PathInfo])]
-    param([Parameter(Mandatory, ValueFromPipeline)] [Alias('Dir', 'Path', 'LiteralPath')] $Directory)
-
-    process {
-        if (!(Test-Path $Directory)) { New-Item $Directory -ItemType 'Directory' | Out-Null }
-
-        return Resolve-Path $Directory
-    }
-}
-
-function relpath {
-    <#
-    .SYNOPSIS
-        Returns relative path to caller.
-    #>
-    [CmdletBinding()]
-    [OutputType([String])]
-    param([String] $Path)
-
-    process { return Join-Path $MyInvocation.PSScriptRoot $Path }
-}
-
 function friendly_path($path) {
     $h = (Get-PSProvider 'FileSystem').Home
     if (!$h.EndsWith('\')) { $h += '\' }
@@ -504,7 +468,6 @@ function friendly_path($path) {
 
     return "$path" -replace ([System.Text.RegularExpressions.Regex]::Escape($h)), '~\'
 }
-function is_local($path) { return ($path -notmatch '^https?://') -and (Test-Path $path) }
 
 # operations
 
@@ -601,12 +564,14 @@ function Invoke-ExternalCommand {
     return $true
 }
 
+#region TODO: Extract lib/Download.ps1
 function dl($url, $to) {
     $wc = New-Object System.Net.Webclient
     $wc.Headers.Add('Referer', (strip_filename $url))
     $wc.Headers.Add('User-Agent', $SHOVEL_USERAGENT)
     $wc.DownloadFile($url, $to)
 }
+#endregion TODO: Extract lib/Download.ps1
 
 # TODO: Unix
 function env($name, $global, $val = '__get') {
@@ -637,6 +602,7 @@ function isFileLocked([string]$path) {
 function is_directory([String] $path) { return (Test-Path $path) -and (Get-Item $path) -is [System.IO.DirectoryInfo] }
 
 # Move content of directory into different directory
+# TODO: Monkey patch for Unix Ash258/Scoop-Core#103
 function movedir {
     [CmdletBinding()]
     param ($from, $to)
@@ -667,6 +633,7 @@ function movedir {
     }
 }
 
+#region TODO: Extract lib/Installation.ps1 / lib/Shimming.ps1
 function get_app_name($path) {
     if ($path -match '([^/\\]+)[/\\]current[/\\]') {
         return $matches[1].ToLower()
@@ -765,6 +732,7 @@ powershell -noprofile -ex unrestricted `"& '$resolved_path' $arg %args%;exit `$L
         "#!/bin/sh`njava -jar `"$resolved_path`" $arg `"$@`"" | Out-File $shim -Encoding 'Ascii'
     }
 }
+#endregion TODO: Extract lib/Installation.ps1 / lib/Shimming.ps1
 
 function search_in_path($target) {
     $path = (env 'PATH' $false) + ';' + (env 'PATH' $true)
@@ -909,6 +877,7 @@ function format_hash([String] $hash) {
     return $hash
 }
 
+#region TODO: Extract lib/Download.aria.ps1
 function format_hash_aria2([String] $hash) {
     $hash = $hash -split ':' | Select-Object -Last 1
 
@@ -922,7 +891,9 @@ function format_hash_aria2([String] $hash) {
 
     return $hash
 }
+#region TODO: Extract lib/Download.aria.ps1
 
+#region TODO: Extract lib/Download.ps1
 function get_hash([String] $multihash) {
     $type, $hash = $multihash -split ':'
     # no type specified, assume sha256
@@ -962,6 +933,7 @@ function handle_special_urls($url) {
 
     return $url
 }
+#endregion TODO: Extract lib/Download.ps1
 
 function Resolve-ArchitectureParameter {
     [CmdletBinding()]
@@ -985,6 +957,14 @@ function Resolve-ArchitectureParameter {
 }
 
 #region Deprecated
+function ensure {
+    param([Parameter(Mandatory, ValueFromPipeline)] [Alias('Dir', 'Path', 'LiteralPath')] $Directory)
+
+    process {
+        return Confirm-DirectoryExistence -LiteralPath $Directory
+    }
+}
+
 function file_path($app, $file) {
     Show-DeprecatedWarning $MyInvocation 'Get-AppFilePath'
     return Get-AppFilePath -App $app -File $file
@@ -999,6 +979,12 @@ function fullpath($path) {
     Show-DeprecatedWarning $MyInvocation 'Get-AbsolutePath'
     return Get-AbsolutePath -Path $path
 }
+
+function abort($msg, $exit_code = 3) { Stop-ScoopExecution -Message $msg -ExitCode $exit_code }
+function error($msg) { Write-UserMessage -Message $msg -Err }
+function warn($msg) { Write-UserMessage -Message $msg -Warning }
+function info($msg) { Write-UserMessage -Message $msg -Info }
+function message($msg) { Write-UserMessage -Message $msg -SkipSeverity }
 #endregion Deprecated
 
 ##################

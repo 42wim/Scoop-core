@@ -16,7 +16,7 @@
     @('getopt', 'Resolve-GetOpt'),
     @('help', 'scoop_help'),
     @('Helpers', 'New-IssuePrompt'),
-    @('install', 'install_app'),
+    @('install', 'msi_installed'),
     @('manifest', 'Resolve-ManifestInformation')
 ) | ForEach-Object {
     if (!([bool] (Get-Command $_[1] -ErrorAction 'Ignore'))) {

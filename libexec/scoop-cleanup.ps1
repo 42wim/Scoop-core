@@ -16,7 +16,7 @@
     @('Helpers', 'New-IssuePrompt'),
     @('Applications', 'Get-InstalledApplicationInformation'),
     @('buckets', 'Get-KnownBucket'),
-    @('install', 'install_app'),
+    @('install', 'msi_installed'),
     @('manifest', 'Resolve-ManifestInformation'),
     @('Versions', 'Clear-InstalledVersion')
 ) | ForEach-Object {

@@ -53,7 +53,7 @@ function startmenu_shortcut([System.IO.FileInfo] $target, $shortcutName, $argume
     $scoop_startmenu_folder = shortcut_folder $global
     $subdirectory = [System.IO.Path]::GetDirectoryName($shortcutName)
     if ($subdirectory) {
-        $subdirectory = ensure $([System.IO.Path]::Combine($scoop_startmenu_folder, $subdirectory))
+        $subdirectory = Confirm-DirectoryExistence -LiteralPath ([System.IO.Path]::Combine($scoop_startmenu_folder, $subdirectory))
     }
 
     $wsShell = New-Object -ComObject WScript.Shell

@@ -2,7 +2,7 @@
     @('core', 'Test-ScoopDebugEnabled'),
     @('Helpers', 'New-IssuePrompt'),
     @('buckets', 'Get-KnownBucket'),
-    @('install', 'install_app'),
+    @('install', 'msi_installed'),
     @('manifest', 'Resolve-ManifestInformation')
 ) | ForEach-Object {
     if (!([bool] (Get-Command $_[1] -ErrorAction 'Ignore'))) {

@@ -13,8 +13,7 @@
     @('Applications', 'Get-InstalledApplicationInformation'),
     @('buckets', 'Get-KnownBucket'),
     @('Dependencies', 'Resolve-DependsProperty'),
-    @('depends', 'script_deps'),
-    @('install', 'install_app'),
+    @('install', 'msi_installed'),
     @('manifest', 'Resolve-ManifestInformation'),
     @('Versions', 'Clear-InstalledVersion')
 ) | ForEach-Object {

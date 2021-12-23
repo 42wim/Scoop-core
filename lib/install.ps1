@@ -31,109 +31,6 @@ function Deny-ArmInstallation {
     }
 }
 
-function install_app($app, $architecture, $global, $suggested, $use_cache = $true, $check_hash = $true) {
-    $app, $bucket, $null = parse_app $app
-    $app, $manifest, $bucket, $url = Find-Manifest $app $bucket
-
-    if (!$manifest) {
-        throw [ScoopException] "Could not find manifest for '$app'$(if($url){ " at the URL $url" })." # TerminatingError thrown
-    }
-
-    $version = $manifest.version
-    if (!$version) { throw [ScoopException] "Invalid manifest|-Manifest '$app' does not specify a version." } # TerminatingError thrown
-    if ($version -match '[^\w\.\-\+_]') {
-        throw [ScoopException] "Invalid manifest|-Manifest version has unsupported character '$($matches[0])'." # TerminatingError thrown
-    }
-
-    $is_nightly = $version -eq 'nightly'
-    if ($is_nightly) {
-        $version = nightly_version $(Get-Date)
-        $check_hash = $false
-    }
-
-    if (!(supports_architecture $manifest $architecture)) {
-        throw [ScoopException] "'$app' does not support $architecture architecture" # TerminatingError thrown
-    }
-
-    Deny-ArmInstallation -Manifest $manifest -Architecture $architecture
-
-    $buc = if ($bucket) { " [$bucket]" } else { '' }
-    Write-UserMessage -Message "Installing '$app' ($version) [$architecture]$buc"
-
-    # Show license
-    $license = $manifest.license
-    if ($license -and ($license -ne 'Unknown')) {
-        $id = if ($license.identifier) { $license.identifier } else { $license }
-        # Remove [|,]...
-        if ($id -like '*...') { $id = $id -replace '[|,]\.{3}' }
-        $id = $id -split ','
-        $id = $id -split '\|'
-
-        if ($license.url) {
-            $s = if ($id.Count -eq 1) { $id } else { $id -join ', ' }
-            $toShow = $s + ' (' + $license.url + ')'
-        } else {
-            $line = if ($id.Count -gt 1) { "`r`n  " } else { '' }
-            $id | ForEach-Object {
-                $toShow += "$line$_ (https://spdx.org/licenses/$_.html)"
-            }
-        }
-
-        Write-UserMessage -Message "By installing you accept following $(pluralize $id.Count 'license' 'licenses'): $toShow" -Warn
-    }
-
-    # Variables
-    $dir = versiondir $app $version $global | Confirm-DirectoryExistence
-    $current_dir = current_dir $dir # Save some lines in manifests
-    $original_dir = $dir # Keep reference to real (not linked) directory
-    $persist_dir = persistdir $app $global
-
-    # Suggest installing arm64
-    if (($SHOVEL_IS_ARM_ARCH) -and ($architecture -ne 'arm64') -and ($manifest.'architecture'.'arm64')) {
-        Write-UserMessage -Message 'Manifest explicitly supports arm64. Consider to install using arm64 version to achieve best compatibility/performance.' -Success
-    }
-
-    # Download and extraction
-    Invoke-ManifestScript -Manifest $manifest -ScriptName 'pre_download' -Architecture $architecture
-    $fname = dl_urls $app $version $manifest $bucket $architecture $dir $use_cache $check_hash
-
-    # Installers
-    Invoke-ManifestScript -Manifest $manifest -ScriptName 'pre_install' -Architecture $architecture
-    run_installer $fname $manifest $architecture $dir $global
-    ensure_install_dir_not_in_path $dir $global
-    $dir = link_current $dir
-    create_shims $manifest $dir $global $architecture
-    create_startmenu_shortcuts $manifest $dir $global $architecture
-    install_psmodule $manifest $dir $global
-    if ($global) { ensure_scoop_in_path $global } # Can assume local scoop is in path
-    env_add_path $manifest $dir $global $architecture
-    env_set $manifest $dir $global $architecture
-
-    # Persist data
-    persist_data $manifest $original_dir $persist_dir
-    persist_permission $manifest $global
-
-    Invoke-ManifestScript -Manifest $manifest -ScriptName 'post_install' -Architecture $architecture
-
-    # Save info for uninstall
-    save_installed_manifest $app $bucket $dir $url
-    save_install_info @{ 'architecture' = $architecture; 'url' = $url; 'bucket' = $bucket } $dir
-
-    if ($manifest.suggest) { $suggested[$app] = $manifest.suggest }
-
-    Write-UserMessage -Message "'$app' ($version) was installed successfully!" -Success
-
-    # Additional info to user
-    show_notes $manifest $dir $original_dir $persist_dir
-
-    if ($manifest.changelog) {
-        $changelog = $manifest.changelog
-        if (!$changelog.StartsWith('http')) { $changelog = friendly_path (Join-Path $dir $changelog) }
-
-        Write-UserMessage -Message "New changes in this release: '$changelog'" -Success
-    }
-}
-
 function Get-HelperPath {
     <#
     .SYNOPSIS
@@ -270,6 +167,7 @@ function Find-Manifest($app, $bucket) {
     return $app, $manifest, $bucket, $url
 }
 
+#region TODO: Extract lib/Download.ps1
 function dl_with_cache($app, $version, $url, $to, $cookies = $null, $use_cache = $true) {
     $cached = cache_path $app $version $url
     debug $cached
@@ -295,7 +193,9 @@ function do_dl($url, $to, $cookies) {
         throw [ScoopException] "Download failed|-$($e.Message)" # TerminatingError thrown
     }
 }
+#endregion TODO: Extract lib/Download.ps1
 
+#region TODO: Extract lib/Download.aria.ps1
 function aria_exit_code($exitcode) {
     $codes = @{
         0  = 'All downloads were successful'
@@ -524,7 +424,9 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
         }
     }
 }
+#endregion TODO: Extract lib/Download.aria.ps1
 
+#region TODO: Extract lib/Download.ps1
 # Download with filesize and progress indicator
 function dl($url, $to, $cookies, $progress) {
     $reqUrl = ($url -split '#')[0]
@@ -868,6 +770,7 @@ function compute_hash($file, $algname) {
 
     return ''
 }
+#endregion TODO: Extract lib/Download.ps1
 
 # for dealing with installers
 function args($config, $dir, $global) {
@@ -1128,6 +1031,7 @@ function unlink_current($versiondir) {
     return $versiondir
 }
 
+#region TODO: Extract lib/Installation.ps1 / lib/Environment.ps1
 # to undo after installers add to path so that scoop manifest can keep track of this instead
 function ensure_install_dir_not_in_path($dir, $global) {
     # TODO: Properly handle unix
@@ -1216,6 +1120,7 @@ function env_set($manifest, $dir, $global, $arch) {
         }
     }
 }
+
 function env_rm($manifest, $global, $arch) {
     # TODO: Properly handle unix
     if ($SHOVEL_IS_UNIX) {
@@ -1232,7 +1137,9 @@ function env_rm($manifest, $global, $arch) {
         }
     }
 }
+#endregion TODO: Extract lib/Installation.ps1 / lib/Environment.ps1
 
+# TODO: Move to Installation and rename
 function show_notes($manifest, $dir, $original_dir, $persist_dir) {
     if ($manifest.notes) {
         Write-UserMessage -Output:$false -Message @(
@@ -1243,45 +1150,7 @@ function show_notes($manifest, $dir, $original_dir, $persist_dir) {
     }
 }
 
-function all_installed($apps, $global) {
-    $apps | Where-Object {
-        $app, $null, $null = parse_app $_
-        installed $app $global
-    }
-}
-
-# returns (uninstalled, installed)
-function prune_installed($apps, $global) {
-    $installed = @(all_installed $apps $global)
-
-    $uninstalled = $apps | Where-Object { $installed -notcontains $_ }
-
-    return @($uninstalled), @($installed)
-}
-
-# check whether the app failed to install
-function failed($app, $global) {
-    if (is_directory (appdir $app $global)) {
-        return !(install_info $app (Select-CurrentVersion -App $app -Global:$global) $global)
-    } else {
-        return $false
-    }
-}
-
-function ensure_none_failed($apps, $global) {
-    $new = @()
-    foreach ($app in $apps) {
-        if (failed $app $global) {
-            Write-UserMessage -Message "'$app' install failed previously. Please uninstall it and try again." -Err
-            continue
-        } else {
-            $new += $app
-        }
-    }
-
-    return $new
-}
-
+# TODO: Move to Installation and rename
 function show_suggestions($suggested) {
     $installed_apps = (installed_apps $true) + (installed_apps $false)
 
@@ -1307,6 +1176,7 @@ function show_suggestions($suggested) {
     }
 }
 
+#region TODO: Extract lib/Persist.ps1
 # Persistent data
 function persist_def($persist) {
     if ($persist -is [Array]) {
@@ -1405,3 +1275,4 @@ function persist_permission($manifest, $global) {
         $acl | Set-Acl -Path $path
     }
 }
+#endregion TODO: Extract lib/Persist.ps1

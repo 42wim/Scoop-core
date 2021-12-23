@@ -20,7 +20,7 @@
     @('getopt', 'Resolve-GetOpt'),
     @('help', 'scoop_help'),
     @('Helpers', 'New-IssuePrompt'),
-    @('install', 'install_app'),
+    @('install', 'msi_installed'),
     @('manifest', 'Resolve-ManifestInformation'),
     @('shortcuts', 'rm_startmenu_shortcuts'),
     @('Versions', 'Clear-InstalledVersion')

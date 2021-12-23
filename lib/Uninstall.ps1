@@ -1,7 +1,7 @@
 @(
     @('core', 'Test-ScoopDebugEnabled'),
     @('Helpers', 'New-IssuePrompt'),
-    @('install', 'install_app'),
+    @('install', 'msi_installed'),
     @('manifest', 'Resolve-ManifestInformation'),
     @('psmodules', 'install_psmodule'),
     @('shortcuts', 'rm_startmenu_shortcuts'),

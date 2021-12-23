@@ -2,7 +2,7 @@
     @('core', 'Test-ScoopDebugEnabled'),
     @('Helpers', 'New-IssuePrompt'),
     @('decompress', 'Expand-7zipArchive'),
-    @('install', 'install_app')
+    @('install', 'msi_installed')
 ) | ForEach-Object {
     if (!([bool] (Get-Command $_[1] -ErrorAction 'Ignore'))) {
         Write-Verbose "Import of lib '$($_[0])' initiated from '$PSCommandPath'"
