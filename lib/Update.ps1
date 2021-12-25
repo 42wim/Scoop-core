@@ -300,7 +300,7 @@ function Update-App {
         try {
             $ar = Resolve-ManifestInformation -ApplicationQuery $a
         } catch {
-            throw [ScoopException] $_.Exception.Message # TerminatingError thrown
+            throw [ScoopException]::new($_.Exception.Message) # TerminatingError thrown
         }
         $toInstall.Resolved += $ar
     } else {
@@ -308,7 +308,7 @@ function Update-App {
     }
 
     if ($toInstall.Failed.Count -gt 0) {
-        throw [ScoopException] 'Cannot resolve all dependencies' # TerminatingError thrown
+        throw [ScoopException]::new('Cannot resolve all dependencies') # TerminatingError thrown
     }
 
     $_deps = @($toInstall.Resolved | Where-Object -Property 'Dependency' -NE -Value $false)
@@ -330,18 +330,18 @@ function Update-App {
 
     # TODO: Could this ever happen?
     if (!$Force -and ($oldVersion -eq $version)) {
-        throw [ScoopException] "The Latest version of '$App' ($version) is already installed." # TerminatingError thrown
+        throw [ScoopException]::new("The Latest version of '$App' ($version) is already installed.") # TerminatingError thrown
     }
 
     # TODO:???
     # TODO: Case when bucket no longer have this application?
     if (!$version) {
-        throw [ScoopException] "No manifest available for '$App'" # TerminatingError thrown
+        throw [ScoopException]::new("No manifest available for '$App'") # TerminatingError thrown
     }
 
     # Do not update if the new manifest does not support the installed architecture
     if (!(supports_architecture $manifest $architecture)) {
-        throw [ScoopException] "Manifest no longer supports specific architecture '$architecture'" # TerminatingError thrown
+        throw [ScoopException]::new("Manifest no longer supports specific architecture '$architecture'") # TerminatingError thrown
     }
 
     Deny-ArmInstallation -Manifest $manifest -Architecture $architecture
@@ -373,7 +373,7 @@ function Update-App {
                     if ($url -like '*sourceforge.net*') {
                         Write-UserMessage -Message 'SourceForge.net is known for causing hash validation fails. Please try again before opening a ticket.' -Warning
                     }
-                    throw [ScoopException] "Hash check failed|-$err" # TerminatingError thrown
+                    throw [ScoopException]::new("Hash check failed|-$err") # TerminatingError thrown
                 }
             }
         }
@@ -384,7 +384,7 @@ function Update-App {
     #endregion Workaround of #2220
 
     $result = Uninstall-ScoopApplication -App $App -Global:$Global
-    if ($result -eq $false) { throw [ScoopException] 'Ignore' }
+    if ($result -eq $false) { throw [ScoopException]::new('Ignore') }
 
     # Rename current version to .old if same version is installed
     if ($Force -and ($oldVersion -eq $version)) {

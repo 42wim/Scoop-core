@@ -161,7 +161,7 @@ function Resolve-SpecificQueryDependency {
         try {
             $information = Resolve-ManifestInformation -ApplicationQuery $ApplicationQuery
         } catch {
-            throw [ScoopException] "'$ApplicationQuery' -> $($_.Exception.Message)"
+            throw [ScoopException]::new("'$ApplicationQuery' -> $($_.Exception.Message)")
         }
     }
 
@@ -171,7 +171,7 @@ function Resolve-SpecificQueryDependency {
     foreach ($dep in $deps) {
         if ($Resolved.ApplicationName -notcontains $dep) {
             if ($Unresolved -contains $dep) {
-                throw [ScoopException] "Circular dependency detected: '$($information.ApplicationName)' -> '$dep'." # TerminatingError thrown
+                throw [ScoopException]::new("Circular dependency detected: '$($information.ApplicationName)' -> '$dep'.") # TerminatingError thrown
             }
 
             Resolve-SpecificQueryDependency -ApplicationQuery $dep -Architecture $Architecture -Resolved $Resolved -Unresolved $Unresolved -IncludeInstalled:$IncludeInstalled

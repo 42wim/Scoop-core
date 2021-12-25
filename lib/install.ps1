@@ -20,12 +20,12 @@ function Deny-ArmInstallation {
     process {
         if ($SHOVEL_IS_ARM_ARCH) {
             if (($Architecture -eq 'arm64') -and !($Manifest.'architecture'.'arm64')) {
-                throw [ScoopException] "Manifest does not explicitly support 'arm64' architecture. Try to install with '--arch 32bit' or '--arch 64bit' to use Windows arm emulation."
+                throw [ScoopException]::new("Manifest does not explicitly support 'arm64' architecture. Try to install with '--arch 32bit' or '--arch 64bit' to use Windows arm emulation.")
             }
         } else {
             if ($Architecture -eq 'arm64') {
                 if ($true -eq (get_config 'dbgBypassArmCheck' $false)) { return }
-                throw [ScoopException] "Installation of 'arm64' version is not supported on x86 based system"
+                throw [ScoopException]::new("Installation of 'arm64' version is not supported on x86 based system")
             }
         }
     }
@@ -190,7 +190,7 @@ function do_dl($url, $to, $cookies) {
     } catch {
         $e = $_.Exception
         if ($e.InnerException) { Write-UserMessage -Message $e.InnerException -Err }
-        throw [ScoopException] "Download failed|-$($e.Message)" # TerminatingError thrown
+        throw [ScoopException]::new("Download failed|-$($e.Message)") # TerminatingError thrown
     }
 }
 #endregion TODO: Extract lib/Download.ps1
@@ -384,7 +384,7 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
                 $aria2
             )
 
-            throw [ScoopException] "Download via aria2 failed|-$mes" # TerminatingError thrown
+            throw [ScoopException]::new("Download via aria2 failed|-$mes") # TerminatingError thrown
         }
 
         # Remove aria2 input file when done
@@ -408,12 +408,12 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
                     Write-UserMessage -Message 'SourceForge.net is known for causing hash validation fails. Please try again before opening a ticket.' -Color Yellow
                 }
 
-                throw [ScoopException] "Hash check failed|-$err" # TerminatingError thrown
+                throw [ScoopException]::new("Hash check failed|-$err") # TerminatingError thrown
             }
         }
 
         # Copy or move file to target location
-        if (!(Test-Path $data.$url.source) ) { throw [ScoopException] 'Cached file not found' } # TerminatingError thrown
+        if (!(Test-Path $data.$url.source) ) { throw [ScoopException]::new('Cached file not found') } # TerminatingError thrown
 
         if ($dir -ne $SCOOP_CACHE_DIRECTORY) {
             if ($use_cache) {
@@ -607,7 +607,7 @@ function dl_urls($app, $version, $manifest, $bucket, $architecture, $dir, $use_c
     try {
         Confirm-DirectoryExistence -LiteralPath $SCOOP_CACHE_DIRECTORY | Out-Null
     } catch {
-        throw [ScoopException] "Could not create cache directory: '$SCOOP_CACHE_DIRECTORY'"
+        throw [ScoopException]::new("Could not create cache directory: '$SCOOP_CACHE_DIRECTORY'")
     }
 
     # Download first
@@ -631,7 +631,7 @@ function dl_urls($app, $version, $manifest, $bucket, $architecture, $dir, $use_c
                     if ($url.Contains('sourceforge.net')) {
                         Write-Host -f yellow 'SourceForge.net is known for causing hash validation fails. Please try again before opening a ticket.'
                     }
-                    throw [ScoopException] "Hash check failed|-$err" # TerminatingError thrown
+                    throw [ScoopException]::new("Hash check failed|-$err") # TerminatingError thrown
                 }
             }
         }
@@ -711,7 +711,7 @@ function hash_for_url($manifest, $url, $arch) {
     $urls = @(url $manifest $arch)
 
     $index = [array]::IndexOf($urls, $url)
-    if ($index -eq -1) { throw [ScoopException] "Invalid manifest|-Could not find hash in manifest for '$url'." } # TerminatingError thrown
+    if ($index -eq -1) { throw [ScoopException]::new("Invalid manifest|-Could not find hash in manifest for '$url'.") } # TerminatingError thrown
 
     return @($hashes)[$index]
 }
@@ -813,9 +813,9 @@ function run_installer($fname, $manifest, $architecture, $dir, $global) {
 function install_msi($fname, $dir, $msi) {
     $msifile = Join-Path $dir (coalesce $msi.File "$fname")
 
-    if (!(is_in_dir $dir $msifile)) { throw [ScoopException] "Invalid manifest|-MSI file '$msifile' is outside the app directory." } # TerminatingError thrown
-    if (!($msi.code)) { throw [ScoopException] 'Invalid manifest|-Could not find MSI code.' } # TerminatingError thrown
-    if (msi_installed $msi.code) { throw [ScoopException] 'The MSI package is already installed on this system.' } # TerminatingError thrown
+    if (!(is_in_dir $dir $msifile)) { throw [ScoopException]::new("Invalid manifest|-MSI file '$msifile' is outside the app directory.") } # TerminatingError thrown
+    if (!($msi.code)) { throw [ScoopException]::new('Invalid manifest|-Could not find MSI code.') } # TerminatingError thrown
+    if (msi_installed $msi.code) { throw [ScoopException]::new('The MSI package is already installed on this system.') } # TerminatingError thrown
 
     $logfile = Join-Path $dir 'install.log'
 
@@ -828,7 +828,7 @@ function install_msi($fname, $dir, $msi) {
 
     $installed = Invoke-ExternalCommand 'msiexec' $arg -Activity 'Running installer...' -ContinueExitCodes $continue_exit_codes
     if (!$installed) {
-        throw [ScoopException] "Installation aborted. You might need to run 'scoop uninstall $app' before trying again." # TerminatingError thrown
+        throw [ScoopException]::new("Installation aborted. You might need to run 'scoop uninstall $app' before trying again.") # TerminatingError thrown
     }
     Remove-Item $logfile
     Remove-Item $msifile
@@ -851,7 +851,7 @@ function msi_installed($code) {
 function install_prog($fname, $dir, $installer, $global) {
     $prog = Join-Path $dir (coalesce $installer.file "$fname")
     if (!(is_in_dir $dir $prog)) {
-        throw [ScoopException] "Invalid manifest|-Installer '$prog' is outside the app directory." # TerminatingError thrown
+        throw [ScoopException]::new("Invalid manifest|-Installer '$prog' is outside the app directory.") # TerminatingError thrown
     }
     $arg = @(args $installer.args $dir $global)
 
@@ -859,12 +859,12 @@ function install_prog($fname, $dir, $installer, $global) {
         Write-UserMessage -Message "Running installer file '$prog'" -Output:$false
         & $prog @arg
         if ($LASTEXITCODE -ne 0) {
-            throw [ScoopException] "Installation failed with exit code $LASTEXITCODE" # TerminatingError thrown
+            throw [ScoopException]::new("Installation failed with exit code $LASTEXITCODE") # TerminatingError thrown
         }
     } else {
         $installed = Invoke-ExternalCommand $prog $arg -Activity 'Running installer...'
         if (!$installed) {
-            throw [ScoopException] "Installation aborted. You might need to run 'scoop uninstall $app' before trying again." # TerminatingError thrown
+            throw [ScoopException]::new("Installation aborted. You might need to run 'scoop uninstall $app' before trying again.") # TerminatingError thrown
         }
     }
 
@@ -917,7 +917,7 @@ function run_uninstaller($manifest, $architecture, $dir) {
                 & $exe @arg
             } else {
                 $uninstalled = Invoke-ExternalCommand $exe $arg -Activity 'Running uninstaller...' -ContinueExitCodes $continue_exit_codes
-                if (!$uninstalled) { throw [ScoopException] 'Uninstallation aborted.' } # TerminatingError thrown
+                if (!$uninstalled) { throw [ScoopException]::new('Uninstallation aborted.') } # TerminatingError thrown
             }
         }
     }
@@ -944,7 +944,7 @@ function create_shims($manifest, $dir, $global, $arch) {
             $bin = search_in_path $target
         }
 
-        if (!$bin) { throw [ScoopException] "Shim creation fail|-Cannot shim '$target': File does not exist" } # TerminatingError thrown
+        if (!$bin) { throw [ScoopException]::new("Shim creation fail|-Cannot shim '$target': File does not exist") } # TerminatingError thrown
 
         shim $bin $global $name (Invoke-VariableSubstitution -Entity $arg -Substitutes @{ '$dir' = $dir; '$original_dir' = $original_dir; '$persist_dir' = $persist_dir })
     }
@@ -999,7 +999,7 @@ function link_current($versiondir) {
     Write-UserMessage -Message "Linking $(friendly_path $currentdir) => $(friendly_path $versiondir)" -Output:$false
 
     if ($currentdir -eq $versiondir) {
-        throw [ScoopException] "Version 'current' is not allowed!" # TerminatingError thrown
+        throw [ScoopException]::new("Version 'current' is not allowed!") # TerminatingError thrown
     }
 
     if (Test-Path -LiteralPath $currentdir -PathType 'Container') {
@@ -1081,7 +1081,7 @@ function env_add_path($manifest, $dir, $global, $arch) {
         $env_add_path | Where-Object { $_ } | ForEach-Object {
             $path_dir = Join-Path $dir $_
             if (!(is_in_dir $dir $path_dir)) {
-                throw [ScoopException] "Invalid manifest|-env_add_path '$_' is outside the app directory." # TerminatingError thrown
+                throw [ScoopException]::new("Invalid manifest|-env_add_path '$_' is outside the app directory.") # TerminatingError thrown
             }
             add_first_in_path $path_dir $global
         }

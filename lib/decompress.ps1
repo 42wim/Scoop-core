@@ -128,9 +128,10 @@ function Expand-7zipArchive {
             try {
                 $7zPath = (Get-Command '7z' -CommandType 'Application' -ErrorAction 'Stop' | Select-Object -First 1).Source
             } catch [System.Management.Automation.CommandNotFoundException] {
-                throw [ScoopException] (
-                    "Cannot find external 7-Zip (7z.exe) while '7ZIPEXTRACT_USE_EXTERNAL' is 'true'!",
-                    "Run 'scoop config 7ZIPEXTRACT_USE_EXTERNAL false' or install 7zip manually and try again." -join "`n"
+                throw [ScoopException]::new((
+                        "Cannot find external 7-Zip (7z.exe) while '7ZIPEXTRACT_USE_EXTERNAL' is 'true'!",
+                        "Run 'scoop config 7ZIPEXTRACT_USE_EXTERNAL false' or install 7zip manually and try again." -join "`n"
+                    )
                 ) # TerminatingError thrown
             }
         } else {
@@ -155,11 +156,11 @@ function Expand-7zipArchive {
         try {
             $status = Invoke-ExternalCommand $7zPath $argList -LogPath $logPath
         } catch [System.Management.Automation.ParameterBindingException] {
-            throw [ScoopException] '''7zip'' is not installed or cannot be used' # TerminatingError thrown
+            throw [ScoopException]::new('''7zip'' is not installed or cannot be used') # TerminatingError thrown
         }
 
         if (!$status) {
-            throw [ScoopException] (_decompressErrorPrompt $Path $logPath) # TerminatingError thrown
+            throw [ScoopException]::new((_decompressErrorPrompt $Path $logPath)) # TerminatingError thrown
         }
         if (!$isTar -and $ExtractDir) {
             movedir (Join-Path $DestinationPath $ExtractDir) $DestinationPath | Out-Null
@@ -174,7 +175,7 @@ function Expand-7zipArchive {
                 $tarFile = (Get-Content -Path $logPath)[-4] -replace '.{53}(.*)', '$1'
                 Expand-7zipArchive -Path (Join-Path $DestinationPath $tarFile) -DestinationPath $DestinationPath -ExtractDir $ExtractDir -Removal
             } else {
-                throw [ScoopException] "Decompress error|-Failed to list files in $Path.`nNot a 7zip supported archive file." # TerminatingError thrown
+                throw [ScoopException]::new("Decompress error|-Failed to list files in $Path.`nNot a 7zip supported archive file.") # TerminatingError thrown
             }
         }
 
@@ -232,7 +233,7 @@ function Expand-MsiArchive {
         $status = Invoke-ExternalCommand $msiPath $argList -LogPath $logPath
 
         if (!$status) {
-            throw [ScoopException] (_decompressErrorPrompt $Path $logPath) # TerminatingError thrown
+            throw [ScoopException]::new((_decompressErrorPrompt $Path $logPath)) # TerminatingError thrown
         }
 
         $sourceDir = Join-Path $DestinationPath 'SourceDir'
@@ -330,11 +331,11 @@ function Expand-InnoArchive {
         try {
             $status = Invoke-ExternalCommand $innoPath $argList -LogPath $logPath
         } catch [System.Management.Automation.ParameterBindingException] {
-            throw [ScoopException] "'$inno' is not installed or cannot be used" # TerminatingError thrown
+            throw [ScoopException]::new("'$inno' is not installed or cannot be used") # TerminatingError thrown
         }
 
         if (!$status) {
-            throw [ScoopException] (_decompressErrorPrompt $Path $logPath) # TerminatingError thrown
+            throw [ScoopException]::new((_decompressErrorPrompt $Path $logPath)) # TerminatingError thrown
         }
 
         # Innoextract --include do not extract the directory, it only filter the content
@@ -389,17 +390,17 @@ function Expand-ZipArchive {
                     Expand-7zipArchive $Path $DestinationPath -Removal:$Removal
                     return
                 } else {
-                    throw [ScoopException] "Unzip failed: Windows cannot handle long paths in this zip file.`nInstall 7zip and try again." # TerminatingError thrown
+                    throw [ScoopException]::new("Unzip failed: Windows cannot handle long paths in this zip file.`nInstall 7zip and try again.") # TerminatingError thrown
                 }
             } catch [System.IO.IOException] {
                 if (Test-HelperInstalled -Helper '7zip') {
                     Expand-7zipArchive $Path $DestinationPath -Removal:$Removal
                     return
                 } else {
-                    throw [ScoopException] "Unzip failed: Windows cannot handle the file names in this zip file.`nInstall 7zip and try again." # TerminatingError thrown
+                    throw [ScoopException]::new("Unzip failed: Windows cannot handle the file names in this zip file.`nInstall 7zip and try again.") # TerminatingError thrown
                 }
             } catch {
-                throw [ScoopException] "Decompress error|-Unzip failed: $_" # TerminatingError thrown
+                throw [ScoopException]::new("Decompress error|-Unzip failed: $_") # TerminatingError thrown
             }
         } else {
             # Use Expand-Archive to unzip in PowerShell 5+
@@ -449,11 +450,11 @@ function Expand-DarkArchive {
         try {
             $status = Invoke-ExternalCommand (Get-HelperPath -Helper 'Dark') $argList -LogPath $logPath
         } catch [System.Management.Automation.ParameterBindingException] {
-            throw [ScoopException] '''dark'' is not installed or cannot be used' # TerminatingError thrown
+            throw [ScoopException]::new('''dark'' is not installed or cannot be used') # TerminatingError thrown
         }
 
         if (!$status) {
-            throw [ScoopException] (_decompressErrorPrompt $Path $logPath) # TerminatingError thrown
+            throw [ScoopException]::new((_decompressErrorPrompt $Path $logPath)) # TerminatingError thrown
         }
         if (Test-Path $logPath) { Remove-Item $logPath -Force }
 
@@ -519,7 +520,7 @@ function Expand-ZstdArchive {
 
         $status = Invoke-ExternalCommand -Path $zstdPath -ArgumentList $_arg -LogPath $_log
         if (!$status) {
-            throw [ScoopException] (_decompressErrorPrompt $_path $_log) # TerminatingError thrown
+            throw [ScoopException]::new((_decompressErrorPrompt $_path $_log)) # TerminatingError thrown
         }
 
         Remove-Item -Path $_log -ErrorAction 'SilentlyContinue' -Force

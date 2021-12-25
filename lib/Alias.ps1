@@ -42,7 +42,7 @@ function Get-ScoopAliasPath {
     )
 
     begin {
-        if (($null -eq $AliasName) -or ($AliasName -eq '')) { throw [ScoopException] 'Alias name required' }
+        if (($null -eq $AliasName) -or ($AliasName -eq '')) { throw [ScoopException]::new('Alias name required') }
     }
 
     process { return shimdir $false | Join-Path -ChildPath "scoop-$AliasName.ps1" }

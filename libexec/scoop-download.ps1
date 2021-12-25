@@ -115,7 +115,7 @@ foreach ($app in $application) {
                                     Write-UserMessage -Message 'SourceForge.net is known for causing hash validation fails. Please try again before opening a ticket.' -Warning
                                 }
 
-                                throw [ScoopException] "Hash check failed|-$err" # TerminatingError thrown
+                                throw [ScoopException]::new("Hash check failed|-$err") # TerminatingError thrown
                             }
                         }
                     } catch {

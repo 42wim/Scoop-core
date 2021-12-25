@@ -190,7 +190,7 @@ function Assert-Administrator {
     .SYNOPSIS
         Test administrator privileges.
     #>
-    if (!(is_admin)) { throw [ScoopException] 'Administrator privileges are required' }
+    if (!(is_admin)) { throw [ScoopException]::new('Administrator privileges are required') }
 }
 
 function Assert-WindowsMinimalVersion {
@@ -202,7 +202,7 @@ function Assert-WindowsMinimalVersion {
 
     $cmp = Compare-Version -ReferenceVersion ([Environment]::OSVersion.Version.ToString()) -DifferenceVersion $Version
     if ($cmp -eq 1) {
-        throw [ScoopException] "Application requires at least '$Version' Windows version"
+        throw [ScoopException]::new("Application requires at least '$Version' Windows version")
     }
 }
 
@@ -221,7 +221,7 @@ function Assert-ScoopConfigValue {
 
     process {
         $actualValue = get_config $ConfigOption
-        if ($actualValue -ne $ExpectedValue) { throw [ScoopException] "Configuration option '$ConfigOption' needs to be set to '$ExpectedValue'" }
+        if ($actualValue -ne $ExpectedValue) { throw [ScoopException]::new("Configuration option '$ConfigOption' needs to be set to '$ExpectedValue'") }
     }
 }
 #endregion Asserts

@@ -373,7 +373,6 @@ function debug($obj) {
         Write-Host " -> $($MyInvocation.PSCommandPath):$($MyInvocation.ScriptLineNumber):$($MyInvocation.OffsetInLine)" -ForegroundColor 'DarkGray'
     }
 }
-function success($msg) { Write-Host $msg -ForegroundColor 'DarkGreen' }
 
 function filesize($length) {
     $gb = [System.Math]::Pow(2, 30)
@@ -624,7 +623,7 @@ function movedir {
 
     if ($proc.ExitCode -ge 8) {
         debug $out
-        throw [ScoopException] "Decompress Error|-Could not find '$(fname $from) in $parent'! (error $($proc.ExitCode))" # TerminatingError thrown
+        throw [ScoopException]::new("Decompress Error|-Could not find '$(fname $from) in $parent'! (error $($proc.ExitCode))") # TerminatingError thrown
     }
 
     # Wait for robocopy to terminate its threads
@@ -662,7 +661,7 @@ function warn_on_overwrite($shim_ps1, $path) {
 }
 
 function shim($path, $global, $name, $arg) {
-    if (!(Test-Path $path)) { throw [ScoopException] "Shim creation fail|-Cannot shim '$(fname $path)': could not find '$path'" } # TerminatingError thrown
+    if (!(Test-Path $path)) { throw [ScoopException]::new("Shim creation fail|-Cannot shim '$(fname $path)': could not find '$path'") } # TerminatingError thrown
 
     $abs_shimdir = shimdir $global | Confirm-DirectoryExistence
     if (!$name) { $name = strip_ext (fname $path) }
@@ -985,8 +984,10 @@ function error($msg) { Write-UserMessage -Message $msg -Err }
 function warn($msg) { Write-UserMessage -Message $msg -Warning }
 function info($msg) { Write-UserMessage -Message $msg -Info }
 function message($msg) { Write-UserMessage -Message $msg -SkipSeverity }
+function success($msg) { Write-UserMessage -Message $msg -Success }
 #endregion Deprecated
 
+#region Main
 ##################
 # Core Bootstrap #
 ##################
@@ -1054,3 +1055,4 @@ $PSNativeCommandArgumentPassing = 'Legacy'
 
 # Setup proxy globally
 setup_proxy
+#endregion Main

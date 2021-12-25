@@ -135,7 +135,7 @@ function Set-InstalledApplicationInformationPropertyValue {
         $info = if ($InputObject) { $InputObject } else { Get-InstalledApplicationInformation -AppName $AppName -Version $Version -Global:$Global }
         if (!$info) { $info = @{ } }
         if ($Property.Count -ne $Value.Count) {
-            throw [ScoopException] 'Property and value mismatch'
+            throw [ScoopException]::new('Property and value mismatch')
         }
     }
 
@@ -149,7 +149,7 @@ function Set-InstalledApplicationInformationPropertyValue {
                 if ($Force) {
                     $info.$prop = $val
                 } else {
-                    throw [ScoopException] "Property '$prop' is already set"
+                    throw [ScoopException]::new("Property '$prop' is already set")
                 }
             } else {
                 $info | Add-Member -MemberType 'NoteProperty' -Name $prop -Value $val

@@ -33,7 +33,7 @@ function command_path($cmd) {
         # Get path from shim
         $shim_path = Join-Path $SCOOP_ROOT_DIRECTORY "shims\scoop-$cmd.ps1"
         if (!(Test-Path -LiteralPath $shim_path)) {
-            throw [ScoopException] "Shim for alias '$cmd' does not exist" # TerminatingError thrown
+            throw [ScoopException]::new("Shim for alias '$cmd' does not exist") # TerminatingError thrown
         }
 
         $cmd_path = $shim_path
