@@ -150,12 +150,14 @@ Describe 'Manifests operations' -Tag 'Scoop' {
             It 'Versioned manifest URL' {
                 $result = Resolve-ManifestInformation 'https://raw.githubusercontent.com/Ash258/GithubActionsBucketForTesting/068225b07cad6baeb46eb1adc26f8207fa423508/bucket/old/alfa/0.0.15-12060.yaml'
                 $result.ApplicationName | Should -Be 'alfa'
+                $result.RequestedVersion | Should -Be '0.0.15-12060'
                 $result.Version | Should -Be '0.0.15-12060'
                 $result.ManifestObject.bin | Should -Be 'rpcs3.exe'
                 $result = $null
 
                 $result = Resolve-ManifestInformation 'https://raw.githubusercontent.com/Ash258/GithubActionsBucketForTesting/8117ddcbadc606f5d4576778676e81bfc6dc2e78/bucket/old/aaaaa/0.0.15-11936.json'
                 $result.ApplicationName | Should -Be 'aaaaa'
+                $result.RequestedVersion | Should -Be '0.0.15-11936'
                 $result.Version | Should -Be '0.0.15-11936'
                 $result.ManifestObject.bin | Should -Be 'rpcs3.exe'
                 $result = $null
@@ -291,10 +293,102 @@ Describe 'Manifests operations' -Tag 'Scoop' {
             }
         }
 
-        It 'Not supported query' {
-            { Resolve-ManifestInformation '@@cosi@@' } | Should -Throw 'Not supported way how to provide manifest'
-            { Resolve-ManifestInformation '@1.2.5.8' } | Should -Throw 'Not supported way how to provide manifest'
-            { Resolve-ManifestInformation 'ftp://test.json' } | Should -Throw 'Not supported way how to provide manifest'
+        Describe 'Resolve-ManifestInformation -Simple' {
+            It 'All types' {
+                # Local path
+                $result = Resolve-ManifestInformation "$working_dir\bucket\pwsh.json" -Simple
+                $result.ApplicationName | Should -Be 'pwsh'
+                $result = $null
+
+                $result = Resolve-ManifestInformation "$working_dir\bucket/cosi.yaml"
+                $result.ApplicationName | Should -Be 'cosi'
+                $result = $null
+
+                $result = Resolve-ManifestInformation "$working_dir\bucket\old\pwsh\6.2.3.yml"
+                $result.ApplicationName | Should -Be 'pwsh'
+                $result.RequestedVersion | Should -Be '6.2.3'
+                $result = $null
+
+                $result = Resolve-ManifestInformation "$working_dir\bucket\old\cosi\7.1.0.yaml"
+                $result.ApplicationName | Should -Be 'cosi'
+                $result.RequestedVersion | Should -Be '7.1.0'
+                $result = $null
+
+                $result = Resolve-ManifestInformation "$working_dir\bucket/old\cosi/7.1.0.yaml"
+                $result.ApplicationName | Should -Be 'cosi'
+                $result.RequestedVersion | Should -Be '7.1.0'
+                $result = $null
+
+                # Local usermanifest
+                $path = Get-ChildItem $SHOVEL_GENERAL_MANIFESTS_DIRECTORY -File | Select-Object -First 1
+
+                # TODO: Is this relatable?
+                $result = Resolve-ManifestInformation $path.FullName -Simple
+                $result.ApplicationName | Should -Be 'aaaaa'
+                $result = $null
+
+                $result = Resolve-ManifestInformation "$($working_dir -replace '\\', '/')/bucket/old/cosi/7.1.0.yaml"
+                $result.ApplicationName | Should -Be 'cosi'
+                $result.RequestedVersion | Should -Be '7.1.0'
+                $result = $null
+
+                # Simple lookup
+                $result = Resolve-ManifestInformation 'cosi' -Simple
+                $result.ApplicationName | Should -Be 'cosi'
+                $result.Bucket | Should -BeNullOrEmpty
+                $result = $null
+
+                $result = Resolve-ManifestInformation 'pwsh@1.2.4' -Simple
+                $result.ApplicationName | Should -Be 'pwsh'
+                $result.RequestedVersion | Should -Be '1.2.4'
+                $result.Bucket | Should -BeNullOrEmpty
+                $result = $null
+
+                # Bucket lookup
+                $result = Resolve-ManifestInformation 'main/pwsh@7.0.6' -Simple 6>$null
+                $result.ApplicationName | Should -Be 'pwsh'
+                $result.Print | Should -Be 'main/pwsh@7.0.6'
+                $result.RequestedVersion | Should -Be '7.0.6'
+                $result.Bucket | Should -Be 'main'
+                $result = $null
+
+                # URL lookup
+                $result = Resolve-ManifestInformation 'https://raw.githubusercontent.com/Ash258/GithubActionsBucketForTesting/184d2f072798441e8eb03a655dea16f2695ee699/bucket/alfa.yaml' -Simple
+                $result.ApplicationName | Should -Be 'alfa'
+                $result = $null
+
+                $result = Resolve-ManifestInformation 'https://raw.githubusercontent.com/Ash258/GithubActionsBucketForTesting/068225b07cad6baeb46eb1adc26f8207fa423508/bucket/old/alfa/0.0.15-12060.yaml' -Simple
+                $result.ApplicationName | Should -Be 'alfa'
+                $result.RequestedVersion | Should -Be '0.0.15-12060'
+                $result = $null
+
+                $result = Resolve-ManifestInformation 'https://raw.githubusercontent.com/Ash258/GithubActionsBucketForTesting/8117ddcbadc606f5d4576778676e81bfc6dc2e78nonExistentURL/bucket/old/aaaaa/0.0.15-11936.json' -Simple
+                $result.ApplicationName | Should -Be 'aaaaa'
+                $result.RequestedVersion | Should -Be '0.0.15-11936'
+                $result = $null
+
+                # Even non-exitent stuff should work
+                $result = Resolve-ManifestInformation 'nonexistent/cosi' -Simple
+                $result.ApplicationName | Should -Be 'cosi'
+                $result.Bucket | Should -Be 'nonexistent'
+                $result = $null
+
+                $result = Resolve-ManifestInformation 'main/tryharder' -Simple
+                $result.ApplicationName | Should -Be 'tryharder'
+                $result.Bucket | Should -Be 'main'
+
+                # Error state
+                { Resolve-ManifestInformation '@@cosi@@' -Simple } | Should -Throw 'Not supported way how to provide manifest'
+                { Resolve-ManifestInformation '@@cosi@@' -Simple } | Should -Throw 'Not supported way how to provide manifest'
+                { Resolve-ManifestInformation '@1.2.5.8' -Simple } | Should -Throw 'Not supported way how to provide manifest'
+                { Resolve-ManifestInformation 'ws://test.json' -Simple } | Should -Throw 'Not supported way how to provide manifest'
+            }
+
+            It 'Not supported query' {
+                { Resolve-ManifestInformation '@@cosi@@' } | Should -Throw 'Not supported way how to provide manifest'
+                { Resolve-ManifestInformation '@1.2.5.8' } | Should -Throw 'Not supported way how to provide manifest'
+                { Resolve-ManifestInformation 'ws://test.json' } | Should -Throw 'Not supported way how to provide manifest'
+            }
         }
     }
 }

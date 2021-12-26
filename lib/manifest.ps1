@@ -178,30 +178,41 @@ function Get-LocalManifest {
         Get "metadata" about local manifest with support for archived manifests.
     .PARAMETER Query
         Specifies the file path where manifest is stored.
+    .PARAMETER Simple
+        Specifies to return limited information about the resolved manifest.
     #>
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
-    param([Parameter(Mandatory, ValueFromPipeline)] [String] $Query)
+    param([Parameter(Mandatory, ValueFromPipeline)] [String] $Query, [Switch] $Simple)
 
     process {
+        # TODO: Try to implement it without Get-Item, with regex approach
+        # TODO: In this case the archived manifest regex could not work properly??
+        $localPath = $reqVersion = $manifest = $null
         try {
-            $manifest = ConvertFrom-Manifest -LiteralPath $Query
+            $localPath = Get-Item -LiteralPath $Query
         } catch {
-            throw [ScoopException]::new("File is not a valid manifest ($($_.Exception.Message))") # TerminatingError thrown
+            throw [ScoopException]::new("Cannot get file '$Query'")
         }
 
-        $localPath = Get-Item -LiteralPath $Query
         $applicationName = $localPath.BaseName
-        $reqVersion = $null
 
         # Check if archived version was provided
         if ($localPath.FullName -match $_archivedManifestRegex) {
             $applicationName = $Matches['manifestName']
-            $reqVersion = $manifest.version
+            $reqVersion = $Matches['manifestVersion']
         }
         # Check if downloaded manfiest was provided
         if ($localPath.Name -match $_localDownloadedRegex) {
             $applicationName = $Matches['app']
+        }
+
+        if (!$Simple) {
+            try {
+                $manifest = ConvertFrom-Manifest -LiteralPath $localPath.FullName
+            } catch {
+                throw [ScoopException]::new("File is not a valid manifest ($($_.Exception.Message))") # TerminatingError thrown
+            }
         }
 
         return @{
@@ -220,15 +231,39 @@ function Get-RemoteManifest {
         Download manifest from provided URL.
     .PARAMETER URL
         Specifies the URL pointing to manifest.
+    .PARAMETER Simple
+        Specifies to return limited information about the resolved manifest.
     #>
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
-    param([Parameter(Mandatory, ValueFromPipeline)] [String] $URL)
+    param([Parameter(Mandatory, ValueFromPipeline)] [String] $URL, [Switch] $Simple)
 
     process {
+        # Parse name and extension from URL
+        # TODO: Will this be enough? Consider more advanced approach
+        $name = Split-Path $URL -Leaf
+        $extension = ($name -split '\.')[-1]
+        $name = $name -replace "\.($ALLOWED_MANIFEST_EXTENSION_REGEX)$"
+        $requestedVersion = $null
+
+        if ($URL -match $_archivedManifestRegex) {
+            $name = $Matches['manifestName']
+            $extension = $Matches['manifestExtension']
+            $requestedVersion = $Matches['manifestVersion']
+        }
+
+        if ($Simple) {
+            return @{
+                'Name'             = $name
+                'RequestedVersion' = $requestedVersion
+                'Print'            = $URL
+                'Manifest'         = $null
+                'Path'             = $null
+            }
+        }
+
         $str = $null
         try {
-            # TODO: Implement proxy
             $wc = New-Object System.Net.Webclient
             $wc.Headers.Add('User-Agent', $SHOVEL_USERAGENT)
             $str = $wc.DownloadString($URL)
@@ -243,16 +278,6 @@ function Get-RemoteManifest {
         }
 
         Confirm-DirectoryExistence -Directory $SHOVEL_GENERAL_MANIFESTS_DIRECTORY | Out-Null
-
-        # Parse name and extension from URL
-        $name = Split-Path $URL -Leaf
-        $extension = ($name -split '\.')[-1]
-        $name = $name -replace "\.($ALLOWED_MANIFEST_EXTENSION_REGEX)$"
-
-        if ($URL -match $_archivedManifestRegex) {
-            $name = $Matches['manifestName']
-            $extension = $Matches['manifestExtension']
-        }
 
         $rand = "$_localAdditionalSeed$(Get-Random)-$(Get-Random)"
         $outName = "$name-$rand.$extension"
@@ -271,10 +296,11 @@ function Get-RemoteManifest {
         $manifest = ConvertFrom-Manifest -Path $manifestFile
 
         return @{
-            'Name'     = $name
-            'Manifest' = $manifest
-            'Path'     = Get-Item -LiteralPath $manifestFile
-            'Print'    = $URL
+            'Name'             = $name
+            'Manifest'         = $manifest
+            'Path'             = Get-Item -LiteralPath $manifestFile
+            'RequestedVersion' = $requestedVersion
+            'Print'            = $URL
         }
     }
 }
@@ -285,10 +311,12 @@ function Get-ManifestFromLookup {
         Lookup for manifest in all local buckets and return required information.
     .PARAMETER Query
         Specifies the lookup query.
+    .PARAMETER Simple
+        Specifies to return limited information about the resolved manifest.
     #>
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
-    param([Parameter(Mandatory, ValueFromPipeline)] [String] $Query)
+    param([Parameter(Mandatory, ValueFromPipeline)] [String] $Query, [Switch] $Simple)
 
     process {
         # Get all requested information
@@ -298,6 +326,18 @@ function Get-ManifestFromLookup {
             $requestedBucket = $null
         }
         $requestedName, $requestedVersion = $requestedName -split '@'
+        $printableRepresentation = if ($requestedVersion) { "@$requestedVersion" } else { '' }
+
+        if ($Simple) {
+            return @{
+                'Name'             = $requestedName
+                'Bucket'           = $requestedBucket
+                'RequestedVersion' = $requestedVersion
+                'Print'            = "$requestedBucket/$requestedName$printableRepresentation"
+                'Manifest'         = $null
+                'Path'             = $null
+            }
+        }
 
         # Local manifest with specific name in all buckets
         $found = @()
@@ -324,12 +364,9 @@ function Get-ManifestFromLookup {
 
         $manifestBucket = $valid.Bucket
         $manifestPath = $valid.Path
-        $printableRepresentation = ''
 
         # Select versioned manifest or generate it
         if ($requestedVersion) {
-            $printableRepresentation = "@$requestedVersion"
-
             try {
                 $path = manifest_path -app $requestedName -bucket $manifestBucket -version $requestedVersion
                 if ($null -eq $path) { throw 'trigger' }
@@ -378,6 +415,8 @@ function Resolve-ManifestInformation {
         Find and parse manifest file according to search query. Return universal object with all relevant information about manifest.
     .PARAMETER ApplicationQuery
         Specifies the string used for looking for manifest.
+    .PARAMETER Simple
+        Specifies to return limited information about the resolved manifest.
     .EXAMPLE
         Resolve-ManifestInformation -ApplicationQuery 'pwsh'
         Resolve-ManifestInformation -ApplicationQuery 'pwsh@7.2.0'
@@ -393,13 +432,13 @@ function Resolve-ManifestInformation {
     #>
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
-    param([Parameter(Mandatory, ValueFromPipeline)] [String] $ApplicationQuery)
+    param([Parameter(Mandatory, ValueFromPipeline)] [String] $ApplicationQuery, [Switch] $Simple)
 
     process {
         $manifest = $applicationName = $applicationVersion = $requestedVersion = $bucket = $localPath = $url = $print = $calcBucket = $calcURL = $null
 
         if (Test-Path -LiteralPath $ApplicationQuery) {
-            $res = Get-LocalManifest -Query $ApplicationQuery
+            $res = Get-LocalManifest -Query $ApplicationQuery -Simple:$Simple
             $applicationName = $res.Name
             $applicationVersion = $res.Manifest.version
             $requestedVersion = $res.RequestedVersion
@@ -407,15 +446,16 @@ function Resolve-ManifestInformation {
             $localPath = $res.Path
             $print = $res.Print
         } elseif ($ApplicationQuery -match '^https?://') {
-            $res = Get-RemoteManifest -URL $ApplicationQuery
+            $res = Get-RemoteManifest -URL $ApplicationQuery -Simple:$Simple
             $applicationName = $res.Name
             $applicationVersion = $res.Manifest.version
+            $requestedVersion = $res.RequestedVersion
             $manifest = $res.Manifest
             $localPath = $res.Path
             $url = $ApplicationQuery
             $print = $res.Print
         } elseif ($ApplicationQuery -match $_lookupRegex) {
-            $res = Get-ManifestFromLookup -Query $ApplicationQuery
+            $res = Get-ManifestFromLookup -Query $ApplicationQuery -Simple:$Simple
             $applicationName = $res.Name
             $requestedVersion = $res.RequestedVersion
             $applicationVersion = $res.Manifest.version
@@ -430,7 +470,7 @@ function Resolve-ManifestInformation {
         debug $res
 
         # TODO: Validate manifest object
-        if ($null -eq $manifest.version) {
+        if (!$Simple -and ($null -eq $manifest.version)) {
             debug $manifest
             throw [ScoopException]::new('Not a valid manifest') # TerminatingError thrown
         }
