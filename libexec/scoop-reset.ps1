@@ -1,6 +1,7 @@
 # Usage: scoop reset [<OPTIONS>] <APP>...
 # Summary: Force binaries/shims, shortcuts, environment variables and persisted data to be re-linked.
-# Help: Could be used to resolve conflicts in favor of a particular application(s).
+# Help: Only name of the installed application should be used as <APP> parameter. No URL, bucket, local path to the manifest.
+# Could be used to resolve conflicts in favor of a particular application(s).
 # For example, if you have installed 'python' and 'python27', you can use 'scoop reset' to switch between
 # using one or the other.
 #
@@ -50,11 +51,22 @@ if ($Applications -eq '*') {
 }
 
 foreach ($a in $Applications) {
-    ($app, $gl) = $a
+    ($appName, $gl) = $a
 
-    # TODO: Adopt Resolve-ManifestInformation ???
-    # Only name and version is relevant, manual parse should be enough
-    $app, $bucket, $version = parse_app $app
+    try {
+        $resolved = Resolve-ManifestInformation -ApplicationQuery $appName -Simple
+    } catch {
+        ++$Problems
+        Write-UserMessage -Message "Cannot resolve '$appName'" -Err
+        continue
+    }
+
+    $app = $resolved.ApplicationName
+    $version = $resolved.RequestedVersion
+
+    if ($resolved.Bucket -or $resolved.URL) {
+        Write-UserMessage -Message 'You need to provide just an installed application name instead of URL or bucket syntax. In future versions this will result into error' -Warning
+    }
 
     # Skip scoop
     if ($app -eq 'scoop') { continue }
