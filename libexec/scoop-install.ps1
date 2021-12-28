@@ -163,7 +163,7 @@ foreach ($app in $toInstall.Resolved) {
         }
 
         debug $_.InvocationInfo
-        New-IssuePromptFromException -ExceptionMessage $_.Exception.Message -Application $app.ApplicationName -Bucket $app.Bucket
+        New-IssuePromptFromException -ExceptionMessage $_.Exception.Message -Application $app.ApplicationName -Bucket $app.Bucket -Version $app.Version
 
         continue
     }

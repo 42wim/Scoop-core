@@ -58,7 +58,7 @@ foreach ($explode in $Applications) {
     } catch {
         ++$Problems
         debug $_.InvocationInfo
-        New-IssuePromptFromException -ExceptionMessage $_.Exception.Message -Application $app -Bucket $bucket
+        New-IssuePromptFromException -ExceptionMessage $_.Exception.Message -Application $app -Bucket $bucket -Version $_.Exception.Version
 
         continue
     }

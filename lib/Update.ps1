@@ -330,7 +330,7 @@ function Update-App {
 
     # TODO: Could this ever happen?
     if (!$Force -and ($oldVersion -eq $version)) {
-        throw [ScoopException]::new("The Latest version of '$App' ($version) is already installed.") # TerminatingError thrown
+        throw [ScoopException]::new("The Latest version of '$App' ($version) is already installed.", $version) # TerminatingError thrown
     }
 
     # TODO:???
@@ -373,7 +373,7 @@ function Update-App {
                     if ($url -like '*sourceforge.net*') {
                         Write-UserMessage -Message 'SourceForge.net is known for causing hash validation fails. Please try again before opening a ticket.' -Warning
                     }
-                    throw [ScoopException]::new("Hash check failed|-$err") # TerminatingError thrown
+                    throw [ScoopException]::new("Hash check failed|-$err", $version) # TerminatingError thrown
                 }
             }
         }

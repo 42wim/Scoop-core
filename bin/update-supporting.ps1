@@ -46,7 +46,7 @@ foreach ($sup in $Sups) {
     } catch {
         ++$problems
         debug $_.InvocationInfo
-        New-IssuePromptFromException -ExceptionMessage $_.Exception.Message
+        New-IssuePromptFromException -ExceptionMessage $_.Exception.Message -Version $manifest.version
 
         continue
     }

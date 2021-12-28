@@ -103,7 +103,7 @@ if (!$Applications) {
             ++$Problems
             $failedApplications += $out[0]
             debug $_.InvocationInfo
-            New-IssuePromptFromException -ExceptionMessage $_.Exception.Message -Application $out[0] -Bucket $out[2]
+            New-IssuePromptFromException -ExceptionMessage $_.Exception.Message -Application $out[0] -Bucket $out[2] -Version $_.Exception.Version
         }
     }
 }

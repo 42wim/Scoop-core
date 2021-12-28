@@ -139,34 +139,6 @@ function Test-Aria2Enabled {
     process { return (Test-HelperInstalled -Helper 'Aria2') -and (get_config 'aria2-enabled' $true) }
 }
 
-function Find-Manifest($app, $bucket) {
-    $manifest, $url = $null, $null
-
-    # Check if app is a URL or UNC path
-    if ($app -match '^(ht|f)tps?://|\\\\') {
-        $url = $app
-        $app = appname_from_url $url
-        $manifest = url_manifest $url
-    } else {
-        # Check buckets
-        $manifest, $bucket = find_manifest $app $bucket
-
-        if (!$manifest) {
-            # Could not find app in buckets: check if it's a local path
-            $path = $app
-            # TODO: YAML
-            if (!$path.endswith('.json')) { $path += '.json' }
-            if (Test-Path $path) {
-                $url = "$(Resolve-Path $path)"
-                $app = appname_from_url $url
-                $manifest, $bucket = url_manifest $url
-            }
-        }
-    }
-
-    return $app, $manifest, $bucket, $url
-}
-
 #region TODO: Extract lib/Download.ps1
 function dl_with_cache($app, $version, $url, $to, $cookies = $null, $use_cache = $true) {
     $cached = cache_path $app $version $url
@@ -174,7 +146,11 @@ function dl_with_cache($app, $version, $url, $to, $cookies = $null, $use_cache =
 
     if (!(Test-Path $cached) -or !$use_cache) {
         Confirm-DirectoryExistence -LiteralPath $SCOOP_CACHE_DIRECTORY | Out-Null
-        do_dl $url "$cached.download" $cookies
+        try {
+            do_dl $url "$cached.download" $cookies
+        } catch {
+            throw [ScoopException]::new($_.Exception.Message, $version) # TerminatingError thrown
+        }
         Move-Item "$cached.download" $cached -Force
     } else { Write-UserMessage -Message "Loading $(url_remote_filename $url) from cache" }
 
@@ -344,6 +320,7 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
         Out-UTF8File -Path $urlstxt -Content $urlstxt_content
 
         # Build aria2 command
+        # TODO: Adopt better approach
         $aria2 = "& '$(Get-HelperPath -Helper Aria2)' $($options -join ' ')"
 
         debug $aria2
@@ -384,7 +361,7 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
                 $aria2
             )
 
-            throw [ScoopException]::new("Download via aria2 failed|-$mes") # TerminatingError thrown
+            throw [ScoopException]::new("Download via aria2 failed|-$mes", $version) # TerminatingError thrown
         }
 
         # Remove aria2 input file when done
@@ -408,7 +385,7 @@ function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $co
                     Write-UserMessage -Message 'SourceForge.net is known for causing hash validation fails. Please try again before opening a ticket.' -Color Yellow
                 }
 
-                throw [ScoopException]::new("Hash check failed|-$err") # TerminatingError thrown
+                throw [ScoopException]::new("Hash check failed|-$err", $version) # TerminatingError thrown
             }
         }
 
@@ -631,7 +608,7 @@ function dl_urls($app, $version, $manifest, $bucket, $architecture, $dir, $use_c
                     if ($url.Contains('sourceforge.net')) {
                         Write-Host -f yellow 'SourceForge.net is known for causing hash validation fails. Please try again before opening a ticket.'
                     }
-                    throw [ScoopException]::new("Hash check failed|-$err") # TerminatingError thrown
+                    throw [ScoopException]::new("Hash check failed|-$err", $version) # TerminatingError thrown
                 }
             }
         }

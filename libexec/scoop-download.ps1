@@ -91,7 +91,7 @@ foreach ($app in $application) {
                     }
 
                     debug $_.InvocationInfo
-                    New-IssuePromptFromException -ExceptionMessage $_.Exception.Message -Application $appName -Bucket $bucket
+                    New-IssuePromptFromException -ExceptionMessage $_.Exception.Message -Application $appName -Bucket $bucket -Version $version
 
                     continue
                 }
@@ -126,7 +126,7 @@ foreach ($app in $application) {
                         }
 
                         debug $_.InvocationInfo
-                        New-IssuePromptFromException -ExceptionMessage $_.Exception.Message -Application $appName -Bucket $bucket
+                        New-IssuePromptFromException -ExceptionMessage $_.Exception.Message -Application $appName -Bucket $bucket -Version $version
 
                         continue
                     }

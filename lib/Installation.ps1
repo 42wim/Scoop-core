@@ -20,7 +20,7 @@ function Install-ScoopApplication {
         $version = $ResolvedObject.ManifestObject.version
 
         if ($version -match '[^\w\.\-\+_]') {
-            throw [ScoopException]::new("Invalid manifest|-Manifest version has unsupported character '$($matches[0])'.") # TerminatingError thrown
+            throw [ScoopException]::new("Invalid manifest|-Manifest version has unsupported character '$($Matches[0])'.", $version) # TerminatingError thrown
         }
 
         if ($version -eq 'nightly') {

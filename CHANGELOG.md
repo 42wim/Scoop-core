@@ -4,6 +4,7 @@
 
 🎉🎉 YAML typed manifest and archived manifest installation support 🎉🎉
 
+- Prompt for the new issue now has correct version in title in case of archived manifest is being downloaded/installed/...
 - **Unix**:
     - Fix `--version` command under *nix
     - Supress errors about environment variables, until fully implemented.

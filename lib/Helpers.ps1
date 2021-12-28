@@ -310,7 +310,7 @@ function New-IssuePrompt {
     <#
     .SYNOPSIS
         Prompt user to report a manifest problem to it's maintaners.
-        Post direct link in case of supported source control provides.
+        Post direct link in case of supported source control providers.
     .PARAMETER Application
         Specifies the application name.
     .PARAMETER Bucket
@@ -319,23 +319,34 @@ function New-IssuePrompt {
         Specifies the title of newly created issue.
     .PARAMETER Body
         Specifies more details to be posted as issue body.
+    .PARAMETER Version
+        Specifies the exact version to be shown in the title of issue.
     #>
-    param([String] $Application, [String] $Bucket, [String] $Title, [String[]] $Body)
+    param([String] $Application, [String] $Bucket, [String] $Title, [String[]] $Body, [String] $Version)
 
-    $Bucket = $Bucket.Trim()
-    # TODO: Adopt-ManifestResolveInformation
-    $app, $manifest, $Bucket, $url = Find-Manifest $Application $Bucket
-    $url = known_bucket_repo $Bucket
-    $bucketPath = Join-Path $SCOOP_BUCKETS_DIRECTORY $Bucket
+    $url = $null
+    if ($Bucket) {
+        $Bucket = $Bucket.Trim()
+        if (!$Version) {
+            try {
+                $Version = (manifest_path $Application $Bucket | ConvertFrom-Manifest).version
+            } catch {
+                $Version = $null
+            }
+        }
 
-    if ((Test-Path $bucketPath) -and (Join-Path $bucketPath '.git' | Test-Path -PathType 'Container')) {
-        $remote = Invoke-GitCmd -Repository $bucketPath -Command 'config' -Argument '--get', 'remote.origin.url'
-        # Support ssh and http syntax
-        # git@PROVIDER:USER/REPO.git
-        # https://PROVIDER/USER/REPO.git
-        # https://regex101.com/r/OMEqfV
-        if ($remote -match '(?:@|:\/\/)(?<provider>.+?)[:\/](?<user>.*)\/(?<repo>.+?)(?:\.git)?$') {
-            $url = "https://$($Matches.Provider)/$($Matches.User)/$($Matches.Repo)"
+        $url = known_bucket_repo $Bucket
+        $bucketPath = Join-Path $SCOOP_BUCKETS_DIRECTORY $Bucket
+
+        if ((Test-Path -LiteralPath $bucketPath) -and (Join-Path $bucketPath '.git' | Test-Path -PathType 'Container')) {
+            $remote = Invoke-GitCmd -Repository $bucketPath -Command 'config' -Argument '--get', 'remote.origin.url'
+            # Support ssh and http syntax
+            # git@PROVIDER:USER/REPO.git
+            # https://PROVIDER/USER/REPO.git
+            # https://regex101.com/r/OMEqfV
+            if ($remote -match '(?:@|:\/\/)(?<provider>.+?)[:\/](?<user>.*)\/(?<repo>.+?)(?:\.git)?$') {
+                $url = "https://$($Matches.Provider)/$($Matches.User)/$($Matches.Repo)"
+            }
         }
     }
 
@@ -344,7 +355,8 @@ function New-IssuePrompt {
         return
     }
 
-    $Title = [System.Web.HttpUtility]::UrlEncode("$Application@$($Manifest.version): $Title")
+    $_v = if ($Version) { "$Application@$Version" } else { $Application }
+    $Title = [System.Web.HttpUtility]::UrlEncode("${_v}: $Title")
     $Body = [System.Web.HttpUtility]::UrlEncode($Body)
     $msg = "`nPlease try again"
 
@@ -373,14 +385,16 @@ function New-IssuePromptFromException {
         [AllowNull()]
         [String] $Application,
         [AllowNull()]
-        [String] $Bucket
+        [String] $Bucket,
+        [AllowNull()]
+        [String] $Version
     )
 
     process {
         $title, $body = $ExceptionMessage -split '\|-'
         if (!$body) { $body = $title }
         if ($body -ne 'Ignore') { Write-UserMessage -Message $body -Err }
-        if ($title -ne 'Ignore' -and ($title -ne $body)) { New-IssuePrompt -Application $Application -Bucket $Bucket -Title $title -Body $body }
+        if ($title -ne 'Ignore' -and ($title -ne $body)) { New-IssuePrompt -Application $Application -Bucket $Bucket -Title $title -Body $body -Version $Version }
     }
 }
 
@@ -401,10 +415,16 @@ function Get-NotePropertyEnumerator {
 
 #region Exceptions
 class ScoopException: System.Exception {
-    $Message
+    [String] $Message
+    [String] $Version
 
     ScoopException([String] $Message) {
         $this.Message = $Message
+    }
+
+    ScoopException([String] $Message, [String] $Version) {
+        $this.Message = $Message
+        $this.Version = $Version
     }
 }
 #endregion Exceptions
