@@ -1138,9 +1138,13 @@ function show_suggestions($suggested) {
 
             $fulfilled = $false
             foreach ($suggestion in $feature_suggestions) {
-                $suggested_app, $bucket, $null = parse_app $suggestion
+                try {
+                    $resolved = Resolve-ManifestInformation -ApplicationQuery $suggestion -Simple
+                } catch {
+                    continue
+                }
 
-                if ($installed_apps -contains $suggested_app) {
+                if ($installed_apps -contains $resolved.ApplicationName) {
                     $fulfilled = $true
                     break
                 }
