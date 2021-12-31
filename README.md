@@ -74,11 +74,11 @@ The following buckets are known to Shovel:
 - [Base](https://github.com/shovel-org/Base) - Rebuild of main bucket suited for Shovel usage; Archived + arm64 version support
 - [main](https://github.com/ScoopInstaller/Main) - Default bucket for the most common command line utilities
 - [extras](https://github.com/ScoopInstaller/Extras) - GUI applications
-- [nerd-fonts](https://github.com/matthewjberger/scoop-nerd-fonts) - Nerd Fonts
-- [nirsoft](https://github.com/Ash258/Scoop-NirSoft) - All [Nirsoft](https://nirsoft.net) utilites
-- [java](https://github.com/ScoopInstaller/Java) - Installers for Oracle Java, OpenJDK, Zulu, ojdkbuild, AdoptOpenJDK, Amazon Corretto, BellSoft Liberica, SapMachine and Microsoft
+- [nirsoft](https://github.com/shovel-org/NirSoft-Bucket) - All [Nirsoft](https://nirsoft.net) utilites
+- [sysinternals](https://github.com/shovel-org/Sysinternals-Bucket) - All [Sysinternals](https://docs.microsoft.com/en-us/sysinternals/) tools separately
 - [jetbrains](https://github.com/Ash258/Scoop-JetBrains) - All [JetBrains](https://www.jetbrains.com/products/) utilities and IDEs
-- [sysinternals](https://github.com/Ash258/Scoop-Sysinternals) - All [Sysinternals](https://docs.microsoft.com/en-us/sysinternals/) tools separately
+- [nerd-fonts](https://github.com/matthewjberger/scoop-nerd-fonts) - Nerd Fonts
+- [java](https://github.com/ScoopInstaller/Java) - Installers for Oracle Java, OpenJDK, Zulu, ojdkbuild, AdoptOpenJDK, Amazon Corretto, BellSoft Liberica, SapMachine and Microsoft
 - [nonportable](https://github.com/TheRandomLabs/scoop-nonportable) - Non-portable applications (may require UAC)
 - [php](https://github.com/ScoopInstaller/PHP) - Installers for various versions of PHP
 - [versions](https://github.com/ScoopInstaller/Versions) - Alternative versions of applications found in known buckets

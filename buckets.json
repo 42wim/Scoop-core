@@ -4,7 +4,7 @@
     "extras": "https://github.com/ScoopInstaller/Extras",
     "java": "https://github.com/ScoopInstaller/Java",
     "nerd-fonts": "https://github.com/matthewjberger/scoop-nerd-fonts",
-    "sysinternals": "https://github.com/shovel-org/SysInternals-Bucket",
+    "sysinternals": "https://github.com/shovel-org/Sysinternals-Bucket",
     "nirsoft": "https://github.com/shovel-org/NirSoft-Bucket",
     "jetbrains": "https://github.com/Ash258/Scoop-JetBrains",
     "nonportable": "https://github.com/TheRandomLabs/scoop-nonportable",

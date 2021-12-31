@@ -1,10 +1,8 @@
 {
     "extensions": {
         "recommendations": [
-            "CoenraadS.bracket-pair-colorizer-2",
             "DavidAnson.vscode-markdownlint",
             "EditorConfig.EditorConfig",
-            "fabiospampinato.vscode-terminals",
             "ms-dotnettools.csharp",
             "ms-vscode.powershell-preview",
             "ms-vscode-remote.remote-ssh",
@@ -201,10 +199,10 @@
         "yaml.hover": true,
         "yaml.schemas": {
             "https://raw.githubusercontent.com/SchemaStore/schemastore/master/src/schemas/json/github-workflow.json": [
-                "github/workflows/**/*",
+                ".github/workflows/**/*",
             ],
             "https://raw.githubusercontent.com/SchemaStore/schemastore/master/src/schemas/json/appveyor.json": [
-                "*appveyor.y*(a)ml",
+                "*appveyor.y*ml",
             ],
             "https://raw.githubusercontent.com/Ash258/Scoop-Core/NEW/schema.json": [
                 "bucket/**/*.y*ml",

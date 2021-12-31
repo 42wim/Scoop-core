@@ -2,6 +2,8 @@
 
 ## [0.6.5](https://github.com/Ash258/Scoop-Core/milestone/5)
 
+### 0.6.5-pre2
+
 🎉🎉 YAML typed manifest and archived manifest installation support 🎉🎉
 
 - Prompt for the new issue now has correct version in title in case of archived manifest is being downloaded/installed/...

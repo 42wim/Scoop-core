@@ -9,7 +9,7 @@
         # this command is used by some core functions and hard to be removed.
         'PSAvoidUsingInvokeExpression',
         # PSUseDeclaredVarsMoreThanAssignments doesn't currently work due to:
-        # https://github.com/PowerShell/PSScriptAnalyzer/issues/636
+        # https://github.com/PowerShell/PSScriptAnalyzer/issues/1163
         'PSUseDeclaredVarsMoreThanAssignments'
     )
 }

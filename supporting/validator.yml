@@ -1,13 +1,13 @@
 version: 1.0.4
 description: Scoop validator
-homepage: https://github.com/Ash258/Scoop-Validator
+homepage: https://github.com/shovel-org/Validator
 license:
   identifier: GPL-3.0-only
-  url: https://github.com/Ash258/Scoop-Validator/blob/main/LICENSE
-url: https://github.com/Ash258/Scoop-Validator/releases/download/1.0.4/validator.zip
+  url: https://github.com/shovel-org/Validator/blob/main/LICENSE
+url: https://github.com/shovel-org/Validator/releases/download/1.0.4/validator.zip
 hash: c2e5b0aaa061fbde504a892d45c767fed654be9b218034eae18d047b84240c0a
 checkver: github
 autoupdate:
-  url: https://github.com/Ash258/Scoop-Validator/releases/download/$version/validator.zip
+  url: https://github.com/shovel-org/Validator/releases/download/$version/validator.zip
   hash:
     url: $url.sha256
