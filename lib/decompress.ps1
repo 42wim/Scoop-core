@@ -518,6 +518,7 @@ function Expand-ZstdArchive {
         $_arg = $argList
         $_arg += """$_path""", '-o', """$_output"""
 
+        Confirm-DirectoryExistence -LiteralPath $_dest | Out-Null
         $status = Invoke-ExternalCommand -Path $zstdPath -ArgumentList $_arg -LogPath $_log
         if (!$status) {
             throw [ScoopException]::new((_decompressErrorPrompt $_path $_log)) # TerminatingError thrown

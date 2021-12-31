@@ -117,6 +117,23 @@ function Test-DiagBucket {
         }
     }
 
+    # Bucket migrations from my personal account to shovel-org
+    'sysinternals' | ForEach-Object {
+        if ($all -notcontains $_) { continue }
+
+        $path = Find-BucketDirectory -Name $_ -Root
+
+        if ((Invoke-GitCmd -Repository $path -Command 'remote' -Argument 'get-url', 'origin') -match 'Ash258') {
+            Write-UserMessage -Message "'$_' bucket was moved" -Warning
+            Write-UserMessage -Message @(
+                '  Fixable with running following command:'
+                "    shovel bucket rm '$_'; shovel bucket add '$_'"
+            )
+            $verdict = $false
+        }
+
+    }
+
     return $verdict
 }
 
@@ -154,7 +171,7 @@ function Test-DiagLongPathEnabled {
 function Test-DiagEnvironmentVariable {
     <#
     .SYNOPSIS
-        Test if scoop's related environment variables are defined.
+        Test if Shovel's related environment variables are defined.
     #>
     [CmdletBinding()]
     [OutputType([bool])]
@@ -193,7 +210,7 @@ function Test-DiagEnvironmentVariable {
     }
 
     if ($env:SCOOP -ne $SCOOP_ROOT_DIRECTORY) {
-        Write-UserMessage -Message '''SCOOP'' environment variable should be set to actual scoop installation location' -Warning
+        Write-UserMessage -Message '''SCOOP'' environment variable should be set to actual Shovel installation location' -Warning
         Write-UserMessage -Message @(
             '  Fixable with running following command:'
             "    [Environment]::SetEnvironmentVariable('SCOOP', '$SCOOP_ROOT_DIRECTORY', 'User')"
@@ -231,9 +248,9 @@ function Test-DiagHelpersInstalled {
         Write-UserMessage -Message '''7-Zip'' not installed!. It is essential component for most of the manifests.' -Warning
         Write-UserMessage -Message @(
             '  Fixable with running following command:'
-            '    scoop install 7zip'
-            '  or you can configure to use 7-Zip not installed by scoop:'
-            '    scoop config ''7ZIPEXTRACT_USE_EXTERNAL'' $true'
+            '    shovel install 7zip'
+            '  or you can configure to use 7-Zip not installed by Shovel:'
+            '    shovel config ''7ZIPEXTRACT_USE_EXTERNAL'' $true'
         )
 
         $result = $false
@@ -243,7 +260,7 @@ function Test-DiagHelpersInstalled {
         Write-UserMessage -Message '''innounp'' is not installed! It is essential component for extraction of InnoSetup based installers.' -Warning
         Write-UserMessage -Message @(
             '  Fixable with running following command:'
-            '    scoop install innounp'
+            '    shovel install innounp'
         )
 
         $result = $false
@@ -253,9 +270,9 @@ function Test-DiagHelpersInstalled {
         Write-UserMessage -Message '''dark'' is not installed! It is essential component for extraction of WiX Toolset based installers.' -Warning
         Write-UserMessage -Message @(
             '  Fixable with running following command:'
-            '    scoop install dark'
+            '    shovel install dark'
             '  or'
-            '    scoop install wixtoolset'
+            '    shovel install wixtoolset'
         )
 
         $result = $false
@@ -265,7 +282,7 @@ function Test-DiagHelpersInstalled {
         Write-UserMessage -Message '''lessmsi'' is not installed! It is essential component for extraction of msi installers.' -Warning
         Write-UserMessage -Message @(
             '  Fixable with running following command:'
-            '    scoop install lessmsi'
+            '    shovel install lessmsi'
         )
 
         $result = $false
@@ -279,7 +296,7 @@ function Test-DiagHelpersInstalled {
 function Test-DiagConfig {
     <#
     .SYNOPSIS
-        Test if various recommended scoop configurations are set correctly.
+        Test if various recommended Shovel configurations are set correctly.
     #>
     [CmdletBinding()]
     [OutputType([bool])]
@@ -290,7 +307,7 @@ function Test-DiagConfig {
         Write-UserMessage -Message '''lessmsi'' should be used for extraction of msi installers!' -Warning
         Write-UserMessage -Message @(
             '  Fixable with running following command:'
-            '    scoop install lessmsi; scoop config MSIEXTRACT_USE_LESSMSI $true'
+            '    shovel install lessmsi; shovel config MSIEXTRACT_USE_LESSMSI $true'
         )
 
         $result = $false
@@ -363,7 +380,7 @@ function Test-MainBranchAdoption {
     $scoopHome = versiondir 'scoop' 'current'
     $fix = @(
         '  Fixable with running following command:'
-        '    scoop update'
+        '    shovel update'
     )
 
     # Shovel - empty config
@@ -415,7 +432,7 @@ function Test-ScoopConfigFile {
         Write-UserMessage -Message 'Configuration file does not exists.' -Warn
         Write-UserMessage -Message @(
             '  Fixable with running following commands:'
-            '    scoop update'
+            '    shovel update'
         )
 
         $verdict = $false
@@ -445,7 +462,7 @@ function Test-ScoopConfigFile {
         Write-UserMessage -Message 'Some configuration options are no longer supported.' -Warn
         Write-UserMessage -Message @(
             '  Fixable with running following commands:'
-            ($toFix | ForEach-Object { "    scoop config rm '$_'" })
+            ($toFix | ForEach-Object { "    shovel config rm '$_'" })
         )
     }
 
