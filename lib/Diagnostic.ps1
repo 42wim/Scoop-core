@@ -91,43 +91,43 @@ function Test-DiagBucket {
 
     # Base, main added
     # TODO: Drop main in near future for security reasons
-    'main', 'Base' | ForEach-Object {
-        if ($all -notcontains $_) {
-            Write-UserMessage -Message "'$_' bucket is not added" -Warning
-            Write-UserMessage -Message @(
-                '  Fixable with running following command:'
-                "    scoop bucket add '$_'"
-            )
+    foreach ($b in 'main', 'Base') {
+        if ($all -contains $b) { continue }
 
-            $verdict = $false
-        }
+        Write-UserMessage -Message "'$b' bucket is not added" -Warning
+        Write-UserMessage -Message @(
+            '  Fixable with running following command:'
+            "    shovel bucket add '$b'"
+        )
+
+        $verdict = $false
     }
 
     # Extras changed
     if ($all -contains 'extras') {
         $path = Find-BucketDirectory -Name 'extras' -Root
 
-        if ((Invoke-GitCmd -Repository $path -Command 'remote' -Argument 'get-url', 'origin') -match 'lukesampson') {
+        if ((Test-Path -LiteralPath $path -PathType 'Container') -and (Invoke-GitCmd -Repository $path -Command 'remote' -Argument 'get-url', 'origin') -match 'lukesampson') {
             Write-UserMessage -Message "'extras' bucket was moved" -Warning
             Write-UserMessage -Message @(
                 '  Fixable with running following command:'
-                "    scoop bucket rm 'extras'; scoop bucket add 'extras'"
+                "    shovel bucket rm 'extras'; shovel bucket add 'extras'"
             )
             $verdict = $false
         }
     }
 
     # Bucket migrations from my personal account to shovel-org
-    'sysinternals', 'nirsoft' | ForEach-Object {
-        if ($all -notcontains $_) { continue }
+    foreach ($bb in 'sysinternals', 'nirsoft') {
+        if ($all -notcontains $bb) { continue }
 
-        $path = Find-BucketDirectory -Name $_ -Root
+        $path = Find-BucketDirectory -Name $bb -Root
 
-        if ((Invoke-GitCmd -Repository $path -Command 'remote' -Argument 'get-url', 'origin') -match 'Ash258') {
-            Write-UserMessage -Message "'$_' bucket was moved" -Warning
+        if ((Test-Path -LiteralPath $path -PathType 'Container') -and ((Invoke-GitCmd -Repository $path -Command 'remote' -Argument 'get-url', 'origin') -match 'Ash258')) {
+            Write-UserMessage -Message "'$bb' bucket was moved" -Warning
             Write-UserMessage -Message @(
                 '  Fixable with running following command:'
-                "    shovel bucket rm '$_'; shovel bucket add '$_'"
+                "    shovel bucket rm '$bb'; shovel bucket add '$bb'"
             )
             $verdict = $false
         }
@@ -450,10 +450,10 @@ function Test-ScoopConfigFile {
     }
 
     $toFix = @()
-    'rootPath', 'globalPath', 'cachePath' | ForEach-Object {
-        $c = get_config $_
+    foreach ($tc in 'rootPath', 'globalPath', 'cachePath') {
+        $c = get_config $tc
         if ($c) {
-            $toFix += $_
+            $toFix += $tc
 
             $verdict = $false
         }
