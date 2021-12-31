@@ -118,7 +118,7 @@ function Test-DiagBucket {
     }
 
     # Bucket migrations from my personal account to shovel-org
-    'sysinternals' | ForEach-Object {
+    'sysinternals', 'nirsoft' | ForEach-Object {
         if ($all -notcontains $_) { continue }
 
         $path = Find-BucketDirectory -Name $_ -Root
